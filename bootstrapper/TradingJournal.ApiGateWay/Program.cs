@@ -11,6 +11,8 @@ using Scalar.AspNetCore;
 using TradingJournal.Shared.Middlewares;
 using TradingJournal.Modules.Psychology;
 using TradingJournal.Modules.Auth;
+using TradingJournal.Modules.Backtest;
+using TradingJournal.Modules.Backtest.Hubs;
 using TradingJournal.Messaging.Shared;
 using System.Security.Claims;
 
@@ -64,6 +66,7 @@ builder.Services
     .AddTradeModule(configuration, isDevelopment)
     .AddPsychologyModule(configuration, isDevelopment)
     .AddAnalyticsModule(isDevelopment)
+    .AddBacktestModule(configuration, isDevelopment)
     .AddInMemoryMessageQueue();
 
 builder.Services.AddOpenApi(options =>
@@ -78,11 +81,17 @@ WebApplication app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     await app.MigrateTradingDatabase();
+    await app.MigrateBacktestDatabase();
 }
 
 app.UseStaticFiles();
 
 app.UseCustomExceptionHandler();
+
+app.UseCors(cors => cors
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader());
 
 app.UseSwaggerDoc();
 
@@ -99,9 +108,7 @@ app.MapScalarApiReference(options =>
 {
 });
 
-app.UseCors(cors => cors
-    .AllowAnyOrigin()
-    .AllowAnyMethod()
-    .AllowAnyHeader());
+// SignalR hub for backtest real-time communication
+app.MapHub<BacktestHub>("/hubs/backtest");
 
 await app.RunAsync();

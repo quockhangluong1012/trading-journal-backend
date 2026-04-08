@@ -9,6 +9,7 @@
     <Project Path="modules/Auth/TradingJournal.Modules.Auth/TradingJournal.Modules.Auth.csproj" />
     <Project Path="modules/Psychology/TradingJournal.Modules.Psychology/TradingJournal.Modules.Psychology.csproj" />
     <Project Path="modules/Trades/TradingJournal.Modules.Trades/TradingJournal.Modules.Trades.csproj" />
+    <Project Path="modules/Backtest/TradingJournal.Modules.Backtest/TradingJournal.Modules.Backtest.csproj" />
   </Folder>
   <Folder Name="/shared/">
     <Project Path="shared/TradingJournal.Messaging.Shared/TradingJournal.Messaging.Shared.csproj" Id="96e200b6-2bea-42bb-8320-806a6773ac3c" />
