@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/**)",
+      "Read(//c/project/**)",
+      "Bash(cygpath -w \"$\\(pwd\\)/modules/Auth/TradingJournal.Modules.Auth/GlobalUsings.cs\")",
+      "Bash(pwd -W)",
+      "Bash(echo \"$\\(pwd -W\\)/modules/Auth/TradingJournal.Modules.Auth/GlobalUsings.cs\")",
+      "Bash(dotnet build:*)",
+      "Bash(grep -v \":0$\")",
+      "Bash(find modules/Psychology/TradingJournal.Modules.Psychology/Features/V1/Dashboard -name \"*.cs\" -exec sed -i 's/internal record Request\\(\\)/internal record Request\\(int UserId\\)/g' {} \\\\;)",
+      "Bash(find modules/Psychology/TradingJournal.Modules.Psychology/Features/V1/Psychology -name \"*.cs\" -exec sed -i 's/internal record Request\\(\\)/internal record Request\\(int UserId\\)/g' {} \\\\;)",
+      "Bash(find modules/Psychology/TradingJournal.Modules.Psychology/Features/V1/Dashboard -name \"*.cs\" -exec sed -i 's/internal record Request\\(int UserId\\)/internal record Request\\(int UserId = 0\\)/g' {} \\\\;)",
+      "Bash(grep:*)",
+      "Bash(dotnet tool:*)",
+      "Bash(dotnet ef:*)",
+      "Bash(ls *.cs)",
+      "Bash(dotnet restore:*)",
+      "Bash(find:*)",
+      "Bash(sed -i 's/int? TradingSessionId\\) : ICommand<int? TradingSessionId, int UserId = 0\\) : ICommand/' \"modules/Trades/TradingJournal.Modules.Trades/Features/V1/Trade/CreateTrade.cs\")",
+      "Bash(sed -i 's/public int Id { get; set; }/public int Id { get; set; }\\\\n        public int UserId { get; set; }/' \"modules/Trades/TradingJournal.Modules.Trades/Features/V1/Trade/DeleteTrade.cs\")",
+      "Bash(sed -i 's/public record Request\\(int TradeId\\)/public record Request\\(int TradeId, int UserId = 0\\)/' \"modules/Trades/TradingJournal.Modules.Trades/Features/V1/Trade/SummerizeTradeHistory.cs\")",
+      "Bash(sed -i 's/int? TradingSessionId\\) : ICommand<int UserId = 0, int?\\\\n        int? TradingSessionId\\) : ICommand/' \"modules/Trades/TradingJournal.Modules.Trades/Features/V1/Trade/UpdateTrade.cs\")",
+      "Bash(sed -i 's/int? TradingSessionId\\) : ICommand/int UserId = 0,\\\\n        int? TradingSessionId\\) : ICommand/' \"modules/Trades/TradingJournal.Modules.Trades/Features/V1/Trade/UpdateTrade.cs\")",
+      "Bash(sed -i 's/th => th.Id == request.Id, cancellationToken: cancellationToken/th => th.Id == request.Id \\\\&\\\\& th.CreatedBy == request.UserId, cancellationToken/' \"modules/Trades/TradingJournal.Modules.Trades/Features/V1/Trade/UpdateTrade.cs\")",
+      "Bash(sed -i 's/x => x.Id == request.Id, cancellationToken: cancellationToken/x => x.Id == request.Id \\\\&\\\\& x.CreatedBy == request.UserId, cancellationToken/' \"modules/Trades/TradingJournal.Modules.Trades/Features/V1/Trade/DeleteTrade.cs\")",
+      "Bash(sed -i 's/int? TradingSessionId\\) : ICommand<int UserId = 0,\\\\n        int? TradingSessionId\\) : ICommand/' \"modules/Trades/TradingJournal.Modules.Trades/Features/V1/Trade/CreateTrade.cs\")",
+      "Bash(sed -i 's/public record Request\\(int TradeId\\) : IQuery/public record Request\\(int TradeId, int UserId = 0\\) : IQuery/' \"modules/Trades/TradingJournal.Modules.Trades/Features/V1/Trade/SummerizeTradeHistory.cs\")",
+      "Bash(sed -i 's/TradeHistory? tradeHistory = await context.TradeHistories.FindAsync\\(\\\\[request.TradeId\\\\], cancellationToken\\);/TradeHistory? tradeHistory = await context.TradeHistories.FirstOrDefaultAsync\\(x => x.Id == request.TradeId \\\\&\\\\& x.CreatedBy == request.UserId, cancellationToken\\);/' \"modules/Trades/TradingJournal.Modules.Trades/Features/V1/Trade/SummerizeTradeHistory.cs\")",
+      "Bash(sed -i 's/AnalyticsFilter\\\\.Today/AnalyticsFilter.OneMonth/g' GetPerformanceSummaryTest.cs)",
+      "Bash(sed -i 's/AnalyticsFilter\\\\.ThisWeek/AnalyticsFilter.OneWeek/g' GetEquityCurveTest.cs)",
+      "Bash(sed -i 's/AnalyticsFilter\\\\.ThisMonth/AnalyticsFilter.OneMonth/g' GetMonthlyReturnsTest.cs GetDayOfWeekBreakdownTest.cs)",
+      "Bash(sed -i 's/AnalyticsFilter\\\\.ThisYear/AnalyticsFilter.SixMonths/g' GetAssetBreakdownTest.cs)",
+      "Bash(sed -i 's/AnalyticsFilter\\\\.AllTime/AnalyticsFilter.AllTime/g' GetInsightsTest.cs)"
+    ]
+  }
+}

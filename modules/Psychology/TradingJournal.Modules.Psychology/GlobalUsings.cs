@@ -1,0 +1,17 @@
+global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.AspNetCore.Routing;
+global using Microsoft.AspNetCore.Http;
+global using FluentValidation;
+global using Microsoft.AspNetCore.Builder;
+global using TradingJournal.Shared.Abstractions;
+global using TradingJournal.Shared.CQRS;
+global using System.Net;
+global using MediatR;
+global using Microsoft.EntityFrameworkCore;
+global using Carter;
+global using TradingJournal.Modules.Psychology.Common.Enum;
+global using TradingJournal.Modules.Psychology.Constants;
+global using TradingJournal.Modules.Psychology.Domain;
+global using TradingJournal.Modules.Psychology.Infrastructure.Persistance;
+global using TradingJournal.Shared.Contracts;
+global using TradingJournal.Shared.Interfaces;

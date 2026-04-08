@@ -1,0 +1,14 @@
+global using Microsoft.AspNetCore.Routing;
+global using Microsoft.AspNetCore.Http;
+global using FluentValidation;
+global using Microsoft.AspNetCore.Builder;
+global using TradingJournal.Shared.Abstractions;
+global using TradingJournal.Shared.CQRS;
+global using System.Net;
+global using MediatR;
+global using Carter;
+global using TradingJournal.Shared.Interfaces;
+global using TradingJournal.Shared.Dtos;
+global using TradingJournal.Modules.Analytics.Common.Constants;
+global using TradingJournal.Modules.Analytics.Common.Enum;
+global using TradingJournal.Modules.Analytics.Common.Helpers;
