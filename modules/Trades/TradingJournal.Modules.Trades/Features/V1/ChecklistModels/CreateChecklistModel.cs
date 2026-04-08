@@ -59,7 +59,7 @@ public sealed class CreateChecklistModel
             .WithSummary("Create a new checklist model.")
             .WithDescription("Creates a new checklist model with the given name and description.")
             .WithTags(Tags.ChecklistModels)
-            .RequireAuthorization();
+            .RequireAuthorization("AdminOnly");
         }
     }
 }

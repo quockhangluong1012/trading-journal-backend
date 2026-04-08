@@ -50,7 +50,7 @@ public sealed class DeletePretradeChecklist
             .Produces(StatusCodes.Status500InternalServerError)
             .WithSummary("Delete a pretrade checklist by its Id.")
             .WithTags(Tags.PretradeChecklists)
-            .RequireAuthorization();
+            .RequireAuthorization("AdminOnly");
         }
     }
 }

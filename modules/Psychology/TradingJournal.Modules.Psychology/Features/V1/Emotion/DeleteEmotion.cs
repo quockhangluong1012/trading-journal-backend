@@ -1,4 +1,4 @@
-﻿namespace TradingJournal.Modules.Psychology.Features.V1.Emotion;
+namespace TradingJournal.Modules.Psychology.Features.V1.Emotion;
 
 public sealed class DeleteEmotion
 {
@@ -54,7 +54,7 @@ public sealed class DeleteEmotion
             .WithSummary("Delete an emotion tag.")
             .WithDescription("Deletes an emotion tag/")
             .WithTags(Tags.Emotions)
-            .RequireAuthorization();
+            .RequireAuthorization("AdminOnly");
         }
     }
 }

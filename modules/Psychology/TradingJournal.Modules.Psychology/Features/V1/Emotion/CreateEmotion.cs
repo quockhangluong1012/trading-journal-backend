@@ -1,4 +1,4 @@
-﻿using TradingJournal.Shared.Common.Enum;
+using TradingJournal.Shared.Common.Enum;
 
 namespace TradingJournal.Modules.Psychology.Features.V1.Emotion;
 
@@ -69,7 +69,7 @@ public sealed class CreateEmotion
             .WithSummary("Create a new emotion tag.")
             .WithDescription("Creates a new emotion tag/")
             .WithTags(Tags.Emotions)
-            .RequireAuthorization();
+            .RequireAuthorization("AdminOnly");
         }
     }
 }

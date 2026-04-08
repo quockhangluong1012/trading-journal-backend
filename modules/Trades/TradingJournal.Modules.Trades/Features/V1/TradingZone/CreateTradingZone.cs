@@ -1,4 +1,4 @@
-﻿using Mapster;
+using Mapster;
 
 namespace TradingJournal.Modules.Trades.Features.V1.TradingZone;
 
@@ -78,7 +78,7 @@ public sealed class CreateTradingZone
             .WithSummary("Create a new trading zone.")
             .WithDescription("Creates a new trading zone with the given details.")
             .WithTags(Tags.TradingZones)
-            .RequireAuthorization();
+            .RequireAuthorization("AdminOnly");
         }
     }
 }

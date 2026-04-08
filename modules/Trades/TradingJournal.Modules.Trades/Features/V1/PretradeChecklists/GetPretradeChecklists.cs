@@ -27,8 +27,8 @@ public sealed class GetPretradeChecklists
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.PretradeChecklists);
 
-            group.MapGet("/", async (int userId, ISender sender) => {
-                Result<IReadOnlyCollection<PretradeChecklistViewModel>> result = await sender.Send(new Request(userId));
+            group.MapGet("/", async (ISender sender) => {
+                Result<IReadOnlyCollection<PretradeChecklistViewModel>> result = await sender.Send(new Request());
                 return result.IsSuccess ? Results.Ok(result)
                     : Results.BadRequest(result);
             })

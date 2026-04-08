@@ -40,7 +40,7 @@ You will provide the system architecture, database schema, API design, and step-
   - **Pause:** Halts automatic rendering.
   - **Skip/Next:** Manually advances the chart exactly one candle forward.
 - **Multi-Timeframe (MTF) Support:**
-  - Dropdown to switch between 5M, 15M, 1H, 4H, and 1D.
+  - Dropdown to switch between 1M,5M, 15M, 1H, 4H, and 1D.
   - *CRITICAL RULE (Look-ahead bias prevention):* When switching timeframes (e.g., from 15M up to 1H), the chart must strictly calculate and display candles up to the *current simulated timestamp*. It must never reveal "future" price action before the user plays it.
 
 ### 2.4. Advanced Charting & Drawing Tools (TradingView Clone)

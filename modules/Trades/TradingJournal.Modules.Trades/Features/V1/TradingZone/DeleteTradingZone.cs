@@ -1,4 +1,4 @@
-﻿namespace TradingJournal.Modules.Trades.Features.V1.TradingZone;
+namespace TradingJournal.Modules.Trades.Features.V1.TradingZone;
 
 public sealed class DeleteTradingZone
 {
@@ -53,7 +53,7 @@ public sealed class DeleteTradingZone
             .WithSummary("Delete a trading zone by ID.")
             .WithDescription("Deletes a trading zone by its ID.")
             .WithTags(Tags.TradingZones)
-            .RequireAuthorization();
+            .RequireAuthorization("AdminOnly");
         }
     }
 }

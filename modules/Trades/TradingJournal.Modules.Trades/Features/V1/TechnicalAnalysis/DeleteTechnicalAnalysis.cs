@@ -54,7 +54,7 @@ public sealed class DeleteTechnicalAnalysis
             .WithSummary("Delete a technical analysis by ID.")
             .WithDescription("Deletes a technical analysis by its ID.")
             .WithTags(Tags.TechnicalAnalysis)
-            .RequireAuthorization();
+            .RequireAuthorization("AdminOnly");
         }
     }
 }

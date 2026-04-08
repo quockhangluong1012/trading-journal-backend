@@ -62,7 +62,7 @@ public sealed class CreateTechnicalAnalysis
             .WithSummary("Create a new technical analysis.")
             .WithDescription("Creates a new technical analysis.")
             .WithTags(Tags.TechnicalAnalysis)
-            .RequireAuthorization();
+            .RequireAuthorization("AdminOnly");
         }
     }
 }

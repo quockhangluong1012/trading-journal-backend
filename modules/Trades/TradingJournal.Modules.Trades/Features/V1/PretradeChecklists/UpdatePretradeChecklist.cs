@@ -1,4 +1,4 @@
-﻿namespace TradingJournal.Modules.Trades.Features.V1.PretradeChecklists;
+namespace TradingJournal.Modules.Trades.Features.V1.PretradeChecklists;
 
 public sealed class UpdatePretradeChecklist
 {
@@ -66,7 +66,7 @@ public sealed class UpdatePretradeChecklist
             .Produces(StatusCodes.Status500InternalServerError)
             .WithSummary("Update an existing pretrade checklist by its Id.")
             .WithTags(Tags.PretradeChecklists)
-            .RequireAuthorization();
+            .RequireAuthorization("AdminOnly");
         }
     }
 }

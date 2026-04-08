@@ -1,4 +1,4 @@
-﻿namespace TradingJournal.Modules.Trades.Features.V1.TradingZone;
+namespace TradingJournal.Modules.Trades.Features.V1.TradingZone;
 
 public sealed class UpdateTradingZone
 {
@@ -83,7 +83,7 @@ public sealed class UpdateTradingZone
             .WithSummary("Update a trading zone by ID.")
             .WithDescription("Updates a trading zone by its ID.")
             .WithTags(Tags.TradingZones)
-            .RequireAuthorization();
+            .RequireAuthorization("AdminOnly");
         }
     }
 }

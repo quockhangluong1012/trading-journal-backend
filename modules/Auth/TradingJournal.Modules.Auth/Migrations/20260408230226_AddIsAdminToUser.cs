@@ -1,0 +1,31 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace TradingJournal.Modules.Auth.Migrations
+{
+    /// <inheritdoc />
+    public partial class AddIsAdminToUser : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AddColumn<bool>(
+                name: "IsAdmin",
+                schema: "Auth",
+                table: "Users",
+                type: "bit",
+                nullable: false,
+                defaultValue: false);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropColumn(
+                name: "IsAdmin",
+                schema: "Auth",
+                table: "Users");
+        }
+    }
+}

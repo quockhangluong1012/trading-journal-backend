@@ -5,6 +5,7 @@ internal sealed class AuthDbContext : DbContext, IAuthDbContext
     public AuthDbContext(DbContextOptions<AuthDbContext> options) : base(options) { }
 
     public DbSet<User> Users { get; set; } = null!;
+    public DbSet<Staff> Staffs { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -16,6 +17,14 @@ internal sealed class AuthDbContext : DbContext, IAuthDbContext
             builder.Property(u => u.Email).HasMaxLength(256).IsRequired();
             builder.Property(u => u.PasswordHash).HasMaxLength(256).IsRequired();
             builder.Property(u => u.FullName).HasMaxLength(256).IsRequired();
+        });
+
+        modelBuilder.Entity<Staff>(builder =>
+        {
+            builder.HasIndex(s => s.Email).IsUnique();
+            builder.Property(s => s.Email).HasMaxLength(256).IsRequired();
+            builder.Property(s => s.PasswordHash).HasMaxLength(256).IsRequired();
+            builder.Property(s => s.FullName).HasMaxLength(256).IsRequired();
         });
     }
 

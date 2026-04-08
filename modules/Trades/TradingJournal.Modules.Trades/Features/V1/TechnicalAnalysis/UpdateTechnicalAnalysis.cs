@@ -61,7 +61,7 @@ public sealed class UpdateTechnicalAnalysis
             .WithSummary("Update a technical analysis.")
             .WithDescription("Updates a technical analysis.")
             .WithTags(Tags.TechnicalAnalysis)
-            .RequireAuthorization();
+            .RequireAuthorization("AdminOnly");
         }
     }
 }

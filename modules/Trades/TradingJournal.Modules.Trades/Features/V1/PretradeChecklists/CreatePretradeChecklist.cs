@@ -1,4 +1,4 @@
-﻿namespace TradingJournal.Modules.Trades.Features.V1.PretradeChecklists;
+namespace TradingJournal.Modules.Trades.Features.V1.PretradeChecklists;
 
 public sealed class CreatePretradeChecklist
 {
@@ -66,7 +66,7 @@ public sealed class CreatePretradeChecklist
             .WithSummary("Create a new pretrade checklist.")
             .WithDescription("Creates a new pretrade checklist with the given details.")
             .WithTags(Tags.PretradeChecklists)
-            .RequireAuthorization();
+            .RequireAuthorization("AdminOnly");
         }
     }
 }
