@@ -68,4 +68,18 @@ public sealed class BacktestAsset : EntityBase<int>
     /// </summary>
     [MaxLength(500)]
     public string? LastError { get; set; }
+
+    /// <summary>
+    /// Default spread in pips for this asset (e.g., 1.5 for EUR/USD, 30 for XAU/USD).
+    /// Applied to new backtest sessions unless overridden.
+    /// </summary>
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal DefaultSpreadPips { get; set; }
+
+    /// <summary>
+    /// Size of 1 pip in price terms. Determines how pips convert to actual price.
+    /// Forex majors: 0.0001, JPY pairs: 0.01, Gold: 0.01, Indices: 1.0
+    /// </summary>
+    [Column(TypeName = "decimal(18,10)")]
+    public decimal PipSize { get; set; } = 0.0001m;
 }

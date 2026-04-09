@@ -208,7 +208,7 @@ public static class ImportAssetData
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapPost(ApiGroup.V1.Admin + "/{assetId:int}/import", async (
+            app.MapPost(AdminApiGroup.V1.BacktestAdmin + "/{assetId:int}/import", async (
                 int assetId,
                 IFormFile file,
                 IBacktestDbContext context,
@@ -234,7 +234,7 @@ public static class ImportAssetData
             .Accepts<IFormFile>("multipart/form-data")
             .Produces<Result<Response>>()
             .Produces<Result<Response>>(StatusCodes.Status400BadRequest)
-            .RequireAuthorization()
+            .RequireAuthorization("AdminOnly")
             .DisableAntiforgery();
         }
     }

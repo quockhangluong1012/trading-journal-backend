@@ -13,7 +13,9 @@ public static class CreateAsset
         string Category,
         string DataProvider,
         DateTime DataStartDate,
-        DateTime? DataEndDate) : ICommand<Result<int>>;
+        DateTime? DataEndDate,
+        decimal DefaultSpreadPips = 1.0m,
+        AssetPipType PipType = AssetPipType.Standard) : ICommand<Result<int>>;
 
     public sealed class Validator : AbstractValidator<Request>
     {
@@ -28,6 +30,8 @@ public static class CreateAsset
                 p is "TwelveData" or "AlphaVantage" or "CSV")
                 .WithMessage("DataProvider must be one of: TwelveData, AlphaVantage, CSV");
             RuleFor(x => x.DataStartDate).LessThan(x => x.DataEndDate ?? DateTime.UtcNow);
+            RuleFor(x => x.PipType)
+                .Must(Enum.IsDefined).WithMessage("Invalid pip type. Valid values: Standard, JpyPair, Metal, Crypto, Index, WholePip");
         }
     }
 
@@ -52,6 +56,8 @@ public static class CreateAsset
                 DataProvider = request.DataProvider,
                 DataStartDate = request.DataStartDate,
                 DataEndDate = request.DataEndDate,
+                DefaultSpreadPips = request.DefaultSpreadPips,
+                PipSize = request.PipType.ToPipSize(),
                 SyncStatus = request.DataProvider == "CSV"
                     ? AssetSyncStatus.Pending
                     : AssetSyncStatus.Pending, // BackgroundService picks up Pending status
@@ -69,18 +75,18 @@ public static class CreateAsset
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapPost(ApiGroup.V1.Admin, async (Request request, ISender sender) =>
+            app.MapPost(AdminApiGroup.V1.BacktestAdmin, async (Request request, ISender sender) =>
             {
                 Result<int> result = await sender.Send(request);
                 return result.IsSuccess
-                    ? Results.Created($"{ApiGroup.V1.Admin}/{result.Value}", result)
+                    ? Results.Created($"{AdminApiGroup.V1.BacktestAdmin}/{result.Value}", result)
                     : Results.BadRequest(result);
             })
             .WithTags(Tags.BacktestAdmin)
             .WithDescription("Register a new asset for backtesting. Triggers background data sync.")
             .Produces<Result<int>>(StatusCodes.Status201Created)
             .Produces<Result<int>>(StatusCodes.Status400BadRequest)
-            .RequireAuthorization();
+            .RequireAuthorization("AdminOnly");
         }
     }
 }

@@ -1,9 +1,9 @@
-namespace TradingJournal.Modules.Backtest.Features.V1.Admin;
+namespace TradingJournal.Modules.Backtest.Features.V1.Assets;
 
 /// <summary>
-/// Admin endpoint to list all registered backtest assets with their sync status.
+/// Public endpoint to list all available assets for backtesting that are ready (synced).
 /// </summary>
-public static class GetAssets
+public static class GetAvailableAssets
 {
     public sealed record Request() : IQuery<Result<List<AssetDto>>>;
 
@@ -12,35 +12,27 @@ public static class GetAssets
         string DisplayName,
         string Symbol,
         string Category,
-        string DataProvider,
-        string SyncStatus,
         DateTime DataStartDate,
         DateTime? DataEndDate,
-        DateTime? LastSyncedDate,
-        long TotalCandles,
-        string? LastError,
-        DateTime CreatedDate);
+        long TotalCandles);
 
     internal sealed class Handler(IBacktestDbContext context) : IQueryHandler<Request, Result<List<AssetDto>>>
     {
         public async Task<Result<List<AssetDto>>> Handle(Request request, CancellationToken cancellationToken)
         {
             List<AssetDto> assets = await context.BacktestAssets
+                .AsNoTracking()
+                .Where(a => a.SyncStatus == AssetSyncStatus.Ready)
                 .OrderBy(a => a.Category)
-                .ThenBy(a => a.DisplayName)
+                .ThenBy(a => a.Symbol)
                 .Select(a => new AssetDto(
                     a.Id,
                     a.DisplayName,
                     a.Symbol,
                     a.Category,
-                    a.DataProvider,
-                    a.SyncStatus.ToString(),
                     a.DataStartDate,
                     a.DataEndDate,
-                    a.LastSyncedDate,
-                    a.TotalCandles,
-                    a.LastError,
-                    a.CreatedDate))
+                    a.TotalCandles))
                 .ToListAsync(cancellationToken);
 
             return Result<List<AssetDto>>.Success(assets);
@@ -51,15 +43,14 @@ public static class GetAssets
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapGet(AdminApiGroup.V1.BacktestAdmin, async (ISender sender) =>
+            app.MapGet(ApiGroup.V1.Assets, async (ISender sender) =>
             {
                 Result<List<AssetDto>> result = await sender.Send(new Request());
-                return Results.Ok(result);
+                return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);
             })
-            .WithTags(Tags.BacktestAdmin)
-            .WithDescription("List all registered backtest assets with sync status.")
-            .Produces<Result<List<AssetDto>>>()
-            .RequireAuthorization("AdminOnly");
+            .WithTags(Tags.BacktestAssets)
+            .WithDescription("Get a list of available assets for backtesting.")
+            .Produces<Result<List<AssetDto>>>();
         }
     }
 }

@@ -44,7 +44,7 @@ public static class UpdateAssetStatus
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapPatch(ApiGroup.V1.Admin + "/{id:int}/status", async (
+            app.MapPatch(AdminApiGroup.V1.BacktestAdmin + "/{id:int}/status", async (
                 int id,
                 UpdateAssetStatus.Request request,
                 ISender sender) =>
@@ -59,7 +59,7 @@ public static class UpdateAssetStatus
             .WithDescription("Update sync status of an asset (retry, pause, resume).")
             .Produces<Result>()
             .Produces<Result>(StatusCodes.Status404NotFound)
-            .RequireAuthorization();
+            .RequireAuthorization("AdminOnly");
         }
     }
 }

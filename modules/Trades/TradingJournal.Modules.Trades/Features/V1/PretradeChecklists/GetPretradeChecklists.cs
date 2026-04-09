@@ -2,14 +2,13 @@
 
 public sealed class GetPretradeChecklists
 {
-    internal record Request(int UserId = 0) : ICommand<Result<IReadOnlyCollection<PretradeChecklistViewModel>>>;
+    internal record Request() : ICommand<Result<IReadOnlyCollection<PretradeChecklistViewModel>>>;
 
     internal sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<IReadOnlyCollection<PretradeChecklistViewModel>>>
     {
         public async Task<Result<IReadOnlyCollection<PretradeChecklistViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
             List<PretradeChecklist> checklists = await context.PretradeChecklists
-                .Where(c => c.CreatedBy == request.UserId)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 

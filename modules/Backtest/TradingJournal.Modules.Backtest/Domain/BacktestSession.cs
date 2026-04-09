@@ -27,6 +27,14 @@ public sealed class BacktestSession : EntityBase<int>
     public int PlaybackSpeed { get; set; } = 1;
 
     /// <summary>
+    /// Spread in absolute price units applied during simulation.
+    /// Calculated at session creation: DefaultSpreadPips * PipSize.
+    /// OHLC data represents BID prices; Ask = Bid + Spread.
+    /// </summary>
+    [Column(TypeName = "decimal(28,10)")]
+    public decimal Spread { get; set; }
+
+    /// <summary>
     /// Indicates whether historical market data has been downloaded and is ready for playback.
     /// </summary>
     public bool IsDataReady { get; set; }

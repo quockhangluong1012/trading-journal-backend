@@ -8,6 +8,7 @@ public static class Tags
     public const string BacktestMarketData = "Backtest Market Data";
     public const string BacktestDrawings = "Backtest Drawings";
     public const string BacktestAnalytics = "Backtest Analytics";
+    public const string BacktestAssets = "Backtest Assets";
     public const string BacktestAdmin = "Backtest Admin";
 }
 
@@ -21,6 +22,14 @@ public static class ApiGroup
         internal const string MarketData = "api/v1/backtest-market-data";
         internal const string Drawings = "api/v1/backtest-drawings";
         internal const string Analytics = "api/v1/backtest-analytics";
-        internal const string Admin = "api/v1/backtest-admin/assets";
+        internal const string Assets = "api/v1/backtest-assets";
+    }
+}
+
+public static class AdminApiGroup
+{
+    public static class V1
+    {
+        internal const string BacktestAdmin = "api/v1/admin/backtest";
     }
 }

@@ -44,11 +44,21 @@ public sealed class CreateSession
             try
             {
                 DateTime endDate = request.EndDate ?? DateTime.UtcNow;
+                string normalizedAsset = request.Asset.Trim().ToUpperInvariant();
+
+                // Look up asset to get spread configuration
+                BacktestAsset? asset = await context.BacktestAssets
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(a => a.Symbol == normalizedAsset, cancellationToken);
+
+                decimal spread = asset is not null
+                    ? asset.DefaultSpreadPips * asset.PipSize
+                    : 0m;
 
                 BacktestSession session = new()
                 {
                     Id = 0,
-                    Asset = request.Asset.Trim().ToUpperInvariant(),
+                    Asset = normalizedAsset,
                     StartDate = request.StartDate,
                     EndDate = endDate,
                     InitialBalance = request.InitialBalance,
@@ -57,6 +67,7 @@ public sealed class CreateSession
                     CurrentTimestamp = request.StartDate,
                     ActiveTimeframe = Timeframe.M15,
                     PlaybackSpeed = 1,
+                    Spread = spread,
                     IsDataReady = false
                 };
 

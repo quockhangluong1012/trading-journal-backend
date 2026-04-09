@@ -21,6 +21,8 @@ internal sealed class BacktestDbContext(DbContextOptions<BacktestDbContext> opti
 
     public DbSet<BacktestAsset> BacktestAssets { get; set; } = null!;
 
+    public DbSet<CsvImportJob> CsvImportJobs { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -31,6 +33,7 @@ internal sealed class BacktestDbContext(DbContextOptions<BacktestDbContext> opti
 
             builder.Property(s => s.InitialBalance).HasColumnType("decimal(18,2)");
             builder.Property(s => s.CurrentBalance).HasColumnType("decimal(18,2)");
+            builder.Property(s => s.Spread).HasColumnType("decimal(28,10)").HasDefaultValue(0m);
 
             builder.HasMany(s => s.Orders)
                 .WithOne(o => o.Session)
@@ -97,6 +100,22 @@ internal sealed class BacktestDbContext(DbContextOptions<BacktestDbContext> opti
             builder.HasIndex(a => a.Symbol)
                 .IsUnique()
                 .HasDatabaseName("IX_BacktestAssets_Symbol");
+
+            builder.Property(a => a.DefaultSpreadPips).HasColumnType("decimal(18,4)").HasDefaultValue(0m);
+            builder.Property(a => a.PipSize).HasColumnType("decimal(18,10)").HasDefaultValue(0.0001m);
+        });
+
+        modelBuilder.Entity<CsvImportJob>(builder =>
+        {
+            builder.ToTable("CsvImportJobs", "Backtest");
+
+            builder.HasIndex(j => new { j.Status, j.CreatedDate })
+                .HasDatabaseName("IX_CsvImportJobs_StatusCreated");
+
+            builder.HasOne(j => j.Asset)
+                .WithMany()
+                .HasForeignKey(j => j.AssetId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 

@@ -33,7 +33,7 @@ public static class DeleteAsset
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapDelete(ApiGroup.V1.Admin + "/{id:int}", async (int id, ISender sender) =>
+            app.MapDelete(AdminApiGroup.V1.BacktestAdmin + "/{id:int}", async (int id, ISender sender) =>
             {
                 Result result = await sender.Send(new Request(id));
                 return result.IsSuccess
@@ -44,7 +44,7 @@ public static class DeleteAsset
             .WithDescription("Delete an asset and all its candle data.")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
-            .RequireAuthorization();
+            .RequireAuthorization("AdminOnly");
         }
     }
 }

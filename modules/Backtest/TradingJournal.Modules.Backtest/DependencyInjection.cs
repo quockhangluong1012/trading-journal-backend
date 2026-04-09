@@ -45,8 +45,9 @@ public static class DependencyInjection
         services.Configure<TwelveDataOptions>(configuration.GetSection(TwelveDataOptions.SectionName));
         services.AddHttpClient<IMarketDataProvider, TwelveDataMarketDataProvider>();
 
-        // Background service for data sync
+        // Background services for data sync
         services.AddHostedService<DataSyncBackgroundService>();
+        services.AddHostedService<CsvImportBackgroundService>();
 
         // Event handlers
         services.AddTransient<INotificationHandler<FetchHistoricalDataEvent>,

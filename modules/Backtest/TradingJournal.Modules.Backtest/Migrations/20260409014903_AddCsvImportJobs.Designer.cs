@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TradingJournal.Modules.Backtest.Infrastructure;
 
@@ -11,9 +12,11 @@ using TradingJournal.Modules.Backtest.Infrastructure;
 namespace TradingJournal.Modules.Backtest.Migrations
 {
     [DbContext(typeof(BacktestDbContext))]
-    partial class BacktestDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260409014903_AddCsvImportJobs")]
+    partial class AddCsvImportJobs
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -344,70 +347,6 @@ namespace TradingJournal.Modules.Backtest.Migrations
                     b.ToTable("ChartDrawings", "Backtest");
                 });
 
-            modelBuilder.Entity("TradingJournal.Modules.Backtest.Domain.CsvImportJob", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AssetId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CreatedBy")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ErrorMessage")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<int>("ImportedCandles")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsDisabled")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("ProcessedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("SkippedDuplicates")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<string>("StoredFilePath")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int?>("UpdatedBy")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssetId");
-
-                    b.HasIndex("Status", "CreatedDate")
-                        .HasDatabaseName("IX_CsvImportJobs_StatusCreated");
-
-                    b.HasIndex(new[] { "Status", "CreatedDate" }, "IX_CsvImportJobs_StatusCreated");
-
-                    b.ToTable("CsvImportJobs", "Backtest");
-                });
-
             modelBuilder.Entity("TradingJournal.Modules.Backtest.Domain.OhlcvCandle", b =>
                 {
                     b.Property<int>("Id")
@@ -507,17 +446,6 @@ namespace TradingJournal.Modules.Backtest.Migrations
                         .IsRequired();
 
                     b.Navigation("Session");
-                });
-
-            modelBuilder.Entity("TradingJournal.Modules.Backtest.Domain.CsvImportJob", b =>
-                {
-                    b.HasOne("TradingJournal.Modules.Backtest.Domain.BacktestAsset", "Asset")
-                        .WithMany()
-                        .HasForeignKey("AssetId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Asset");
                 });
 
             modelBuilder.Entity("TradingJournal.Modules.Backtest.Domain.BacktestSession", b =>

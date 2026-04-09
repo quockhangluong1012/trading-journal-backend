@@ -84,7 +84,7 @@ internal sealed class PlaybackEngine(
         {
             // No orders to evaluate, or already on M1 — use the display candle directly
             result = matchingEngine.EvaluateCandle(
-                displayCandle, pendingOrders, activePositions, session.CurrentBalance);
+                displayCandle, pendingOrders, activePositions, session.CurrentBalance, session.Spread);
         }
 
         // ── Persist fills ──
@@ -191,7 +191,7 @@ internal sealed class PlaybackEngine(
                 "No M1 data for intra-bar evaluation of {Asset} at {Timestamp}. Falling back to display candle.",
                 session.Asset, displayCandle.Timestamp);
             return matchingEngine.EvaluateCandle(
-                displayCandle, pendingOrders, activePositions, session.CurrentBalance);
+                displayCandle, pendingOrders, activePositions, session.CurrentBalance, session.Spread);
         }
 
         logger.LogDebug(
@@ -216,7 +216,7 @@ internal sealed class PlaybackEngine(
                 break;
 
             MatchingResult m1Result = matchingEngine.EvaluateCandle(
-                m1Candle, pendingOrders, activePositions, balance);
+                m1Candle, pendingOrders, activePositions, balance, session.Spread);
 
             // Collect results
             allFills.AddRange(m1Result.Fills);

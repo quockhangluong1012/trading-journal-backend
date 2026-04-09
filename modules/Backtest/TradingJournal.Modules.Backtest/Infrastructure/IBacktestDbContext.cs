@@ -14,6 +14,8 @@ public interface IBacktestDbContext
 
     DbSet<BacktestAsset> BacktestAssets { get; set; }
 
+    DbSet<CsvImportJob> CsvImportJobs { get; set; }
+
     Task BeginTransaction();
 
     Task CommitTransaction();

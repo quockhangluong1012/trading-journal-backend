@@ -185,9 +185,12 @@ internal sealed class TwelveDataMarketDataProvider(
         // Map common aliases
         return trimmed switch
         {
-            "NASDAQ E-MINI" or "NQ FUTURES" or "NQ" or "MNQ" => "NQ",
-            "S&P E-MINI" or "ES FUTURES" or "ES" or "MES" => "ES",
-            "DOW E-MINI" or "YM FUTURES" or "YM" or "MYM" => "YM",
+            // Twelve Data does NOT support Futures (NQ, ES, YM).
+            // We map them to their corresponding Cash Indices instead.
+            "NASDAQ" or "NASDAQ E-MINI" or "NQ FUTURES" or "NQ" or "MNQ" or "US100" => "NDX",
+            "S&P 500" or "S&P E-MINI" or "ES FUTURES" or "ES" or "MES" or "US500" => "SPX",
+            "DOW JONES" or "DOW E-MINI" or "YM FUTURES" or "YM" or "MYM" or "US30" => "DJI",
+            
             "GOLD" or "XAUUSD" => "XAU/USD",
             "SILVER" or "XAGUSD" => "XAG/USD",
             "EURUSD" => "EUR/USD",
