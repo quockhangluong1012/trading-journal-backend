@@ -4,9 +4,9 @@ namespace TradingJournal.Modules.Trades.Features.V1.TradingZone;
 
 public sealed class CreateTradingZone
 {
-    internal record Request(string Name, string FromTime, string ToTime, string? Description, int UserId = 0) : ICommand<Result<int>>;
+    public record Request(string Name, string FromTime, string ToTime, string? Description, int UserId = 0) : ICommand<Result<int>>;
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -39,7 +39,7 @@ public sealed class CreateTradingZone
         }
     }
 
-    internal sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<int>>
+    public sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<int>>
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {

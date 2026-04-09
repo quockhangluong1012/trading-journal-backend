@@ -1,4 +1,3 @@
-using FluentAssertions;
 using FluentValidation.TestHelper;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -17,7 +16,7 @@ public class DeleteEmotionValidatorTests
     [Test]
     public void Should_Have_Error_When_Id_Is_Zero()
     {
-        var request = new DeleteEmotion.Request(1);
+        var request = new DeleteEmotion.Request(0);
 
         var result = _validator.TestValidate(request);
         result.ShouldHaveValidationErrorFor(x => x.Id);
@@ -50,26 +49,26 @@ public class DeleteEmotionHandlerTests
     [Test]
     public async Task Handle_Returns_Failure_When_Emotion_Not_Found()
     {
-        _contextMock.Setup(x => x.EmotionTags.FindAsync(It.IsAny<object[]>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((EmotionTag?)null);
+        var dbSet = new List<EmotionTag>().BuildMockDbSet();
+        _contextMock.Setup(x => x.EmotionTags).Returns(dbSet.Object);
         var request = new DeleteEmotion.Request(99);
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
+        Assert.That(result.IsFailure, Is.True);
     }
 
     [Test]
     public async Task Handle_Returns_Success_And_Removes_Emotion_When_Found()
     {
         var emotion = new EmotionTag { Id = 1, Name = "Happy" };
-        _contextMock.Setup(x => x.EmotionTags.FindAsync(It.IsAny<object[]>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(emotion);
+        var dbSet = new List<EmotionTag> { emotion }.BuildMockDbSet();
+        _contextMock.Setup(x => x.EmotionTags).Returns(dbSet.Object);
         var request = new DeleteEmotion.Request(1);
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
+        Assert.That(result.IsSuccess, Is.True);
         _contextMock.Verify(x => x.EmotionTags.Remove(emotion), Times.Once);
         _contextMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

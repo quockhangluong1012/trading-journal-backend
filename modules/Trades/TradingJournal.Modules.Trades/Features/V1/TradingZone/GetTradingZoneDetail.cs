@@ -4,9 +4,9 @@ namespace TradingJournal.Modules.Trades.Features.V1.TradingZone;
 
 public sealed class GetTradingZoneDetail
 {
-    internal sealed record Request(int Id) : IQuery<Result<TradingZoneViewModel>>;
+    public sealed record Request(int Id) : IQuery<Result<TradingZoneViewModel>>;
 
-    internal sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<TradingZoneViewModel>>
+    public sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<TradingZoneViewModel>>
     {
         public async Task<Result<TradingZoneViewModel>> Handle(Request request, CancellationToken cancellationToken)
         {

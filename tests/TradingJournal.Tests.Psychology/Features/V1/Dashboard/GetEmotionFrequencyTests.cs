@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Moq;
 using TradingJournal.Modules.Psychology.Domain;
 using TradingJournal.Modules.Psychology.Features.V1.Dashboard;
@@ -28,6 +27,6 @@ public class GetEmotionFrequencyHandlerTests
         _contextMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new System.Collections.Generic.List<TradingJournal.Shared.Dtos.TradeCacheDto>());
         _cacheMock.Setup(x => x.GetEmotionTagsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new System.Collections.Generic.List<TradingJournal.Shared.Dtos.EmotionTagCacheDto>());
         var result = await _handler.Handle(new GetEmotionFrequency.Request(1), CancellationToken.None);
-        result.IsSuccess.Should().BeTrue();
+        Assert.That(result.IsSuccess, Is.True);
     }
 }

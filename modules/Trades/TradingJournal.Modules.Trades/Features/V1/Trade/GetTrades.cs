@@ -7,7 +7,7 @@ namespace TradingJournal.Modules.Trades.Features.V1.Trade;
 
 public class GetTrades
 {
-    internal class Request : IQuery<Result<PaginationViewModel<TradeHistoryViewModel>>>
+    public class Request : IQuery<Result<PaginationViewModel<TradeHistoryViewModel>>>
     {
         public string? Asset { get; set; }
 
@@ -26,7 +26,7 @@ public class GetTrades
         public int UserId { get; set; }
     }
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -44,7 +44,7 @@ public class GetTrades
         }
     }
 
-    internal sealed class Handler(ITradeDbContext tradeDbContext, ICacheRepository cacheRepository, IEmotionTagProvider emotionTagProvider) : IQueryHandler<Request, Result<PaginationViewModel<TradeHistoryViewModel>>>
+    public sealed class Handler(ITradeDbContext tradeDbContext, ICacheRepository cacheRepository, IEmotionTagProvider emotionTagProvider) : IQueryHandler<Request, Result<PaginationViewModel<TradeHistoryViewModel>>>
     {
         public async Task<Result<PaginationViewModel<TradeHistoryViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {

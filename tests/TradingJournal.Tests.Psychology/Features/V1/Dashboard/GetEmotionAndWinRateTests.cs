@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Moq;
 using TradingJournal.Modules.Psychology.Features.V1.Dashboard;
 using TradingJournal.Shared.Common.Enum;
@@ -43,17 +42,17 @@ public class GetEmotionAndWinRateHandlerTests
         var request = new GetEmotionAndWinRate.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(2);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(2));
 
         var confident = result.Value.First(x => x.Id == 1);
-        confident.WinRate.Should().Be(50);
-        confident.Total.Should().Be(2);
-        confident.Name.Should().Be("Confident");
+        Assert.That(confident.WinRate, Is.EqualTo(50));
+        Assert.That(confident.Total, Is.EqualTo(2));
+        Assert.That(confident.Name, Is.EqualTo("Confident"));
 
         var nervous = result.Value.First(x => x.Id == 2);
-        nervous.WinRate.Should().Be(100);
-        nervous.Total.Should().Be(1);
+        Assert.That(nervous.WinRate, Is.EqualTo(100));
+        Assert.That(nervous.Total, Is.EqualTo(1));
     }
 
     [Test]
@@ -74,8 +73,8 @@ public class GetEmotionAndWinRateHandlerTests
         var request = new GetEmotionAndWinRate.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEmpty();
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Empty);
     }
 
     [Test]
@@ -87,8 +86,8 @@ public class GetEmotionAndWinRateHandlerTests
         var request = new GetEmotionAndWinRate.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEmpty();
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Empty);
     }
 
     [Test]
@@ -110,10 +109,10 @@ public class GetEmotionAndWinRateHandlerTests
         var request = new GetEmotionAndWinRate.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(1);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(1));
         var item = result.Value[0];
-        item.Total.Should().Be(1);
+        Assert.That(item.Total, Is.EqualTo(1));
     }
 
     [Test]
@@ -135,9 +134,9 @@ public class GetEmotionAndWinRateHandlerTests
         var request = new GetEmotionAndWinRate.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(1);
-        result.Value[0].WinRate.Should().Be(50);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(1));
+        Assert.That(result.Value[0].WinRate, Is.EqualTo(50));
     }
 }
 

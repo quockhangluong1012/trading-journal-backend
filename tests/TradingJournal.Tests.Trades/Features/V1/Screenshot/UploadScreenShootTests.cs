@@ -49,6 +49,6 @@ public class UploadScreenShootHandlerTests
     {
         var request = new UploadScreenShoot.Request(null!);
         var result = await _handler.Handle(request, CancellationToken.None);
-        result.IsFailure.Should().BeTrue();
+        Assert.That(result.IsFailure, Is.True);
     }
 }

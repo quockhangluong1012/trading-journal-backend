@@ -1,4 +1,3 @@
-using FluentAssertions;
 using FluentValidation.TestHelper;
 using Moq;
 using TradingJournal.Modules.Analytics.Features.V1;
@@ -56,8 +55,8 @@ public class GetDayOfWeekBreakdownHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(7); // All 7 days returned
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(7)); // All 7 days returned
     }
 
     [Test]
@@ -68,8 +67,8 @@ public class GetDayOfWeekBreakdownHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(7);
-        result.Value.Should().AllSatisfy(d => { d.Count.Should().Be(0); d.Pnl.Should().Be(0); });
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(7));
+        Assert.That(result.Value.All(d => d.Count == 0 && d.Pnl == 0), Is.True);
     }
 }

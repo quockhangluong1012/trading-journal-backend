@@ -2,9 +2,9 @@ namespace TradingJournal.Modules.Trades.Features.V1.Dashboard;
 
 public sealed class GetTradingStatistic
 {
-    internal sealed record Request(DashboardFilter Filter, int UserId = 0) : IQuery<Result<TradingStatisticViewModel>>;
+    public sealed record Request(DashboardFilter Filter, int UserId = 0) : IQuery<Result<TradingStatisticViewModel>>;
 
-    internal sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<TradingStatisticViewModel>>
+    public sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<TradingStatisticViewModel>>
     {
         public async Task<Result<TradingStatisticViewModel>> Handle(Request request, CancellationToken cancellationToken)
         {

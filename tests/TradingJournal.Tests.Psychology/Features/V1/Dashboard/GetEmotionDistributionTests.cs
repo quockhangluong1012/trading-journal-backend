@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Moq;
 using TradingJournal.Modules.Psychology.Features.V1.Dashboard;
 using TradingJournal.Shared.Common.Enum;
@@ -45,20 +44,20 @@ public class GetEmotionDistributionHandlerTests
         var request = new GetEmotionDistribution.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(3);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(3));
 
         var positive = result.Value.First(x => x.Name == "Positive");
-        positive.Value.Should().Be(2);
-        positive.Fill.Should().Be("#22c55e");
+        Assert.That(positive.Value, Is.EqualTo(2));
+        Assert.That(positive.Fill, Is.EqualTo("#22c55e"));
 
         var negative = result.Value.First(x => x.Name == "Negative");
-        negative.Value.Should().Be(1);
-        negative.Fill.Should().Be("#ef4444");
+        Assert.That(negative.Value, Is.EqualTo(1));
+        Assert.That(negative.Fill, Is.EqualTo("#ef4444"));
 
         var neutral = result.Value.First(x => x.Name == "Neutral");
-        neutral.Value.Should().Be(1);
-        neutral.Fill.Should().Be("#3b82f6");
+        Assert.That(neutral.Value, Is.EqualTo(1));
+        Assert.That(neutral.Fill, Is.EqualTo("#3b82f6"));
     }
 
     [Test]
@@ -70,8 +69,8 @@ public class GetEmotionDistributionHandlerTests
         var request = new GetEmotionDistribution.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEmpty();
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Empty);
     }
 
     [Test]
@@ -94,10 +93,10 @@ public class GetEmotionDistributionHandlerTests
         var request = new GetEmotionDistribution.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(1);
-        result.Value[0].Name.Should().Be("Positive");
-        result.Value[0].Value.Should().Be(1);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(1));
+        Assert.That(result.Value[0].Name, Is.EqualTo("Positive"));
+        Assert.That(result.Value[0].Value, Is.EqualTo(1));
     }
 
     [Test]
@@ -119,8 +118,8 @@ public class GetEmotionDistributionHandlerTests
         var request = new GetEmotionDistribution.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEmpty();
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Empty);
     }
 
     [Test]
@@ -141,8 +140,8 @@ public class GetEmotionDistributionHandlerTests
         var request = new GetEmotionDistribution.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEmpty();
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Empty);
     }
 }
 

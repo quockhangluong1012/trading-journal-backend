@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Moq;
 using MockQueryable.Moq;
 using TradingJournal.Modules.Psychology.Domain;
@@ -22,20 +21,23 @@ public class UpdatePsychologyJournalHandlerTests
     [Test]
     public async Task Handle_Returns_Failure_When_Journal_Not_Found()
     {
-        _contextMock.Setup(x => x.PsychologyJournals.FindAsync(It.IsAny<object[]>(), It.IsAny<CancellationToken>())).ReturnsAsync((PsychologyJournal?)null);
+        var dbSet = new List<PsychologyJournal>().BuildMockDbSet();
+        _contextMock.Setup(x => x.PsychologyJournals).Returns(dbSet.Object);
         var request = new UpdatePsychologyJournal.Request(99, DateTime.Now, "Notes", new List<int>(), 1, OverallMood.Neutral, ConfidentLevel.None);
         var result = await _handler.Handle(request, CancellationToken.None);
-        result.IsFailure.Should().BeTrue();
+        Assert.That(result.IsFailure, Is.True);
     }
     [Test]
     public async Task Handle_Returns_Success_When_Found()
     {
-        var journal = new PsychologyJournal { Id = 1, Date = DateTime.Now, CreatedBy = 1 };
-        _contextMock.Setup(x => x.PsychologyJournals.FindAsync(It.IsAny<object[]>(), It.IsAny<CancellationToken>())).ReturnsAsync(journal);
+        var journal = new PsychologyJournal { Id = 1, Date = DateTime.Now, CreatedBy = 1, PsychologyJournalEmotions = new List<PsychologyJournalEmotion>() };
+        var dbSet = new List<PsychologyJournal> { journal }.BuildMockDbSet();
+        _contextMock.Setup(x => x.PsychologyJournals).Returns(dbSet.Object);
         _contextMock.Setup(x => x.PsychologyJournalEmotions).Returns(new List<PsychologyJournalEmotion>().BuildMockDbSet<PsychologyJournalEmotion>().Object);
+        _contextMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         var request = new UpdatePsychologyJournal.Request(1, DateTime.Now, "Updated", new List<int> { 1 }, 1, OverallMood.Good, ConfidentLevel.High);
         var result = await _handler.Handle(request, CancellationToken.None);
-        result.IsSuccess.Should().BeTrue();
+        Assert.That(result.IsSuccess, Is.True);
         _contextMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

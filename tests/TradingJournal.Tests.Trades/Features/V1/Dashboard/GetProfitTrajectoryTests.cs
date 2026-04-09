@@ -1,3 +1,4 @@
+using TradingJournal.Tests.Trades.Helpers;
 using NUnit.Framework;
 using FluentAssertions;
 using Moq;
@@ -18,12 +19,12 @@ public sealed class GetProfitTrajectoryValidatorTests
     [Test] public void Validate_ValidFilter_ReturnsValid()
     {
         var result = _validator.Validate(new GetProfitTrajectory.Request(DashboardFilter.OneMonth));
-        result.IsValid.Should().BeTrue();
+        Assert.That(result.IsValid, Is.True);
     }
     [Test] public void Validate_InvalidFilter_ReturnsInvalid()
     {
         var result = _validator.Validate(new GetProfitTrajectory.Request((DashboardFilter)99));
-        result.IsValid.Should().BeFalse();
+        Assert.That(result.IsValid, Is.False);
         result.Errors.Should().Contain(e => e.ErrorMessage.Contains("Invalid filter"));
     }
 }
@@ -42,15 +43,11 @@ public sealed class GetProfitTrajectoryHandlerTests
     [Test]
     public async Task Handle_NoTrades_ReturnsEmptyList()
     {
-        var tradeSet = new Mock<DbSet<TradeHistory>>();
-        tradeSet.Setup(x => x.Where(It.IsAny<System.Linq.Expressions.Expression<System.Func<TradeHistory, bool>>>())).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.AsNoTracking()).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.ToListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeHistory>());
-        _ctx.Setup(x => x.TradeHistories).Returns(tradeSet.Object);
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
 
         var result = await _handler.Handle(new GetProfitTrajectory.Request(DashboardFilter.OneMonth, 1), CancellationToken.None);
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEmpty();
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Empty);
     }
     [Test]
     public async Task Handle_HasTrades_ReturnsTrajectoryData()
@@ -60,14 +57,10 @@ public sealed class GetProfitTrajectoryHandlerTests
         {
             new() { Id = 1, CreatedBy = 1, Status = TradingJournal.Shared.Common.Enum.TradeStatus.Closed, Pnl = 100, ClosedDate = closedDate }
         };
-        var tradeSet = new Mock<DbSet<TradeHistory>>();
-        tradeSet.Setup(x => x.Where(It.IsAny<System.Linq.Expressions.Expression<System.Func<TradeHistory, bool>>>())).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.AsNoTracking()).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.ToListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(trades);
-        _ctx.Setup(x => x.TradeHistories).Returns(tradeSet.Object);
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(trades.AsQueryable()).Object);
 
         var result = await _handler.Handle(new GetProfitTrajectory.Request(DashboardFilter.OneMonth, 1), CancellationToken.None);
-        result.IsSuccess.Should().BeTrue();
+        Assert.That(result.IsSuccess, Is.True);
         result.Value.Should().NotBeEmpty();
     }
 }

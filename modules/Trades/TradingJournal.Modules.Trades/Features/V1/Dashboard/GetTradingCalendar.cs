@@ -2,18 +2,18 @@ namespace TradingJournal.Modules.Trades.Features.V1.Dashboard;
 
 public sealed class GetTradingCalendar
 {
-    internal sealed record Request(int Month, int Year, DateTime? Date, DashboardFilter Filter, int UserId = 0) : IQuery<Result<TradingCalendarResponse>>;
+    public sealed record Request(int Month, int Year, DateTime? Date, DashboardFilter Filter, int UserId = 0) : IQuery<Result<TradingCalendarResponse>>;
 
-    internal sealed record TradingCalendarViewModel(DateTime Date, double? PnL = 0);
+    public sealed record TradingCalendarViewModel(DateTime Date, double? PnL = 0);
 
-    internal sealed record TradingCalendarResponse(
+    public sealed record TradingCalendarResponse(
         double MonthlyPnL,
         double WeeklyPnL,
         double DailyPnL,
         IReadOnlyCollection<TradingCalendarViewModel> Data
     );
 
-    internal sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<TradingCalendarResponse>>
+    public sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<TradingCalendarResponse>>
     {
         public async Task<Result<TradingCalendarResponse>> Handle(Request request, CancellationToken cancellationToken)
         {

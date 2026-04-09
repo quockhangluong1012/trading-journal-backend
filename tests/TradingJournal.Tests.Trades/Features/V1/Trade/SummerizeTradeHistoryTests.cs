@@ -1,3 +1,4 @@
+using TradingJournal.Tests.Trades.Helpers;
 using NUnit.Framework;
 using FluentAssertions;
 using Moq;
@@ -19,12 +20,12 @@ public sealed class SummerizeTradeHistoryValidatorTests
     [Test] public void Validate_ValidTradeId_ReturnsValid()
     {
         var result = _validator.Validate(new SummerizeTradeHistory.Request(1));
-        result.IsValid.Should().BeTrue();
+        Assert.That(result.IsValid, Is.True);
     }
     [Test] public void Validate_TradeIdZero_ReturnsInvalid()
     {
         var result = _validator.Validate(new SummerizeTradeHistory.Request(0));
-        result.IsValid.Should().BeFalse();
+        Assert.That(result.IsValid, Is.False);
         result.Errors.Should().Contain(e => e.ErrorMessage.Contains("TradeId"));
     }
 }
@@ -47,7 +48,7 @@ public sealed class SummerizeTradeHistoryHandlerTests
     {
         _ai.Setup(x => x.GenerateTradingOrderSummary(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((TradeAnalysisResultDto?)null);
         var result = await _handler.Handle(new SummerizeTradeHistory.Request(1), CancellationToken.None);
-        result.IsSuccess.Should().BeFalse();
+        Assert.That(result.IsSuccess, Is.False);
     }
     [Test]
     public async Task Handle_AiReturnsResult_CreatesSummaryAndReturnsSuccess()
@@ -55,15 +56,12 @@ public sealed class SummerizeTradeHistoryHandlerTests
         var aiResult = new TradeAnalysisResultDto { ExecutiveSummary = "summary", TechnicalInsights = "insights", PsychologyAnalysis = "psych", CriticalMistakes = new CriticalMistakesDto { Technical = [], Psychological = [] } };
         _ai.Setup(x => x.GenerateTradingOrderSummary(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(aiResult);
 
-        var summarySet = new Mock<DbSet<TradingSummary>>();
-        _ctx.Setup(x => x.TradingSummaries).Returns(summarySet.Object);
+        _ctx.Setup(x => x.TradingSummaries).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradingSummary>().AsQueryable()).Object);
         _ctx.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var tradeSet = new Mock<DbSet<TradeHistory>>();
-        _ctx.Setup(x => x.TradeHistories).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.FirstOrDefaultAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<TradeHistory, bool>>>(), It.IsAny<CancellationToken>())).ReturnsAsync((TradeHistory?)null);
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
 
         var result = await _handler.Handle(new SummerizeTradeHistory.Request(1), CancellationToken.None);
-        result.IsSuccess.Should().BeTrue();
+        Assert.That(result.IsSuccess, Is.True);
     }
 }

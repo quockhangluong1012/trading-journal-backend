@@ -1,3 +1,4 @@
+using TradingJournal.Tests.Trades.Helpers;
 using NUnit.Framework;
 using FluentAssertions;
 using Moq;
@@ -19,16 +20,11 @@ public sealed class GetTradingCalendarHandlerTests
 
     [Test] public async Task Handle_ReturnsCalendarResponse()
     {
-        var tradeSet = new Mock<DbSet<TradeHistory>>();
-        tradeSet.As<IAsyncEnumerable<TradeHistory>>().Setup(x => x.GetAsyncEnumerator(CancellationToken.None)).Returns(new TestAsyncEnumerator<TradeHistory>(new List<TradeHistory>().GetEnumerator()));
-        tradeSet.Setup(x => x.AsNoTracking()).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.Where(It.IsAny<System.Linq.Expressions.Expression<System.Func<TradeHistory, bool>>>())).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.SumAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<TradeHistory, double>>>(), It.IsAny<CancellationToken>())).ReturnsAsync(0.0);
-        _ctx.Setup(x => x.TradeHistories).Returns(tradeSet.Object);
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
 
         var result = await _handler.Handle(new GetTradingCalendar.Request(1, 2024, null, DashboardFilter.OneMonth, 1), CancellationToken.None);
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().NotBeNull();
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Not.Null);
     }
 }
 

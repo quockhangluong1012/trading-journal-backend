@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Moq;
 using TradingJournal.Modules.Psychology.Domain;
 using TradingJournal.Modules.Psychology.Features.V1.Dashboard;
@@ -34,6 +33,6 @@ public class GetPsychologyStatisticHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
+        Assert.That(result.IsSuccess, Is.True);
     }
 }

@@ -248,15 +248,16 @@ internal sealed class OrderMatchingEngine(ILogger<OrderMatchingEngine> logger) :
             bool slGapped = position.Side switch
             {
                 // Long SL: price must drop below SL → gap if Bid Open < SL
-                BacktestOrderSide.Long => effectiveOpen <= sl.Value,
-                // Short SL: price must rise above SL → gap if Ask Open > SL
-                BacktestOrderSide.Short => effectiveOpen >= sl.Value,
+                BacktestOrderSide.Long => candle.Open <= sl.Value,
+                // Short SL: price must rise above SL → gap if Bid Open > SL
+                BacktestOrderSide.Short => candle.Open >= sl.Value,
                 _ => false
             };
 
             if (slGapped)
             {
-                decimal slippage = effectiveOpen - sl.Value;
+                decimal intendedPrice = position.Side == BacktestOrderSide.Long ? sl.Value : sl.Value + spread;
+                decimal slippage = effectiveOpen - intendedPrice;
                 decimal pnl = CalculateRealizedPnlStatic(position.Side, filledPrice, effectiveOpen, position.PositionSize);
 
                 return new OrderClose(position.Id, effectiveOpen, pnl, "SL Hit (Gapped)", candle.Timestamp, slippage);
@@ -269,15 +270,16 @@ internal sealed class OrderMatchingEngine(ILogger<OrderMatchingEngine> logger) :
             bool tpGapped = position.Side switch
             {
                 // Long TP: price must rise above TP → gap if Bid Open > TP
-                BacktestOrderSide.Long => effectiveOpen >= tp.Value,
-                // Short TP: price must drop below TP → gap if Ask Open < TP
-                BacktestOrderSide.Short => effectiveOpen <= tp.Value,
+                BacktestOrderSide.Long => candle.Open >= tp.Value,
+                // Short TP: price must drop below TP → gap if Bid Open < TP
+                BacktestOrderSide.Short => candle.Open <= tp.Value,
                 _ => false
             };
 
             if (tpGapped)
             {
-                decimal slippage = effectiveOpen - tp.Value;
+                decimal intendedPrice = position.Side == BacktestOrderSide.Long ? tp.Value : tp.Value + spread;
+                decimal slippage = effectiveOpen - intendedPrice;
                 decimal pnl = CalculateRealizedPnlStatic(position.Side, filledPrice, effectiveOpen, position.PositionSize);
 
                 return new OrderClose(position.Id, effectiveOpen, pnl, "TP Hit (Gapped)", candle.Timestamp, slippage);
@@ -363,10 +365,10 @@ internal sealed class OrderMatchingEngine(ILogger<OrderMatchingEngine> logger) :
                     break;
 
                 case BacktestOrderSide.Short:
-                    // Short TP: Does Ask Low reach the TP level?
-                    if (tp.HasValue && askLow <= tp.Value)
+                    // Short TP: Does Bid Low reach the TP level?
+                    if (tp.HasValue && candle.Low <= tp.Value)
                     {
-                        decimal exitPrice = tp.Value;
+                        decimal exitPrice = tp.Value + spread;
                         decimal pnl = CalculateRealizedPnlStatic(position.Side, filledPrice, exitPrice, position.PositionSize);
                         return new OrderClose(position.Id, exitPrice, pnl, "TP Hit", candle.Timestamp);
                     }
@@ -389,10 +391,10 @@ internal sealed class OrderMatchingEngine(ILogger<OrderMatchingEngine> logger) :
                     break;
 
                 case BacktestOrderSide.Short:
-                    // Short SL: Does Ask High reach the SL level?
-                    if (sl.HasValue && askHigh >= sl.Value)
+                    // Short SL: Does Bid High reach the SL level?
+                    if (sl.HasValue && candle.High >= sl.Value)
                     {
-                        decimal exitPrice = sl.Value;
+                        decimal exitPrice = sl.Value + spread;
                         decimal pnl = CalculateRealizedPnlStatic(position.Side, filledPrice, exitPrice, position.PositionSize);
                         return new OrderClose(position.Id, exitPrice, pnl, "SL Hit", candle.Timestamp);
                     }

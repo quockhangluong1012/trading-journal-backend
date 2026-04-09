@@ -1,4 +1,3 @@
-using FluentAssertions;
 using FluentValidation.TestHelper;
 using Moq;
 using TradingJournal.Modules.Psychology.Domain;
@@ -16,7 +15,7 @@ public class DeletePsychologyJournalValidatorTests
     {
         var request = new DeletePsychologyJournal.Request { Id = 1, UserId = 1 };
         var result = _validator.Validate(request);
-        result.IsValid.Should().BeTrue();
+        Assert.That(result.IsValid, Is.True);
     }
 }
 
@@ -34,17 +33,19 @@ public class DeletePsychologyJournalHandlerTests
     [Test]
     public async Task Handle_Returns_Failure_When_Journal_Not_Found()
     {
-        _contextMock.Setup(x => x.PsychologyJournals.FindAsync(It.IsAny<object[]>(), It.IsAny<CancellationToken>())).ReturnsAsync((PsychologyJournal?)null);
+        var dbSet = new List<PsychologyJournal>().BuildMockDbSet();
+        _contextMock.Setup(x => x.PsychologyJournals).Returns(dbSet.Object);
         var result = await _handler.Handle(new DeletePsychologyJournal.Request { Id = 99, UserId = 1 }, CancellationToken.None);
-        result.IsFailure.Should().BeTrue();
+        Assert.That(result.IsFailure, Is.True);
     }
     [Test]
     public async Task Handle_Returns_Success_And_Removes_When_Found()
     {
         var journal = new PsychologyJournal { Id = 1, Date = DateTime.Now, CreatedBy = 1 };
-        _contextMock.Setup(x => x.PsychologyJournals.FindAsync(It.IsAny<object[]>(), It.IsAny<CancellationToken>())).ReturnsAsync(journal);
+        var dbSet = new List<PsychologyJournal> { journal }.BuildMockDbSet();
+        _contextMock.Setup(x => x.PsychologyJournals).Returns(dbSet.Object);
         var result = await _handler.Handle(new DeletePsychologyJournal.Request { Id = 1, UserId = 1 }, CancellationToken.None);
-        result.IsSuccess.Should().BeTrue();
+        Assert.That(result.IsSuccess, Is.True);
         _contextMock.Verify(x => x.PsychologyJournals.Remove(journal), Times.Once);
         _contextMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

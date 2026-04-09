@@ -2,9 +2,9 @@ namespace TradingJournal.Modules.Trades.Features.V1.PretradeChecklists;
 
 public sealed class DeletePretradeChecklist
 {
-    internal record Request(int Id, int UserId = 0) : ICommand<Result>;
+    public record Request(int Id, int UserId = 0) : ICommand<Result>;
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -14,7 +14,7 @@ public sealed class DeletePretradeChecklist
                 .WithMessage("Pretrade Checklist Id must be greater than 0.");
         }
     }
-    internal sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result>
+    public sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result>
     {
         public async Task<Result> Handle(Request request, CancellationToken cancellationToken)
         {

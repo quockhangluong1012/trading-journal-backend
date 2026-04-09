@@ -1,4 +1,4 @@
-global using FluentAssertions;
+
 global using FluentValidation.TestHelper;
 global using NUnit.Framework;
 global using Moq;

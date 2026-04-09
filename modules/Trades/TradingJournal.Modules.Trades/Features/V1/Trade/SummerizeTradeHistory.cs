@@ -7,7 +7,7 @@ public sealed class SummerizeTradeHistory
 {
     public record Request(int TradeId, int UserId = 0) : IQuery<Result<bool>>;
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -18,7 +18,7 @@ public sealed class SummerizeTradeHistory
         }
     }
 
-    internal sealed class Handler(ITradeDbContext context, IOpenRouterAIService googleGenAIService) : IRequestHandler<Request, Result<bool>>
+    public sealed class Handler(ITradeDbContext context, IOpenRouterAIService googleGenAIService) : IRequestHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
         {

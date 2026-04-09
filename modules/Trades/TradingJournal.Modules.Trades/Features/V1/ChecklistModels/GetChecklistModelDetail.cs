@@ -4,9 +4,15 @@ public sealed class GetChecklistModelDetail
 {
     public record Request(int Id, int UserId = 0) : ICommand<Result<ChecklistModelDetailViewModel>>;
 
-    public sealed class Validator() : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
-        
+        public Validator()
+        {
+            RuleFor(x => x.Id)
+                .GreaterThan(0)
+                .WithErrorCode(HttpStatusCode.BadRequest.ToString())
+                .WithMessage("Id must be greater than 0");
+        }
     }
 
     public sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<ChecklistModelDetailViewModel>>

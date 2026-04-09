@@ -2,10 +2,10 @@ namespace TradingJournal.Modules.Trades.Features.V1.Review;
 
 public sealed class GetReviewSummaryStatus
 {
-    internal sealed record Request(ReviewPeriodType PeriodType, DateTime PeriodStart, int UserId = 0)
+    public sealed record Request(ReviewPeriodType PeriodType, DateTime PeriodStart, int UserId = 0)
         : IQuery<Result<ReviewSummaryStatusViewModel>>;
 
-    internal sealed record ReviewSummaryStatusViewModel(
+    public sealed record ReviewSummaryStatusViewModel(
         bool IsGenerating,
         string? AiSummary,
         string? AiStrengths,
@@ -17,7 +17,7 @@ public sealed class GetReviewSummaryStatus
         string? AiCriticalMistakesPsychological,
         string? AiWhatToImprove);
 
-    internal sealed class Handler(ITradeDbContext context)
+    public sealed class Handler(ITradeDbContext context)
         : IQueryHandler<Request, Result<ReviewSummaryStatusViewModel>>
     {
         public async Task<Result<ReviewSummaryStatusViewModel>> Handle(Request request, CancellationToken cancellationToken)

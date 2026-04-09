@@ -2,9 +2,9 @@ namespace TradingJournal.Modules.Trades.Features.V1.PretradeChecklists;
 
 public sealed class UpdatePretradeChecklist
 {
-    internal record Request(int Id, string Name, PretradeChecklistType Type, int UserId = 0) : ICommand<Result>;
+    public record Request(int Id, string Name, PretradeChecklistType Type, int UserId = 0) : ICommand<Result>;
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -26,7 +26,7 @@ public sealed class UpdatePretradeChecklist
         }
     }
 
-    internal sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result>
+    public sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result>
     {
         public async Task<Result> Handle(Request request, CancellationToken cancellationToken)
         {

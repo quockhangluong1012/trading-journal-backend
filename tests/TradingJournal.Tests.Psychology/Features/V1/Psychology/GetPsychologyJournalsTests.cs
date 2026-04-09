@@ -1,5 +1,4 @@
 using MockQueryable.Moq;
-using FluentAssertions;
 using Moq;
 using TradingJournal.Modules.Psychology.Domain;
 using TradingJournal.Modules.Psychology.Features.V1.Psychology;
@@ -31,8 +30,8 @@ public class GetPsychologyJournalsHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.TotalItems.Should().Be(0);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value.TotalItems, Is.EqualTo(0));
     }
 }
 

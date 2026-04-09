@@ -1,5 +1,4 @@
 using MockQueryable.Moq;
-using FluentAssertions;
 using Moq;
 using TradingJournal.Modules.Psychology.Features.V1.Dashboard;
 using TradingJournal.Modules.Psychology.Infrastructure.Persistance;
@@ -39,8 +38,8 @@ public class GetMoodAndConfidenceTrendHandlerTests
         var request = new GetMoodAndConfidenceTrend.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEmpty();
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Empty);
     }
 
     [Test]
@@ -64,11 +63,11 @@ public class GetMoodAndConfidenceTrendHandlerTests
         var request = new GetMoodAndConfidenceTrend.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(3);
-        result.Value[0].Date.Should().Be(new DateTime(2026, 1, 1));
-        result.Value[0].Mood.Should().Be((int)OverallMood.Good);
-        result.Value[0].Confidence.Should().Be((int)TradingJournal.Modules.Psychology.Domain.ConfidentLevel.High);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(3));
+        Assert.That(result.Value[0].Date, Is.EqualTo(new DateTime(2026, 1, 1)));
+        Assert.That(result.Value[0].Mood, Is.EqualTo((int)OverallMood.Good));
+        Assert.That(result.Value[0].Confidence, Is.EqualTo((int)TradingJournal.Modules.Psychology.Domain.ConfidentLevel.High));
     }
 
     [Test]
@@ -85,8 +84,8 @@ public class GetMoodAndConfidenceTrendHandlerTests
         var request = new GetMoodAndConfidenceTrend.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEmpty();
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Empty);
     }
 }
 

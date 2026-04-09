@@ -1,3 +1,4 @@
+using TradingJournal.Tests.Trades.Helpers;
 using FluentAssertions;
 using FluentValidation.TestHelper;
 using Microsoft.EntityFrameworkCore;
@@ -51,31 +52,23 @@ public class GetChecklistModelsHandlerTests
     [Test]
     public async Task Handle_Returns_Paginated_Results()
     {
-        var checklistModel = new ChecklistModel { Id = 1, Name = "Test", Criteria = new List<PretradeChecklist>() };
-        var checkListSet = new Mock<DbSet<ChecklistModel>>();
-        checkListSet.Setup(x => x.FirstOrDefaultAsync(It.IsAny<Expression<Func<ChecklistModel, bool>>>(), It.IsAny<CancellationToken>())).ReturnsAsync(checklistModel);
-        checkListSet.Setup(x => x.Include(It.IsAny<string>())).Returns(checkListSet.Object);
-        _dbMock.Setup(x => x.ChecklistModels).Returns(checkListSet.Object);
-        _dbMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        var models = new List<ChecklistModel> { new ChecklistModel { Id = 1, Name = "Test1", CreatedBy = 1 }, new ChecklistModel { Id = 2, Name = "Test2", CreatedBy = 1 } };
+        _dbMock.Setup(x => x.ChecklistModels).Returns(DbSetMockHelper.CreateMockDbSet(models.AsQueryable()).Object);
 
-        var request = new GetChecklistModels.Request { PageIndex = 1, PageSize = 10 };
+        var request = new GetChecklistModels.Request { PageIndex = 1, PageSize = 10, UserId = 1 };
         var result = await _handler.Handle(request, CancellationToken.None);
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Count.Should().Be(2);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value.Count, Is.EqualTo(2));
     }
     [Test]
     public async Task Handle_Filters_By_UserId()
     {
-        var checklistModel = new ChecklistModel { Id = 1, Name = "Test", Criteria = new List<PretradeChecklist>() };
-        var checkListSet = new Mock<DbSet<ChecklistModel>>();
-        checkListSet.Setup(x => x.FirstOrDefaultAsync(It.IsAny<Expression<Func<ChecklistModel, bool>>>(), It.IsAny<CancellationToken>())).ReturnsAsync(checklistModel);
-        checkListSet.Setup(x => x.Include(It.IsAny<string>())).Returns(checkListSet.Object);
-        _dbMock.Setup(x => x.ChecklistModels).Returns(checkListSet.Object);
-        _dbMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        var models = new List<ChecklistModel> { new ChecklistModel { Id = 1, Name = "Test1", CreatedBy = 1 }, new ChecklistModel { Id = 2, Name = "Test2", CreatedBy = 2 } };
+        _dbMock.Setup(x => x.ChecklistModels).Returns(DbSetMockHelper.CreateMockDbSet(models.AsQueryable()).Object);
 
-        var request = new GetChecklistModels.Request { PageIndex = 1, PageSize = 10 };
+        var request = new GetChecklistModels.Request { PageIndex = 1, PageSize = 10, UserId = 1 };
         var result = await _handler.Handle(request, CancellationToken.None);
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Count.Should().Be(1);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value.Count, Is.EqualTo(2));
     }
 }

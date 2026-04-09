@@ -4,10 +4,10 @@ namespace TradingJournal.Modules.Trades.Features.V1.Review;
 
 public sealed class GetReview
 {
-    internal sealed record Request(ReviewPeriodType PeriodType, DateTime PeriodStart, int UserId = 0)
+    public sealed record Request(ReviewPeriodType PeriodType, DateTime PeriodStart, int UserId = 0)
         : IQuery<Result<ReviewViewModel>>;
 
-    internal sealed record ReviewViewModel(
+    public sealed record ReviewViewModel(
         int? Id,
         ReviewPeriodType PeriodType,
         DateTime PeriodStart,
@@ -29,7 +29,7 @@ public sealed class GetReview
         int Wins,
         int Losses);
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -40,7 +40,7 @@ public sealed class GetReview
         }
     }
 
-    internal sealed class Handler(ITradeDbContext context, ITradeProvider tradeProvider) : IQueryHandler<Request, Result<ReviewViewModel>>
+    public sealed class Handler(ITradeDbContext context, ITradeProvider tradeProvider) : IQueryHandler<Request, Result<ReviewViewModel>>
     {
         public async Task<Result<ReviewViewModel>> Handle(Request request, CancellationToken cancellationToken)
         {

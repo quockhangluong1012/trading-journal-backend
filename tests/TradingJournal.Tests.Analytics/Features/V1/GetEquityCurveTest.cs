@@ -1,4 +1,3 @@
-using FluentAssertions;
 using FluentValidation.TestHelper;
 using Moq;
 using TradingJournal.Modules.Analytics.Features.V1;
@@ -62,11 +61,11 @@ public class GetEquityCurveHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(2);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(2));
         // Equity is cumulative: 50, then 50+30=80
-        result.Value.ElementAt(0).Profit.Should().Be(50);
-        result.Value.ElementAt(1).Profit.Should().Be(80);
+        Assert.That(result.Value.ElementAt(0).Profit, Is.EqualTo(50));
+        Assert.That(result.Value.ElementAt(1).Profit, Is.EqualTo(80));
     }
 
     [Test]
@@ -80,7 +79,7 @@ public class GetEquityCurveHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEmpty();
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Empty);
     }
 }

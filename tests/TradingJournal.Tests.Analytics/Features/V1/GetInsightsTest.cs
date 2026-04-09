@@ -1,4 +1,3 @@
-using FluentAssertions;
 using FluentValidation.TestHelper;
 using Moq;
 using TradingJournal.Modules.Analytics.Features.V1;
@@ -52,9 +51,9 @@ public class GetInsightsHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().ContainSingle();
-        result.Value.First().Type.Should().Be("info");
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(1));
+        Assert.That(result.Value.First().Type, Is.EqualTo("info"));
     }
 
     [Test]
@@ -72,7 +71,7 @@ public class GetInsightsHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCountGreaterThan(1);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.GreaterThan(1));
     }
 }

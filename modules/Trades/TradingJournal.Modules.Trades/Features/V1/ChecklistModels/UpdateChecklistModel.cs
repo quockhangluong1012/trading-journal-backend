@@ -2,9 +2,9 @@ namespace TradingJournal.Modules.Trades.Features.V1.ChecklistModels;
 
 public sealed class UpdateChecklistModel
 {
-    internal record Request(int Id, string Name, string? Description, int UserId = 0) : ICommand<Result<bool>>;
+    public record Request(int Id, string Name, string? Description, int UserId = 0) : ICommand<Result<bool>>;
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -21,7 +21,7 @@ public sealed class UpdateChecklistModel
         }
     }
 
-    internal sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<bool>>
+    public sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
         {

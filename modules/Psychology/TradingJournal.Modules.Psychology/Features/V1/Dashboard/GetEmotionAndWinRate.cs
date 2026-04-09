@@ -16,7 +16,7 @@ public sealed class GetEmotionAndWinRate
             List<TradeCacheDto> trades = [.. allTrades.Where(t => t.CreatedBy == request.UserId)];
             List<EmotionTagCacheDto> tags = await emotionTagProvider.GetEmotionTagsAsync(cancellationToken);
 
-            var closedTrades = allTrades.Where(t => t.ClosedDate.HasValue && t.Pnl.HasValue).ToList();
+            var closedTrades = trades.Where(t => t.ClosedDate.HasValue && t.Pnl.HasValue).ToList();
 
             Dictionary<int, (int wins, int total)> tagStats = [];
 

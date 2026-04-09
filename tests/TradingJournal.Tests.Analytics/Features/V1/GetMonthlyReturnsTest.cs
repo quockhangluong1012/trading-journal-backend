@@ -1,4 +1,3 @@
-using FluentAssertions;
 using FluentValidation.TestHelper;
 using Moq;
 using TradingJournal.Modules.Analytics.Features.V1;
@@ -60,8 +59,8 @@ public class GetMonthlyReturnsHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(2);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(2));
     }
 
     [Test]
@@ -72,7 +71,7 @@ public class GetMonthlyReturnsHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEmpty();
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Empty);
     }
 }

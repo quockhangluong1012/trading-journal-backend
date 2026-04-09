@@ -1,3 +1,4 @@
+using TradingJournal.Tests.Trades.Helpers;
 using FluentAssertions;
 using FluentValidation.TestHelper;
 using Microsoft.EntityFrameworkCore;
@@ -42,28 +43,17 @@ public class GetChecklistModelDetailHandlerTests
     [Test]
     public async Task Handle_Returns_Failure_When_Not_Found()
     {
-        var checklistModel = new ChecklistModel { Id = 1, Name = "Test", Criteria = new List<PretradeChecklist>() };
-        var checkListSet = new Mock<DbSet<ChecklistModel>>();
-        checkListSet.Setup(x => x.FirstOrDefaultAsync(It.IsAny<Expression<Func<ChecklistModel, bool>>>(), It.IsAny<CancellationToken>())).ReturnsAsync(checklistModel);
-        checkListSet.Setup(x => x.Include(It.IsAny<string>())).Returns(checkListSet.Object);
-        _dbMock.Setup(x => x.ChecklistModels).Returns(checkListSet.Object);
-        _dbMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
+        _dbMock.Setup(x => x.ChecklistModels).Returns(DbSetMockHelper.CreateMockDbSet(new List<ChecklistModel>().AsQueryable()).Object);
         var result = await _handler.Handle(new GetChecklistModelDetail.Request(1, 1), CancellationToken.None);
-        result.IsFailure.Should().BeTrue();
+        Assert.That(result.IsFailure, Is.True);
     }
     [Test]
     public async Task Handle_Returns_Success_When_Found()
     {
-        var checklistModel = new ChecklistModel { Id = 1, Name = "Test", Criteria = new List<PretradeChecklist>() };
-        var checkListSet = new Mock<DbSet<ChecklistModel>>();
-        checkListSet.Setup(x => x.FirstOrDefaultAsync(It.IsAny<Expression<Func<ChecklistModel, bool>>>(), It.IsAny<CancellationToken>())).ReturnsAsync(checklistModel);
-        checkListSet.Setup(x => x.Include(It.IsAny<string>())).Returns(checkListSet.Object);
-        _dbMock.Setup(x => x.ChecklistModels).Returns(checkListSet.Object);
-        _dbMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
+        var checklistModel = new ChecklistModel { Id = 1, Name = "Test", Criteria = new List<PretradeChecklist>(), CreatedBy = 1 };
+        _dbMock.Setup(x => x.ChecklistModels).Returns(DbSetMockHelper.CreateMockDbSet(new List<ChecklistModel> { checklistModel }.AsQueryable()).Object);
         var result = await _handler.Handle(new GetChecklistModelDetail.Request(1, 1), CancellationToken.None);
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Name.Should().Be("Test");
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value.Name, Is.EqualTo("Test"));
     }
 }

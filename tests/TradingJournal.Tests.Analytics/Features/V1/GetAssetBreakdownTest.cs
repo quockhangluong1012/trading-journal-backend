@@ -1,4 +1,3 @@
-using FluentAssertions;
 using FluentValidation.TestHelper;
 using Moq;
 using TradingJournal.Modules.Analytics.Features.V1;
@@ -57,10 +56,10 @@ public class GetAssetBreakdownHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(2);
-        result.Value.Should().Contain(a => a.Asset == "EURUSD");
-        result.Value.Should().Contain(a => a.Asset == "BTC");
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(2));
+        Assert.That(result.Value.Any(a => a.Asset == "EURUSD"), Is.True);
+        Assert.That(result.Value.Any(a => a.Asset == "BTC"), Is.True);
     }
 
     [Test]
@@ -71,7 +70,7 @@ public class GetAssetBreakdownHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEmpty();
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Empty);
     }
 }

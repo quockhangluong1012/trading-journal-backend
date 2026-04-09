@@ -27,7 +27,7 @@ public sealed class CreateTrade
         int TradingZoneId,
         int? TradingSessionId) : ICommand<Result<int>>;
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -88,7 +88,7 @@ public sealed class CreateTrade
         }
     }
 
-    internal sealed class Handler(ITradeDbContext context, IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor) : ICommandHandler<Request, Result<int>>
+    public sealed class Handler(ITradeDbContext context, IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor) : ICommandHandler<Request, Result<int>>
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {

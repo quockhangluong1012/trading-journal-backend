@@ -2,9 +2,9 @@ namespace TradingJournal.Modules.Trades.Features.V1.TechnicalAnalysis;
 
 public sealed class UpdateTechnicalAnalysis
 {
-    internal sealed record Request(int Id, string Name, string? ShortName, string? Description, int UserId = 0) : ICommand<Result<bool>>;
+    public sealed record Request(int Id, string Name, string? ShortName, string? Description, int UserId = 0) : ICommand<Result<bool>>;
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -20,7 +20,7 @@ public sealed class UpdateTechnicalAnalysis
         }
     }
 
-    internal sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<bool>>
+    public sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
         {

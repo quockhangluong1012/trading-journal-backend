@@ -4,9 +4,9 @@ namespace TradingJournal.Modules.Trades.Features.V1.TechnicalAnalysis;
 
 public sealed class GetTechnicalAnalysisDetail
 {
-    internal sealed record Request(int Id) : IQuery<Result<TechnicalAnalysisViewModel>>;
+    public sealed record Request(int Id) : IQuery<Result<TechnicalAnalysisViewModel>>;
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -17,7 +17,7 @@ public sealed class GetTechnicalAnalysisDetail
         }
     }
 
-    internal sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<TechnicalAnalysisViewModel>>
+    public sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<TechnicalAnalysisViewModel>>
     {
         public async Task<Result<TechnicalAnalysisViewModel>> Handle(Request request, CancellationToken cancellationToken)
         {

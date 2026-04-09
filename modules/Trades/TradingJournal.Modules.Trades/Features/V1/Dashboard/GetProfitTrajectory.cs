@@ -5,11 +5,11 @@ namespace TradingJournal.Modules.Trades.Features.V1.Dashboard;
 
 public sealed class GetProfitTrajectory
 {
-    internal sealed record Request(DashboardFilter Filter, int UserId = 0) : IQuery<Result<IReadOnlyCollection<ProfitTrajectoryViewModel>>>; 
+    public sealed record Request(DashboardFilter Filter, int UserId = 0) : IQuery<Result<IReadOnlyCollection<ProfitTrajectoryViewModel>>>;
 
-    internal sealed record ProfitTrajectoryViewModel(DateTime Date, double? PnL = 0); 
+    public sealed record ProfitTrajectoryViewModel(DateTime Date, double? PnL = 0);
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -21,7 +21,7 @@ public sealed class GetProfitTrajectory
         }
     }
 
-    internal sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<IReadOnlyCollection<ProfitTrajectoryViewModel>>>
+    public sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<IReadOnlyCollection<ProfitTrajectoryViewModel>>>
     {
         public async Task<Result<IReadOnlyCollection<ProfitTrajectoryViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {

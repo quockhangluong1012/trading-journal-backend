@@ -1,4 +1,3 @@
-using FluentAssertions;
 using FluentValidation.TestHelper;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -47,22 +46,18 @@ public class CreateTodayPsychologyHandlerTests
     [Test]
     public async Task Handle_Returns_Success_When_Creating_New_Journal()
     {
-        DbSet<PsychologyJournal> mockSet = new Mock<DbSet<PsychologyJournal>>().Object;
+        var existingJournal = new PsychologyJournal { Id = 1, Date = new DateTime(2024, 5, 31) };
+        var mockSetMock = new List<PsychologyJournal> { existingJournal }.BuildMockDbSet();
+        
+        _contextMock.Setup(x => x.PsychologyJournals).Returns(mockSetMock.Object);
+        _contextMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        mockSet.AddRangeAsync(new[] {
-            new PsychologyJournal { 
-                Id = 1,
-                Date = new DateTime(2024, 5, 31) 
-            }
-        }, CancellationToken.None);
-
-        _contextMock.Setup(x => x.PsychologyJournals).Returns(mockSet);
         var request = new CreateTodayPsychology.Request(Date: new DateTime(2024, 6, 1), TodayTradingReview: "",
-            EmotionTags: [1], OverallMood: OverallMood.Neutral, UserId: 0);
+            EmotionTags: [1], OverallMood: OverallMood.Neutral, UserId: 1);
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
+        Assert.That(result.IsSuccess, Is.True);
         _contextMock.Verify(x => x.PsychologyJournals.AddAsync(It.IsAny<PsychologyJournal>(), It.IsAny<CancellationToken>()), Times.Once);
         _contextMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

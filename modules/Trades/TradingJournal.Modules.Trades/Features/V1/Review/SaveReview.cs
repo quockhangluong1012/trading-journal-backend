@@ -4,14 +4,14 @@ namespace TradingJournal.Modules.Trades.Features.V1.Review;
 
 public sealed class SaveReview
 {
-    internal sealed record Request(
+    public sealed record Request(
         ReviewPeriodType PeriodType,
         DateTime PeriodStart,
         DateTime PeriodEnd,
         string? UserNotes,
         int UserId = 0) : ICommand<Result<int>>;
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -27,7 +27,7 @@ public sealed class SaveReview
         }
     }
 
-    internal sealed class Handler(ITradeDbContext context, ITradeProvider tradeProvider)
+    public sealed class Handler(ITradeDbContext context, ITradeProvider tradeProvider)
         : ICommandHandler<Request, Result<int>>
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)

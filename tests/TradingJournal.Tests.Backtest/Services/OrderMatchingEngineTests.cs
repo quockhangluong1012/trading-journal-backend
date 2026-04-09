@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using TradingJournal.Modules.Backtest.Common.Enums;
 using TradingJournal.Modules.Backtest.Domain;
@@ -122,9 +121,9 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].ExitPrice.Should().Be(1.1000m); // Exits at SL level (Bid)
-        result.Closes[0].Reason.Should().Be("SL Hit");
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(1.1000m)); // Exits at SL level (Bid)
+        Assert.That(result.Closes[0].Reason, Is.EqualTo("SL Hit"));
     }
 
     [Test]
@@ -142,9 +141,9 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].ExitPrice.Should().Be(1.1100m); // Exits at TP level (Bid)
-        result.Closes[0].Reason.Should().Be("TP Hit");
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(1.1100m)); // Exits at TP level (Bid)
+        Assert.That(result.Closes[0].Reason, Is.EqualTo("TP Hit"));
     }
 
     [Test]
@@ -164,9 +163,9 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].ExitPrice.Should().Be(1.1100m); // Exits at SL level (Ask)
-        result.Closes[0].Reason.Should().Be("SL Hit");
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(1.1100m)); // Exits at SL level (Ask)
+        Assert.That(result.Closes[0].Reason, Is.EqualTo("SL Hit"));
     }
 
     [Test]
@@ -185,7 +184,7 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert
-        result.Closes.Should().BeEmpty();
+        Assert.That(result.Closes, Is.Empty);
     }
 
     [Test]
@@ -204,9 +203,9 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].ExitPrice.Should().Be(1.1000m); // Exits at TP level
-        result.Closes[0].Reason.Should().Be("TP Hit");
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(1.1000m)); // Exits at TP level
+        Assert.That(result.Closes[0].Reason, Is.EqualTo("TP Hit"));
     }
 
     [Test]
@@ -224,8 +223,8 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread);
 
         // Assert
-        result.Fills.Should().HaveCount(1);
-        result.Fills[0].FilledPrice.Should().Be(1.1000m); // Filled at the ASK entry price
+        Assert.That(result.Fills, Has.Count.EqualTo(1));
+        Assert.That(result.Fills[0].FilledPrice, Is.EqualTo(1.1000m)); // Filled at the ASK entry price
     }
 
     [Test]
@@ -243,7 +242,7 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread);
 
         // Assert
-        result.Fills.Should().BeEmpty();
+        Assert.That(result.Fills, Is.Empty);
     }
 
     [Test]
@@ -260,8 +259,8 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread);
 
         // Assert
-        result.Fills.Should().HaveCount(1);
-        result.Fills[0].FilledPrice.Should().Be(1.1100m); // Filled at the BID entry price
+        Assert.That(result.Fills, Has.Count.EqualTo(1));
+        Assert.That(result.Fills[0].FilledPrice, Is.EqualTo(1.1100m)); // Filled at the BID entry price
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -284,11 +283,11 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].ExitPrice.Should().Be(95m); // Bid Open, not SL level
-        result.Closes[0].Reason.Should().Contain("SL Hit");
-        result.Closes[0].Reason.Should().Contain("Gapped");
-        result.Closes[0].Slippage.Should().Be(-5m); // 95 - 100 = -5 (negative slippage)
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(95m)); // Bid Open, not SL level
+        Assert.That(result.Closes[0].Reason, Does.Contain("SL Hit"));
+        Assert.That(result.Closes[0].Reason, Does.Contain("Gapped"));
+        Assert.That(result.Closes[0].Slippage, Is.EqualTo(-5m)); // 95 - 100 = -5 (negative slippage)
     }
 
     [Test]
@@ -306,10 +305,10 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].ExitPrice.Should().Be(105.5m); // Ask Open
-        result.Closes[0].Reason.Should().Contain("SL Hit");
-        result.Closes[0].Slippage.Should().Be(5.5m); // 105.5 - 100 = 5.5
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(105.5m)); // Ask Open
+        Assert.That(result.Closes[0].Reason, Does.Contain("SL Hit"));
+        Assert.That(result.Closes[0].Slippage, Is.EqualTo(5.5m)); // 105.5 - 100 = 5.5
     }
 
     [Test]
@@ -327,11 +326,11 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].ExitPrice.Should().Be(125m); // Bid Open
-        result.Closes[0].Reason.Should().Contain("TP Hit");
-        result.Closes[0].Reason.Should().Contain("Gapped");
-        result.Closes[0].Slippage.Should().Be(5m); // 125 - 120 = +5 (positive/beneficial)
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(125m)); // Bid Open
+        Assert.That(result.Closes[0].Reason, Does.Contain("TP Hit"));
+        Assert.That(result.Closes[0].Reason, Does.Contain("Gapped"));
+        Assert.That(result.Closes[0].Slippage, Is.EqualTo(5m)); // 125 - 120 = +5 (positive/beneficial)
     }
 
     [Test]
@@ -349,9 +348,9 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].ExitPrice.Should().Be(75.5m); // Ask Open
-        result.Closes[0].Reason.Should().Contain("TP Hit");
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(75.5m)); // Ask Open
+        Assert.That(result.Closes[0].Reason, Does.Contain("TP Hit"));
     }
 
     [Test]
@@ -368,8 +367,8 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread);
 
         // Assert
-        result.Fills.Should().HaveCount(1);
-        result.Fills[0].FilledPrice.Should().Be(95.5m); // Ask Open (beneficial gap)
+        Assert.That(result.Fills, Has.Count.EqualTo(1));
+        Assert.That(result.Fills[0].FilledPrice, Is.EqualTo(95.5m)); // Ask Open (beneficial gap)
     }
 
     [Test]
@@ -386,8 +385,8 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread);
 
         // Assert
-        result.Fills.Should().HaveCount(1);
-        result.Fills[0].FilledPrice.Should().Be(105m); // Bid Open (beneficial gap)
+        Assert.That(result.Fills, Has.Count.EqualTo(1));
+        Assert.That(result.Fills[0].FilledPrice, Is.EqualTo(105m)); // Bid Open (beneficial gap)
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -412,9 +411,9 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert: SL should win because bullish path hits Low first
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].Reason.Should().Be("SL Hit");
-        result.Closes[0].ExitPrice.Should().Be(95m);
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].Reason, Is.EqualTo("SL Hit"));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(95m));
     }
 
     [Test]
@@ -435,9 +434,9 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert: TP should win because bearish path hits High first
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].Reason.Should().Be("TP Hit");
-        result.Closes[0].ExitPrice.Should().Be(110m);
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].Reason, Is.EqualTo("TP Hit"));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(110m));
     }
 
     [Test]
@@ -457,9 +456,9 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert: TP should win because bullish path hits Low first → Short TP at Low
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].Reason.Should().Be("TP Hit");
-        result.Closes[0].ExitPrice.Should().Be(95m);
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].Reason, Is.EqualTo("TP Hit"));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(95m));
     }
 
     [Test]
@@ -479,9 +478,9 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert: SL should win because bearish path hits High first → Short SL at High
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].Reason.Should().Be("SL Hit");
-        result.Closes[0].ExitPrice.Should().Be(110m);
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].Reason, Is.EqualTo("SL Hit"));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(110m));
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -506,9 +505,9 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert: TP wins (bullish, Low first, Short TP at Low)
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].Reason.Should().Be("TP Hit");
-        result.Closes[0].ExitPrice.Should().Be(92m);
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].Reason, Is.EqualTo("TP Hit"));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(92m));
     }
 
     [Test]
@@ -528,9 +527,9 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert: SL (gapped) wins, not TP
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].Reason.Should().Contain("SL Hit");
-        result.Closes[0].ExitPrice.Should().Be(90m);
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].Reason, Does.Contain("SL Hit"));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(90m));
     }
 
     [Test]
@@ -549,11 +548,11 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].ExitPrice.Should().Be(95m);
-        result.Closes[0].Reason.Should().Be("SL Hit");
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(95m));
+        Assert.That(result.Closes[0].Reason, Is.EqualTo("SL Hit"));
         decimal expectedPnl = (95m - 100m) * 100_000m; // -500,000
-        result.Closes[0].Pnl.Should().Be(expectedPnl);
+        Assert.That(result.Closes[0].Pnl, Is.EqualTo(expectedPnl));
     }
 
     [Test]
@@ -575,12 +574,12 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [longPos, shortPos], 1_000_000m, spread);
 
         // Assert: No closes
-        result.Closes.Should().BeEmpty();
+        Assert.That(result.Closes, Is.Empty);
 
         // Long unrealized: (Bid Close - entry) * size = (102 - 100) * 100000 = 200000
         // Short unrealized: (entry - Ask Close) * size = (100 - 103) * 100000 = -300000
         // Total: 200000 + (-300000) = -100000
-        result.UnrealizedPnl.Should().Be(-100_000m);
+        Assert.That(result.UnrealizedPnl, Is.EqualTo(-100_000m));
     }
 
     [Test]
@@ -599,10 +598,10 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 50m, spread);
 
         // Assert
-        result.IsLiquidated.Should().BeTrue();
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].ExitPrice.Should().Be(201m); // Ask Close for Short liquidation
-        result.Closes[0].Reason.Should().Be("Liquidated");
+        Assert.That(result.IsLiquidated, Is.True);
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(201m)); // Ask Close for Short liquidation
+        Assert.That(result.Closes[0].Reason, Is.EqualTo("Liquidated"));
     }
 
     [Test]
@@ -622,8 +621,8 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
 
         // Assert: SL wins (bullish → Low first → Long SL)
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].Reason.Should().Be("SL Hit");
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].Reason, Is.EqualTo("SL Hit"));
     }
 
     [Test]
@@ -644,9 +643,9 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [], [longSL, shortTP], 10000m, spread);
 
         // Assert: Both should close
-        result.Closes.Should().HaveCount(2);
-        result.Closes.Should().Contain(c => c.OrderId == 1 && c.Reason == "SL Hit");
-        result.Closes.Should().Contain(c => c.OrderId == 2 && c.Reason == "TP Hit");
+        Assert.That(result.Closes, Has.Count.EqualTo(2));
+        Assert.That(result.Closes.Any(c => c.OrderId == 1 && c.Reason == "SL Hit"), Is.True);
+        Assert.That(result.Closes.Any(c => c.OrderId == 2 && c.Reason == "TP Hit"), Is.True);
     }
 
     [Test]
@@ -666,11 +665,11 @@ public class OrderMatchingEngineTests
         MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread);
 
         // Assert
-        result.Fills.Should().HaveCount(1);
-        result.Fills[0].FilledPrice.Should().Be(98m);
+        Assert.That(result.Fills, Has.Count.EqualTo(1));
+        Assert.That(result.Fills[0].FilledPrice, Is.EqualTo(98m));
 
-        result.Closes.Should().HaveCount(1);
-        result.Closes[0].ExitPrice.Should().Be(93m);
-        result.Closes[0].Reason.Should().Be("SL Hit");
+        Assert.That(result.Closes, Has.Count.EqualTo(1));
+        Assert.That(result.Closes[0].ExitPrice, Is.EqualTo(93m));
+        Assert.That(result.Closes[0].Reason, Is.EqualTo("SL Hit"));
     }
 }

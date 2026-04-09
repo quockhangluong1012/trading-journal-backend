@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Moq;
 using TradingJournal.Modules.Psychology.Domain;
 using TradingJournal.Modules.Psychology.Features.V1.Dashboard;
@@ -30,7 +29,7 @@ public class GetPsychologyHeatmapHandlerTests
         _cacheMock.Setup(x => x.GetEmotionTagsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new System.Collections.Generic.List<TradingJournal.Shared.Dtos.EmotionTagCacheDto>());
         var request = new GetPsychologyHeatmap.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEmpty();
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Empty);
     }
 }

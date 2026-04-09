@@ -1,3 +1,4 @@
+using TradingJournal.Tests.Trades.Helpers;
 using FluentAssertions;
 using FluentValidation.TestHelper;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +16,7 @@ public class CreateChecklistModelValidatorTests
     [Test]
     public void Should_Have_Error_When_Name_Is_Null()
     {
-        var request = new CreateChecklistModel.Request(null, "desc");
+        var request = new CreateChecklistModel.Request(null!, "desc");
         var result = _validator.TestValidate(request);
         result.ShouldHaveValidationErrorFor(x => x.Name);
     }
@@ -51,15 +52,16 @@ public class CreateChecklistModelHandlerTests
     {
         var request = new CreateChecklistModel.Request("Test", "desc", 0);
         var result = await _handler.Handle(request, CancellationToken.None);
-        result.IsFailure.Should().BeTrue();
+        Assert.That(result.IsFailure, Is.True);
     }
     [Test]
     public async Task Handle_Returns_Success_When_Valid()
     {
+        _dbMock.Setup(x => x.ChecklistModels).Returns(DbSetMockHelper.CreateMockDbSet(new List<ChecklistModel>().AsQueryable()).Object);
         _dbMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         var request = new CreateChecklistModel.Request("Test", "desc", 1);
         var result = await _handler.Handle(request, CancellationToken.None);
-        result.IsSuccess.Should().BeTrue();
+        Assert.That(result.IsSuccess, Is.True);
         _dbMock.Verify(x => x.ChecklistModels.AddAsync(It.IsAny<ChecklistModel>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

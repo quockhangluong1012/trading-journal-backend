@@ -1,3 +1,4 @@
+using TradingJournal.Tests.Trades.Helpers;
 using NUnit.Framework;
 using FluentAssertions;
 using Moq;
@@ -19,15 +20,11 @@ public sealed class GetTradeStatisticsHandlerTests
 
     [Test] public async Task Handle_NoTrades_ReturnsEmptyStatistic()
     {
-        var tradeSet = new Mock<DbSet<TradeHistory>>();
-        tradeSet.Setup(x => x.Where(It.IsAny<System.Linq.Expressions.Expression<System.Func<TradeHistory, bool>>>())).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.AsNoTracking()).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.ToListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeHistory>());
-        _ctx.Setup(x => x.TradeHistories).Returns(tradeSet.Object);
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
 
         var result = await _handler.Handle(new GetTradingStatistic.Request(DashboardFilter.OneMonth, 1), CancellationToken.None);
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.TotalTrades.Should().Be(0);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value!.TotalTrades, Is.EqualTo(0));
     }
 
     [Test] public async Task Handle_HasTrades_CalculatesStatistics()
@@ -38,15 +35,11 @@ public sealed class GetTradeStatisticsHandlerTests
             new() { Id = 2, CreatedBy = 1, Status = SharedEnums.TradeStatus.Closed, Pnl = -50, Date = DateTime.UtcNow.AddDays(-2) },
             new() { Id = 3, CreatedBy = 1, Status = SharedEnums.TradeStatus.Open, Pnl = null, Date = DateTime.UtcNow }
         };
-        var tradeSet = new Mock<DbSet<TradeHistory>>();
-        tradeSet.Setup(x => x.Where(It.IsAny<System.Linq.Expressions.Expression<System.Func<TradeHistory, bool>>>())).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.AsNoTracking()).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.ToListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(trades);
-        _ctx.Setup(x => x.TradeHistories).Returns(tradeSet.Object);
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(trades.AsQueryable()).Object);
 
         var result = await _handler.Handle(new GetTradingStatistic.Request(DashboardFilter.OneMonth, 1), CancellationToken.None);
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.TotalTrades.Should().Be(3);
-        result.Value.OpenPositions.Should().Be(1);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value!.TotalTrades, Is.EqualTo(3));
+        Assert.That(result.Value.OpenPositions, Is.EqualTo(1));
     }
 }

@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Moq;
 using TradingJournal.Modules.Psychology.Domain;
 using TradingJournal.Modules.Psychology.Features.V1.Emotion;
@@ -33,8 +32,8 @@ public class GetEmotionsHandlerTests
         var request = new GetEmotions.Request();
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(2);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(2));
     }
 
     [Test]
@@ -45,7 +44,7 @@ public class GetEmotionsHandlerTests
         var request = new GetEmotions.Request();
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
+        Assert.That(result.IsFailure, Is.True);
     }
 }
 

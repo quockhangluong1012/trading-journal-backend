@@ -4,9 +4,9 @@ namespace TradingJournal.Modules.Trades.Features.V1.Screenshot;
 
 public sealed class UploadScreenShoot
 {
-    internal sealed record Request(IFormFile File) : ICommand<Result<string>>;
+    public sealed record Request(IFormFile File) : ICommand<Result<string>>;
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -17,10 +17,12 @@ public sealed class UploadScreenShoot
         }
     }
 
-    internal sealed class Handler(IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor) : ICommandHandler<Request, Result<string>>
+    public sealed class Handler(IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor) : ICommandHandler<Request, Result<string>>
     {
         public async Task<Result<string>> Handle(Request request, CancellationToken cancellationToken)
         {
+            if (request.File == null) return Result<string>.Failure(Error.Create("File cannot be null."));
+
             var path = Path.Combine(env.ContentRootPath, "wwwroot", "screenshots");
 
             if (!Directory.Exists(path))

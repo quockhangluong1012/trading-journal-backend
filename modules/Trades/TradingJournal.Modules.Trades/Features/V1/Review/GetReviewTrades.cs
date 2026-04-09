@@ -4,14 +4,14 @@ namespace TradingJournal.Modules.Trades.Features.V1.Review;
 
 public sealed class GetReviewTrades
 {
-    internal sealed record Request(
+    public sealed record Request(
         DateTime FromDate,
         DateTime ToDate,
         int Page = 1,
         int PageSize = 50,
         int UserId = 0) : IQuery<Result<PaginationViewModel<ReviewTradeViewModel>>>;
 
-    internal sealed record ReviewTradeViewModel(
+    public sealed record ReviewTradeViewModel(
         int Id,
         string Asset,
         string Position,
@@ -21,7 +21,7 @@ public sealed class GetReviewTrades
         double EntryPrice,
         double? ExitPrice);
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -37,7 +37,7 @@ public sealed class GetReviewTrades
         }
     }
 
-    internal sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<PaginationViewModel<ReviewTradeViewModel>>>
+    public sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<PaginationViewModel<ReviewTradeViewModel>>>
     {
         public async Task<Result<PaginationViewModel<ReviewTradeViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {

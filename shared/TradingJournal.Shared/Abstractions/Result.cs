@@ -1,4 +1,4 @@
-﻿namespace TradingJournal.Shared.Abstractions;
+namespace TradingJournal.Shared.Abstractions;
 
 public class Result
 {
@@ -48,7 +48,7 @@ public class Result<T> : Result
         _value = default;
     }
 
-    public T Value => _value;
+    public T Value => IsSuccess ? _value! : throw new InvalidOperationException("The value of a failure result can not be accessed.");
 
     public static Result<T> Success(T value) => new(value);
 

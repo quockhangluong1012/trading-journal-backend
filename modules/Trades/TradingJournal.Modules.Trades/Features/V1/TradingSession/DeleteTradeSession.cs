@@ -4,7 +4,7 @@ public class DeleteTradeSession
 {
     public sealed record Request(int Id, int UserId = 0) : ICommand<Result<bool>>;
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -17,7 +17,7 @@ public class DeleteTradeSession
         }
     }
 
-    internal sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<bool>>
+    public sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
         {

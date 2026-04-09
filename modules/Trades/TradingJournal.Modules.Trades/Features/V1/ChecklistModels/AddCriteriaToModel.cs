@@ -2,9 +2,9 @@ namespace TradingJournal.Modules.Trades.Features.V1.ChecklistModels;
 
 public sealed class AddCriteriaToModel
 {
-    internal record Request(int ModelId, string Name, PretradeChecklistType Type) : ICommand<Result<int>>;
+    public record Request(int ModelId, string Name, PretradeChecklistType Type) : ICommand<Result<int>>;
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -27,7 +27,7 @@ public sealed class AddCriteriaToModel
         }
     }
 
-    internal sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<int>>
+    public sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<int>>
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {

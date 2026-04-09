@@ -1,3 +1,4 @@
+using TradingJournal.Tests.Trades.Helpers;
 using NUnit.Framework;
 using FluentAssertions;
 using Moq;
@@ -19,15 +20,11 @@ public sealed class GetWinLossRatioHandlerTests
 
     [Test] public async Task Handle_NoTrades_ReturnsEmptyList()
     {
-        var tradeSet = new Mock<DbSet<TradeHistory>>();
-        tradeSet.Setup(x => x.Where(It.IsAny<System.Linq.Expressions.Expression<System.Func<TradeHistory, bool>>>())).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.AsNoTracking()).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.ToListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeHistory>());
-        _ctx.Setup(x => x.TradeHistories).Returns(tradeSet.Object);
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
 
         var result = await _handler.Handle(new GetWinLossRatio.Request(DashboardFilter.OneMonth, 1), CancellationToken.None);
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEmpty();
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Empty);
     }
 
     [Test] public async Task Handle_HasTrades_ReturnsWinLossCounts()
@@ -38,14 +35,10 @@ public sealed class GetWinLossRatioHandlerTests
             new() { Id = 1, CreatedBy = 1, Status = SharedEnums.TradeStatus.Closed, Pnl = 100, ClosedDate = fromDate.AddDays(1) },
             new() { Id = 2, CreatedBy = 1, Status = SharedEnums.TradeStatus.Closed, Pnl = -50, ClosedDate = fromDate.AddDays(2) }
         };
-        var tradeSet = new Mock<DbSet<TradeHistory>>();
-        tradeSet.Setup(x => x.Where(It.IsAny<System.Linq.Expressions.Expression<System.Func<TradeHistory, bool>>>())).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.AsNoTracking()).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.ToListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(trades);
-        _ctx.Setup(x => x.TradeHistories).Returns(tradeSet.Object);
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(trades.AsQueryable()).Object);
 
         var result = await _handler.Handle(new GetWinLossRatio.Request(DashboardFilter.OneMonth, 1), CancellationToken.None);
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().HaveCount(2);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(2));
     }
 }

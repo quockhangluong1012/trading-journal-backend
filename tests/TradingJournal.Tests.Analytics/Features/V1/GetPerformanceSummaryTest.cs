@@ -1,4 +1,3 @@
-using FluentAssertions;
 using FluentValidation;
 using FluentValidation.TestHelper;
 using Moq;
@@ -63,11 +62,11 @@ public class GetPerformanceSummaryHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.TotalClosed.Should().Be(2);
-        result.Value.TotalPnl.Should().Be(10);
-        result.Value.Wins.Should().Be(1);
-        result.Value.Losses.Should().Be(1);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value.TotalClosed, Is.EqualTo(2));
+        Assert.That(result.Value.TotalPnl, Is.EqualTo(10));
+        Assert.That(result.Value.Wins, Is.EqualTo(1));
+        Assert.That(result.Value.Losses, Is.EqualTo(1));
     }
 
     [Test]
@@ -82,9 +81,9 @@ public class GetPerformanceSummaryHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.TotalPnl.Should().Be(0);
-        result.Value.TotalClosed.Should().Be(0);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value.TotalPnl, Is.EqualTo(0));
+        Assert.That(result.Value.TotalClosed, Is.EqualTo(0));
     }
 
     [Test]
@@ -105,7 +104,7 @@ public class GetPerformanceSummaryHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.TotalPnl.Should().Be(50); // only user 1's trades
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value.TotalPnl, Is.EqualTo(50)); // only user 1's trades
     }
 }

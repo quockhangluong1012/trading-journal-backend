@@ -5,9 +5,9 @@ namespace TradingJournal.Modules.Trades.Features.V1.Trade;
 
 public sealed class CloseTrade
 {
-    internal sealed record Request(int TradeId, double ExitPrice, double PnL, string? TradingResult, bool? HitStopLoss, int UserId = 0) : ICommand<Result<bool>>;
-    
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed record Request(int TradeId, double ExitPrice, double PnL, string? TradingResult, bool? HitStopLoss, int UserId = 0) : ICommand<Result<bool>>;
+
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -21,7 +21,7 @@ public sealed class CloseTrade
         }
     }
 
-    internal sealed class Handler(ITradeDbContext tradeDbContext,
+    public sealed class Handler(ITradeDbContext tradeDbContext,
         IEventBus eventBus) : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)

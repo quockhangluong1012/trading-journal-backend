@@ -1,3 +1,4 @@
+using TradingJournal.Tests.Trades.Helpers;
 using NUnit.Framework;
 using FluentAssertions;
 using Moq;
@@ -30,7 +31,7 @@ public sealed class UpdateTradeValidatorTests
     public void Validate_ValidRequest_ReturnsValid()
     {
         var result = _validator.Validate(CreateValidRequest());
-        result.IsValid.Should().BeTrue();
+        Assert.That(result.IsValid, Is.True);
     }
 
     [Test]
@@ -38,7 +39,7 @@ public sealed class UpdateTradeValidatorTests
     {
         var request = CreateValidRequest() with { Asset = null! };
         var result = _validator.Validate(request);
-        result.IsValid.Should().BeFalse();
+        Assert.That(result.IsValid, Is.False);
         result.Errors.Should().Contain(e => e.ErrorMessage.Contains("Asset"));
     }
 
@@ -47,7 +48,7 @@ public sealed class UpdateTradeValidatorTests
     {
         var request = CreateValidRequest() with { TradeHistoryChecklists = [] };
         var result = _validator.Validate(request);
-        result.IsValid.Should().BeFalse();
+        Assert.That(result.IsValid, Is.False);
         result.Errors.Should().Contain(e => e.ErrorMessage.Contains("checklist"));
     }
 
@@ -56,7 +57,7 @@ public sealed class UpdateTradeValidatorTests
     {
         var request = CreateValidRequest() with { TradingZoneId = 0 };
         var result = _validator.Validate(request);
-        result.IsValid.Should().BeFalse();
+        Assert.That(result.IsValid, Is.False);
         result.Errors.Should().Contain(e => e.ErrorMessage.Contains("Trading Zone"));
     }
 
@@ -65,7 +66,7 @@ public sealed class UpdateTradeValidatorTests
     {
         var request = CreateValidRequest() with { Position = (SharedEnums.PositionType)99 };
         var result = _validator.Validate(request);
-        result.IsValid.Should().BeFalse();
+        Assert.That(result.IsValid, Is.False);
     }
 }
 
@@ -92,17 +93,13 @@ public sealed class UpdateTradeHandlerTests
             null, null, 1.0800, "Notes", DateTime.UtcNow,
             SharedEnums.TradeStatus.Open, null, null, null, [],
             null, null, ConfidenceLevel.Neutral, null,
-            [1], 1, 42);
+            [1], 1, null, UserId: 42);
 
-        var tradeSet = new Mock<DbSet<TradeHistory>>();
-        tradeSet.Setup(x => x.Include(It.IsAny<string>())).Returns(tradeSet.Object);
-        _ctx.Setup(x => x.TradeHistories).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.FirstOrDefaultAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<TradeHistory, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((TradeHistory?)null);
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeFalse();
+        Assert.That(result.IsSuccess, Is.False);
     }
 
     [Test]
@@ -113,30 +110,22 @@ public sealed class UpdateTradeHandlerTests
             null, null, 1.0800, "Updated", DateTime.UtcNow,
             SharedEnums.TradeStatus.Open, null, null, null, [],
             null, null, ConfidenceLevel.Neutral, null,
-            [1], 1, 42);
+            [1], 1, null, UserId: 42);
 
         var trade = new TradeHistory { Id = 1, CreatedBy = 42, Asset = "GBPUSD",
             TradeEmotionTags = [], TradeChecklists = [], TradeTechnicalAnalysisTags = [], TradeScreenShots = [] };
-        var tradeSet = new Mock<DbSet<TradeHistory>>();
-        tradeSet.Setup(x => x.Include(It.IsAny<string>())).Returns(tradeSet.Object);
-        _ctx.Setup(x => x.TradeHistories).Returns(tradeSet.Object);
-        tradeSet.Setup(x => x.FirstOrDefaultAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<TradeHistory, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(trade);
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory> { trade }.AsQueryable()).Object);
 
-        var emotionSet = new Mock<DbSet<TradeEmotionTag>>();
-        _ctx.Setup(x => x.TradeEmotionTags).Returns(emotionSet.Object);
-        var checklistSet = new Mock<DbSet<TradeHistoryChecklist>>();
-        _ctx.Setup(x => x.TradeHistoryChecklist).Returns(checklistSet.Object);
-        var tagSet = new Mock<DbSet<TradeTechnicalAnalysisTag>>();
-        _ctx.Setup(x => x.TradeTechnicalAnalysisTags).Returns(tagSet.Object);
-        var screenshotSet = new Mock<DbSet<TradeScreenShot>>();
-        _ctx.Setup(x => x.TradeScreenShots).Returns(screenshotSet.Object);
+        _ctx.Setup(x => x.TradeEmotionTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeEmotionTag>().AsQueryable()).Object);
+        _ctx.Setup(x => x.TradeHistoryChecklist).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistoryChecklist>().AsQueryable()).Object);
+        _ctx.Setup(x => x.TradeTechnicalAnalysisTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeTechnicalAnalysisTag>().AsQueryable()).Object);
+        _ctx.Setup(x => x.TradeScreenShots).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeScreenShot>().AsQueryable()).Object);
         _ctx.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeTrue();
-        trade.Notes.Should().Be("Updated");
+        Assert.That(result.IsSuccess, Is.True, $"Error: {result.Errors?.FirstOrDefault()?.Description}");
+        Assert.That(result.Value, Is.True);
+        Assert.That(trade.Notes, Is.EqualTo("Updated"));
     }
 }

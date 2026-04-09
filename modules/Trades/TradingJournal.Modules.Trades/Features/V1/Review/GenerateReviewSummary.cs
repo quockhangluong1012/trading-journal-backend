@@ -5,13 +5,13 @@ namespace TradingJournal.Modules.Trades.Features.V1.Review;
 
 public sealed class GenerateReviewSummary
 {
-    internal sealed record Request(
+    public sealed record Request(
         ReviewPeriodType PeriodType,
         DateTime PeriodStart,
         DateTime PeriodEnd,
         int UserId = 0) : ICommand<Result<bool>>;
 
-    internal sealed class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -27,7 +27,7 @@ public sealed class GenerateReviewSummary
         }
     }
 
-    internal sealed class Handler(ITradeDbContext context, IEventBus eventBus)
+    public sealed class Handler(ITradeDbContext context, IEventBus eventBus)
         : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)

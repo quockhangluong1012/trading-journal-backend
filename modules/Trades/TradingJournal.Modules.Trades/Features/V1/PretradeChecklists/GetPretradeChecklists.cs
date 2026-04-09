@@ -2,9 +2,9 @@
 
 public sealed class GetPretradeChecklists
 {
-    internal record Request() : ICommand<Result<IReadOnlyCollection<PretradeChecklistViewModel>>>;
+    public record Request() : ICommand<Result<IReadOnlyCollection<PretradeChecklistViewModel>>>;
 
-    internal sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<IReadOnlyCollection<PretradeChecklistViewModel>>>
+    public sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<IReadOnlyCollection<PretradeChecklistViewModel>>>
     {
         public async Task<Result<IReadOnlyCollection<PretradeChecklistViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {

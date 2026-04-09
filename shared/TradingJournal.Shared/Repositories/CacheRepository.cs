@@ -56,7 +56,7 @@ public class CacheRepository(HybridCache hybridCache) : ICacheRepository
     {
         T? result = await hybridCache.GetOrCreateAsync<T>(
             key,
-            async (entry) => default(T),
+            async (entry) => default(T)!,
             new HybridCacheEntryOptions
             {
                 Expiration = TimeSpan.FromSeconds(0),

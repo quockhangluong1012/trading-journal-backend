@@ -4,9 +4,9 @@ namespace TradingJournal.Modules.Trades.Features.V1.Dashboard;
 
 public sealed class GetWinLossRatio
 {
-    internal sealed record Request(DashboardFilter Filter, int UserId = 0) : IQuery<Result<IReadOnlyCollection<WinLossRatioViewModel>>>;
+    public sealed record Request(DashboardFilter Filter, int UserId = 0) : IQuery<Result<IReadOnlyCollection<WinLossRatioViewModel>>>;
 
-    internal sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<IReadOnlyCollection<WinLossRatioViewModel>>>
+    public sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<IReadOnlyCollection<WinLossRatioViewModel>>>
     {
         public async Task<Result<IReadOnlyCollection<WinLossRatioViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -34,7 +34,7 @@ public sealed class GetWinLossRatio
         }
     }
 
-    internal sealed record WinLossRatioViewModel(string Name, double Value);
+    public sealed record WinLossRatioViewModel(string Name, double Value);
 
     public sealed class Endpoint() : ICarterModule
     {
