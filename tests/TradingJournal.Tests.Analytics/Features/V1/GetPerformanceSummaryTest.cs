@@ -8,12 +8,11 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Tests.Analytics.Features.V1;
 
-[TestFixture]
 public class GetPerformanceSummaryValidatorTests
 {
     private static readonly GetPerformanceSummary.Validator _validator = new();
 
-    [Test]
+    [Fact]
     public void Should_Have_Error_When_Filter_Is_Invalid()
     {
         var request = new GetPerformanceSummary.Request((AnalyticsFilter)999);
@@ -21,7 +20,7 @@ public class GetPerformanceSummaryValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Filter);
     }
 
-    [Test]
+    [Fact]
     public void Should_Not_Have_Error_When_Filter_Is_Valid()
     {
         var request = new GetPerformanceSummary.Request(AnalyticsFilter.OneMonth);
@@ -30,21 +29,19 @@ public class GetPerformanceSummaryValidatorTests
     }
 }
 
-[TestFixture]
 public class GetPerformanceSummaryHandlerTests
 {
     private Mock<ITradeProvider> _tradeProviderMock = null!;
     private GetPerformanceSummary.Handler _handler = null!;
     private const int UserId = 1;
 
-    [SetUp]
-    public void SetUp()
+    public GetPerformanceSummaryHandlerTests()
     {
         _tradeProviderMock = new Mock<ITradeProvider>();
         _handler = new GetPerformanceSummary.Handler(_tradeProviderMock.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Valid_When_Trades_Exists()
     {
         // Arrange
@@ -62,14 +59,14 @@ public class GetPerformanceSummaryHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value.TotalClosed, Is.EqualTo(2));
-        Assert.That(result.Value.TotalPnl, Is.EqualTo(10));
-        Assert.That(result.Value.Wins, Is.EqualTo(1));
-        Assert.That(result.Value.Losses, Is.EqualTo(1));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value.TotalClosed);
+        Assert.Equal(10, result.Value.TotalPnl);
+        Assert.Equal(1, result.Value.Wins);
+        Assert.Equal(1, result.Value.Losses);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Zero_Values_When_No_Closed_Trades()
     {
         // Arrange
@@ -81,12 +78,12 @@ public class GetPerformanceSummaryHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value.TotalPnl, Is.EqualTo(0));
-        Assert.That(result.Value.TotalClosed, Is.EqualTo(0));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(0, result.Value.TotalPnl);
+        Assert.Equal(0, result.Value.TotalClosed);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Filters_By_User_Id()
     {
         // Arrange
@@ -104,7 +101,7 @@ public class GetPerformanceSummaryHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value.TotalPnl, Is.EqualTo(50)); // only user 1's trades
+        Assert.True(result.IsSuccess);
+        Assert.Equal(50, result.Value.TotalPnl); // only user 1's trades
     }
 }

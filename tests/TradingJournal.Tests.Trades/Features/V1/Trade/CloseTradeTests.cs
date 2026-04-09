@@ -1,5 +1,4 @@
 using TradingJournal.Tests.Trades.Helpers;
-using NUnit.Framework;
 using Moq;
 using Microsoft.EntityFrameworkCore;
 using TradingJournal.Messaging.Shared.Abstractions;
@@ -11,54 +10,51 @@ using SharedEnums = TradingJournal.Shared.Common.Enum;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Trade;
 
-[TestFixture]
 public sealed class CloseTradeValidatorTests
 {
     private CloseTrade.Validator _validator = null!;
-    [SetUp] public void SetUp() => _validator = new CloseTrade.Validator();
+    public CloseTradeValidatorTests() => _validator = new CloseTrade.Validator();
 
-    [Test] public void Validate_ValidRequest_ReturnsValid()
+    [Fact] public void Validate_ValidRequest_ReturnsValid()
     {
         var result = _validator.Validate(new CloseTrade.Request(1, 1.1, 50.0, "ok", false, 42));
-        Assert.That(result.IsValid, Is.True);
+        Assert.True(result.IsValid);
     }
-    [Test] public void Validate_TradeIdZero_ReturnsInvalid()
+    [Fact] public void Validate_TradeIdZero_ReturnsInvalid()
     {
         var r = _validator.Validate(new CloseTrade.Request(0, 1.1, 50.0, null, false, 42));
-        Assert.That(r.IsValid, Is.False);
-        Assert.That(r.Errors.Any(e => e.ErrorMessage.Contains("Trade ID")), Is.True);
+        Assert.False(r.IsValid);
+        Assert.True(r.Errors.Any(e => e.ErrorMessage.Contains("Trade ID")));
     }
-    [Test] public void Validate_ExitPriceZero_ReturnsInvalid()
+    [Fact] public void Validate_ExitPriceZero_ReturnsInvalid()
     {
         var r = _validator.Validate(new CloseTrade.Request(1, 0, 50.0, null, false, 42));
-        Assert.That(r.IsValid, Is.False);
-        Assert.That(r.Errors.Any(e => e.ErrorMessage.Contains("Exit price")), Is.True);
+        Assert.False(r.IsValid);
+        Assert.True(r.Errors.Any(e => e.ErrorMessage.Contains("Exit price")));
     }
 }
 
-[TestFixture]
 public sealed class CloseTradeHandlerTests
 {
     private Mock<ITradeDbContext> _ctx = null!;
     private Mock<IEventBus> eventBus = null!;
     private CloseTrade.Handler _handler = null!;
-    [SetUp]
-    public void SetUp()
+    public CloseTradeHandlerTests()
     {
         _ctx = new Mock<ITradeDbContext>();
         eventBus = new Mock<IEventBus>();
         _handler = new CloseTrade.Handler(_ctx.Object, eventBus.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_TradeNotFound_ReturnsFailure()
     {
         _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
         var result = await _handler.Handle(new CloseTrade.Request(1, 1.1, 50.0, null, false, 42), CancellationToken.None);
-        Assert.That(result.IsSuccess, Is.False);
+        Assert.False(result.IsSuccess);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_TradeFound_ClosesTradeAndPublishesEvent()
     {
         var trade = new TradeHistory { Id = 1, CreatedBy = 42, Status = SharedEnums.TradeStatus.Open };
@@ -66,10 +62,10 @@ public sealed class CloseTradeHandlerTests
         _ctx.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         eventBus.Setup(x => x.PublishAsync(It.IsAny<SummarizeTradingOrderEvent>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         var result = await _handler.Handle(new CloseTrade.Request(1, 1.1, 50.0, "ok", false, 42), CancellationToken.None);
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(trade.ExitPrice, Is.EqualTo(1.1));
-        Assert.That(trade.Status, Is.EqualTo(SharedEnums.TradeStatus.Closed));
-        Assert.That(trade.ClosedDate, Is.Not.Null);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1.1, trade.ExitPrice);
+        Assert.Equal(SharedEnums.TradeStatus.Closed, trade.Status);
+        Assert.NotNull(trade.ClosedDate);
         eventBus.Verify(x => x.PublishAsync(It.IsAny<SummarizeTradingOrderEvent>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

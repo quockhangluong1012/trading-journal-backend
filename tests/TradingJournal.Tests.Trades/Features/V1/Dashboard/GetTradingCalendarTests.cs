@@ -1,6 +1,4 @@
 using TradingJournal.Tests.Trades.Helpers;
-using NUnit.Framework;
-using FluentAssertions;
 using Moq;
 using TradingJournal.Modules.Trades.Features.V1.Dashboard;
 using TradingJournal.Modules.Trades.Infrastructure;
@@ -11,20 +9,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Dashboard;
 
-[TestFixture]
 public sealed class GetTradingCalendarHandlerTests
 {
     private Mock<ITradeDbContext> _ctx = null!;
     private GetTradingCalendar.Handler _handler = null!;
-    [SetUp] public void SetUp() { _ctx = new Mock<ITradeDbContext>(); _handler = new GetTradingCalendar.Handler(_ctx.Object); }
+    public GetTradingCalendarHandlerTests() { _ctx = new Mock<ITradeDbContext>(); _handler = new GetTradingCalendar.Handler(_ctx.Object); }
 
-    [Test] public async Task Handle_ReturnsCalendarResponse()
+    [Fact] public async Task Handle_ReturnsCalendarResponse()
     {
         _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
 
         var result = await _handler.Handle(new GetTradingCalendar.Request(1, 2024, null, DashboardFilter.OneMonth, 1), CancellationToken.None);
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Is.Not.Null);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
     }
 }
 

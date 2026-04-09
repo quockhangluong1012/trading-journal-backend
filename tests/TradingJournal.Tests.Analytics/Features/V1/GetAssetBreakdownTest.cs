@@ -7,12 +7,11 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Tests.Analytics.Features.V1;
 
-[TestFixture]
 public class GetAssetBreakdownValidatorTests
 {
     private static readonly GetAssetBreakdown.Validator _validator = new();
 
-    [Test]
+    [Fact]
     public void Should_Have_Error_When_Filter_Is_Invalid()
     {
         var request = new GetAssetBreakdown.Request((AnalyticsFilter)999);
@@ -20,7 +19,7 @@ public class GetAssetBreakdownValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Filter);
     }
 
-    [Test]
+    [Fact]
     public void Should_Not_Have_Error_When_Filter_Is_Valid()
     {
         var request = new GetAssetBreakdown.Request(AnalyticsFilter.OneYear);
@@ -29,21 +28,19 @@ public class GetAssetBreakdownValidatorTests
     }
 }
 
-[TestFixture]
 public class GetAssetBreakdownHandlerTests
 {
     private Mock<ITradeProvider> _tradeProviderMock = null!;
     private GetAssetBreakdown.Handler _handler = null!;
     private const int UserId = 1;
 
-    [SetUp]
-    public void SetUp()
+    public GetAssetBreakdownHandlerTests()
     {
         _tradeProviderMock = new Mock<ITradeProvider>();
         _handler = new GetAssetBreakdown.Handler(_tradeProviderMock.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Asset_Groups_When_Closed_Trades_Exist()
     {
         var trades = new List<TradeCacheDto>
@@ -56,13 +53,13 @@ public class GetAssetBreakdownHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Has.Count.EqualTo(2));
-        Assert.That(result.Value.Any(a => a.Asset == "EURUSD"), Is.True);
-        Assert.That(result.Value.Any(a => a.Asset == "BTC"), Is.True);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value.Count);
+        Assert.True(result.Value.Any(a => a.Asset == "EURUSD"));
+        Assert.True(result.Value.Any(a => a.Asset == "BTC"));
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Empty_When_No_Closed_Trades()
     {
         _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeCacheDto>());
@@ -70,7 +67,7 @@ public class GetAssetBreakdownHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Is.Empty);
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value);
     }
 }

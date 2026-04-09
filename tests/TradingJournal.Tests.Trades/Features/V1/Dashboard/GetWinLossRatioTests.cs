@@ -1,6 +1,4 @@
 using TradingJournal.Tests.Trades.Helpers;
-using NUnit.Framework;
-using FluentAssertions;
 using Moq;
 using TradingJournal.Modules.Trades.Features.V1.Dashboard;
 using TradingJournal.Modules.Trades.Infrastructure;
@@ -11,23 +9,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Dashboard;
 
-[TestFixture]
 public sealed class GetWinLossRatioHandlerTests
 {
     private Mock<ITradeDbContext> _ctx = null!;
     private GetWinLossRatio.Handler _handler = null!;
-    [SetUp] public void SetUp() { _ctx = new Mock<ITradeDbContext>(); _handler = new GetWinLossRatio.Handler(_ctx.Object); }
+    public GetWinLossRatioHandlerTests() { _ctx = new Mock<ITradeDbContext>(); _handler = new GetWinLossRatio.Handler(_ctx.Object); }
 
-    [Test] public async Task Handle_NoTrades_ReturnsEmptyList()
+    [Fact] public async Task Handle_NoTrades_ReturnsEmptyList()
     {
         _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
 
         var result = await _handler.Handle(new GetWinLossRatio.Request(DashboardFilter.OneMonth, 1), CancellationToken.None);
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Is.Empty);
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value);
     }
 
-    [Test] public async Task Handle_HasTrades_ReturnsWinLossCounts()
+    [Fact] public async Task Handle_HasTrades_ReturnsWinLossCounts()
     {
         var fromDate = DateTime.UtcNow.AddDays(-30);
         var trades = new List<TradeHistory>
@@ -38,7 +35,7 @@ public sealed class GetWinLossRatioHandlerTests
         _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(trades.AsQueryable()).Object);
 
         var result = await _handler.Handle(new GetWinLossRatio.Request(DashboardFilter.OneMonth, 1), CancellationToken.None);
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Has.Count.EqualTo(2));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value.Count);
     }
 }

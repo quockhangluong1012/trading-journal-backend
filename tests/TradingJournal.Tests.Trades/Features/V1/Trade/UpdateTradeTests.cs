@@ -1,6 +1,4 @@
 using TradingJournal.Tests.Trades.Helpers;
-using NUnit.Framework;
-using FluentAssertions;
 using Moq;
 using TradingJournal.Modules.Trades.Features.V1.Trade;
 using TradingJournal.Modules.Trades.Infrastructure;
@@ -12,13 +10,11 @@ using TradingJournal.Modules.Trades.Common.Enum;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Trade;
 
-[TestFixture]
 public sealed class UpdateTradeValidatorTests
 {
     private UpdateTrade.Validator _validator = null!;
 
-    [SetUp]
-    public void SetUp() => _validator = new UpdateTrade.Validator();
+    public UpdateTradeValidatorTests() => _validator = new UpdateTrade.Validator();
 
     private UpdateTrade.Request CreateValidRequest() =>
         new(1, "EURUSD", SharedEnums.PositionType.Long, 1.0850, 1.0900,
@@ -27,65 +23,63 @@ public sealed class UpdateTradeValidatorTests
             null, null, ConfidenceLevel.Neutral, null,
             [1], 1, null);
 
-    [Test]
+    [Fact]
     public void Validate_ValidRequest_ReturnsValid()
     {
         var result = _validator.Validate(CreateValidRequest());
-        Assert.That(result.IsValid, Is.True);
+        Assert.True(result.IsValid);
     }
 
-    [Test]
+    [Fact]
     public void Validate_NullAsset_ReturnsInvalid()
     {
         var request = CreateValidRequest() with { Asset = null! };
         var result = _validator.Validate(request);
-        Assert.That(result.IsValid, Is.False);
-        result.Errors.Should().Contain(e => e.ErrorMessage.Contains("Asset"));
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("Asset"));
     }
 
-    [Test]
+    [Fact]
     public void Validate_EmptyChecklists_ReturnsInvalid()
     {
         var request = CreateValidRequest() with { TradeHistoryChecklists = [] };
         var result = _validator.Validate(request);
-        Assert.That(result.IsValid, Is.False);
-        result.Errors.Should().Contain(e => e.ErrorMessage.Contains("checklist"));
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("checklist"));
     }
 
-    [Test]
+    [Fact]
     public void Validate_TradingZoneIdZero_ReturnsInvalid()
     {
         var request = CreateValidRequest() with { TradingZoneId = 0 };
         var result = _validator.Validate(request);
-        Assert.That(result.IsValid, Is.False);
-        result.Errors.Should().Contain(e => e.ErrorMessage.Contains("Trading Zone"));
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("Trading Zone"));
     }
 
-    [Test]
+    [Fact]
     public void Validate_InvalidPosition_ReturnsInvalid()
     {
         var request = CreateValidRequest() with { Position = (SharedEnums.PositionType)99 };
         var result = _validator.Validate(request);
-        Assert.That(result.IsValid, Is.False);
+        Assert.False(result.IsValid);
     }
 }
 
-[TestFixture]
 public sealed class UpdateTradeHandlerTests
 {
     private Mock<ITradeDbContext> _ctx = null!;
     private Mock<IWebHostEnvironment> _env = null!;
     private UpdateTrade.Handler _handler = null!;
 
-    [SetUp]
-    public void SetUp()
+    public UpdateTradeHandlerTests()
     {
         _ctx = new Mock<ITradeDbContext>();
         _env = new Mock<IWebHostEnvironment>();
         _handler = new UpdateTrade.Handler(_ctx.Object, _env.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_TradeNotFound_ReturnsFailure()
     {
         var request = new UpdateTrade.Request(
@@ -99,10 +93,10 @@ public sealed class UpdateTradeHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.False);
+        Assert.False(result.IsSuccess);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_TradeFound_UpdatesAndReturnsSuccess()
     {
         var request = new UpdateTrade.Request(
@@ -124,8 +118,8 @@ public sealed class UpdateTradeHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True, $"Error: {result.Errors?.FirstOrDefault()?.Description}");
-        Assert.That(result.Value, Is.True);
-        Assert.That(trade.Notes, Is.EqualTo("Updated"));
+        Assert.True(result.IsSuccess, $"Error: {result.Errors?.FirstOrDefault()?.Description}");
+        Assert.True(result.Value);
+        Assert.Equal("Updated", trade.Notes);
     }
 }

@@ -6,22 +6,20 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Tests.Psychology.Features.V1.Dashboard;
 
-[TestFixture]
 public class GetEmotionDistributionHandlerTests
 {
     private Mock<ITradeProvider> _tradeProviderMock = null!;
     private Mock<IEmotionTagProvider> _emotionTagProviderMock = null!;
     private GetEmotionDistribution.Handler _handler = null!;
 
-    [SetUp]
-    public void SetUp()
+    public GetEmotionDistributionHandlerTests()
     {
         _tradeProviderMock = new Mock<ITradeProvider>();
         _emotionTagProviderMock = new Mock<IEmotionTagProvider>();
         _handler = new GetEmotionDistribution.Handler(_tradeProviderMock.Object, _emotionTagProviderMock.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Positive_Negative_Neutral_Distribution()
     {
         var trades = new List<TradeCacheDto>
@@ -44,23 +42,23 @@ public class GetEmotionDistributionHandlerTests
         var request = new GetEmotionDistribution.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Has.Count.EqualTo(3));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(3, result.Value.Count);
 
         var positive = result.Value.First(x => x.Name == "Positive");
-        Assert.That(positive.Value, Is.EqualTo(2));
-        Assert.That(positive.Fill, Is.EqualTo("#22c55e"));
+        Assert.Equal(2, positive.Value);
+        Assert.Equal("#22c55e", positive.Fill);
 
         var negative = result.Value.First(x => x.Name == "Negative");
-        Assert.That(negative.Value, Is.EqualTo(1));
-        Assert.That(negative.Fill, Is.EqualTo("#ef4444"));
+        Assert.Equal(1, negative.Value);
+        Assert.Equal("#ef4444", negative.Fill);
 
         var neutral = result.Value.First(x => x.Name == "Neutral");
-        Assert.That(neutral.Value, Is.EqualTo(1));
-        Assert.That(neutral.Fill, Is.EqualTo("#3b82f6"));
+        Assert.Equal(1, neutral.Value);
+        Assert.Equal("#3b82f6", neutral.Fill);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Empty_List_When_No_Trades()
     {
         _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeCacheDto>());
@@ -69,11 +67,11 @@ public class GetEmotionDistributionHandlerTests
         var request = new GetEmotionDistribution.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Is.Empty);
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Only_Includes_Categories_With_Trades()
     {
         var trades = new List<TradeCacheDto>
@@ -93,13 +91,13 @@ public class GetEmotionDistributionHandlerTests
         var request = new GetEmotionDistribution.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Has.Count.EqualTo(1));
-        Assert.That(result.Value[0].Name, Is.EqualTo("Positive"));
-        Assert.That(result.Value[0].Value, Is.EqualTo(1));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value.Count);
+        Assert.Equal("Positive", result.Value[0].Name);
+        Assert.Equal(1, result.Value[0].Value);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Trades_Without_EmotionTags_Are_Ignored()
     {
         var trades = new List<TradeCacheDto>
@@ -118,11 +116,11 @@ public class GetEmotionDistributionHandlerTests
         var request = new GetEmotionDistribution.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Is.Empty);
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Ignores_Other_Users_Trades_When_No_Matches()
     {
         var trades = new List<TradeCacheDto>
@@ -140,8 +138,8 @@ public class GetEmotionDistributionHandlerTests
         var request = new GetEmotionDistribution.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Is.Empty);
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value);
     }
 }
 

@@ -7,27 +7,25 @@ using TradingJournal.Modules.Psychology.Infrastructure.Persistance;
 
 namespace TradingJournal.Tests.Psychology.Features.V1.Psychology;
 
-[TestFixture]
 public class UpdatePsychologyJournalHandlerTests
 {
     private Mock<IPsychologyDbContext> _contextMock = null!;
     private UpdatePsychologyJournal.Handler _handler = null!;
-    [SetUp]
-    public void SetUp()
+    public UpdatePsychologyJournalHandlerTests()
     {
         _contextMock = new Mock<IPsychologyDbContext>();
         _handler = new UpdatePsychologyJournal.Handler(_contextMock.Object);
     }
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Failure_When_Journal_Not_Found()
     {
         var dbSet = new List<PsychologyJournal>().BuildMockDbSet();
         _contextMock.Setup(x => x.PsychologyJournals).Returns(dbSet.Object);
         var request = new UpdatePsychologyJournal.Request(99, DateTime.Now, "Notes", new List<int>(), 1, OverallMood.Neutral, ConfidentLevel.None);
         var result = await _handler.Handle(request, CancellationToken.None);
-        Assert.That(result.IsFailure, Is.True);
+        Assert.True(result.IsFailure);
     }
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Success_When_Found()
     {
         var journal = new PsychologyJournal { Id = 1, Date = DateTime.Now, CreatedBy = 1, PsychologyJournalEmotions = new List<PsychologyJournalEmotion>() };
@@ -37,7 +35,7 @@ public class UpdatePsychologyJournalHandlerTests
         _contextMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         var request = new UpdatePsychologyJournal.Request(1, DateTime.Now, "Updated", new List<int> { 1 }, 1, OverallMood.Good, ConfidentLevel.High);
         var result = await _handler.Handle(request, CancellationToken.None);
-        Assert.That(result.IsSuccess, Is.True);
+        Assert.True(result.IsSuccess);
         _contextMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

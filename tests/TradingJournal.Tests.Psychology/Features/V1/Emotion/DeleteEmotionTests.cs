@@ -8,12 +8,11 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Tests.Psychology.Features.V1.Emotion;
 
-[TestFixture]
 public class DeleteEmotionValidatorTests
 {
     private static readonly DeleteEmotion.Validator _validator = new();
 
-    [Test]
+    [Fact]
     public void Should_Have_Error_When_Id_Is_Zero()
     {
         var request = new DeleteEmotion.Request(0);
@@ -22,7 +21,7 @@ public class DeleteEmotionValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Id);
     }
 
-    [Test]
+    [Fact]
     public void Should_Not_Have_Error_When_Id_Is_Valid()
     {
         var request = new DeleteEmotion.Request(1);
@@ -31,22 +30,20 @@ public class DeleteEmotionValidatorTests
     }
 }
 
-[TestFixture]
 public class DeleteEmotionHandlerTests
 {
     private Mock<IPsychologyDbContext> _contextMock = null!;
     private Mock<ICacheRepository> _cacheMock = null!;
     private DeleteEmotion.Handler _handler = null!;
 
-    [SetUp]
-    public void SetUp()
+    public DeleteEmotionHandlerTests()
     {
         _contextMock = new Mock<IPsychologyDbContext>();
         _cacheMock = new Mock<ICacheRepository>();
         _handler = new DeleteEmotion.Handler(_contextMock.Object, _cacheMock.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Failure_When_Emotion_Not_Found()
     {
         var dbSet = new List<EmotionTag>().BuildMockDbSet();
@@ -55,10 +52,10 @@ public class DeleteEmotionHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsFailure, Is.True);
+        Assert.True(result.IsFailure);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Success_And_Removes_Emotion_When_Found()
     {
         var emotion = new EmotionTag { Id = 1, Name = "Happy" };
@@ -68,7 +65,7 @@ public class DeleteEmotionHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
+        Assert.True(result.IsSuccess);
         _contextMock.Verify(x => x.EmotionTags.Remove(emotion), Times.Once);
         _contextMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

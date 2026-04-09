@@ -7,12 +7,11 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Tests.Analytics.Features.V1;
 
-[TestFixture]
 public class GetInsightsValidatorTests
 {
     private static readonly GetInsights.Validator _validator = new();
 
-    [Test]
+    [Fact]
     public void Should_Have_Error_When_Filter_Is_Invalid()
     {
         var request = new GetInsights.Request((AnalyticsFilter)999);
@@ -20,7 +19,7 @@ public class GetInsightsValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Filter);
     }
 
-    [Test]
+    [Fact]
     public void Should_Not_Have_Error_When_Filter_Is_Valid()
     {
         var request = new GetInsights.Request(AnalyticsFilter.AllTime);
@@ -29,21 +28,19 @@ public class GetInsightsValidatorTests
     }
 }
 
-[TestFixture]
 public class GetInsightsHandlerTests
 {
     private Mock<ITradeProvider> _tradeProviderMock = null!;
     private GetInsights.Handler _handler = null!;
     private const int UserId = 1;
 
-    [SetUp]
-    public void SetUp()
+    public GetInsightsHandlerTests()
     {
         _tradeProviderMock = new Mock<ITradeProvider>();
         _handler = new GetInsights.Handler(_tradeProviderMock.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Keep_Trading_Insight_When_No_Closed_Trades()
     {
         _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeCacheDto>());
@@ -51,12 +48,12 @@ public class GetInsightsHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Has.Count.EqualTo(1));
-        Assert.That(result.Value.First().Type, Is.EqualTo("info"));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value.Count);
+        Assert.Equal("info", result.Value.First().Type);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Multiple_Insights_When_Profit_Factor_High()
     {
         var now = DateTime.UtcNow;
@@ -71,7 +68,7 @@ public class GetInsightsHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Has.Count.GreaterThan(1));
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value.Count > 1);
     }
 }

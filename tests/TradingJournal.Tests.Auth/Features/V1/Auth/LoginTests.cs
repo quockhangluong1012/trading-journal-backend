@@ -7,12 +7,11 @@ using TradingJournal.Modules.Auth.Infrastructure;
 
 namespace TradingJournal.Tests.Auth.Features.V1.Auth;
 
-[TestFixture]
 public class LoginValidatorTests
 {
     private static readonly Login.Validator _validator = new();
 
-    [Test]
+    [Fact]
     public void Should_Have_Error_When_Email_Is_Empty()
     {
         var request = new Login.Request("", "password123");
@@ -20,7 +19,7 @@ public class LoginValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Email);
     }
 
-    [Test]
+    [Fact]
     public void Should_Have_Error_When_Password_Is_Empty()
     {
         var request = new Login.Request("test@example.com", "");
@@ -28,7 +27,7 @@ public class LoginValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Password);
     }
 
-    [Test]
+    [Fact]
     public void Should_Not_Have_Error_When_Both_Are_Filled()
     {
         var request = new Login.Request("test@example.com", "password123");
@@ -38,14 +37,12 @@ public class LoginValidatorTests
     }
 }
 
-[TestFixture]
 public class LoginHandlerTests
 {
     private Mock<IAuthDbContext> _contextMock = null!;
     private Login.Handler _handler = null!;
 
-    [SetUp]
-    public void SetUp()
+    public LoginHandlerTests()
     {
         _contextMock = new Mock<IAuthDbContext>();
         var inMemorySettings = new System.Collections.Generic.Dictionary<string, string?> {
@@ -60,7 +57,7 @@ public class LoginHandlerTests
         _handler = new Login.Handler(_contextMock.Object, configuration);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Success_When_Credentials_Are_Valid()
     {
         // Arrange
@@ -76,13 +73,13 @@ public class LoginHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value.Email, Is.EqualTo("test@example.com"));
-        Assert.That(result.Value.FullName, Is.EqualTo("Test User"));
-        Assert.That(result.Value.Token, Is.Not.Null.And.Not.Empty);
+        Assert.True(result.IsSuccess);
+        Assert.Equal("test@example.com", result.Value.Email);
+        Assert.Equal("Test User", result.Value.FullName);
+        Assert.NotNull(result.Value.Token); Assert.NotEmpty(result.Value.Token);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Failure_When_User_Not_Found()
     {
         // Arrange
@@ -98,10 +95,10 @@ public class LoginHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.IsFailure, Is.True);
+        Assert.True(result.IsFailure);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Failure_When_Password_Is_Wrong()
     {
         // Arrange
@@ -117,10 +114,10 @@ public class LoginHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.IsFailure, Is.True);
+        Assert.True(result.IsFailure);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Failure_When_Account_Is_Disabled()
     {
         // Arrange
@@ -137,6 +134,6 @@ public class LoginHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.IsFailure, Is.True);
+        Assert.True(result.IsFailure);
     }
 }

@@ -249,14 +249,14 @@ internal sealed class OrderMatchingEngine(ILogger<OrderMatchingEngine> logger) :
             {
                 // Long SL: price must drop below SL → gap if Bid Open < SL
                 BacktestOrderSide.Long => candle.Open <= sl.Value,
-                // Short SL: price must rise above SL → gap if Bid Open > SL
-                BacktestOrderSide.Short => candle.Open >= sl.Value,
+                // Short SL: price must rise above SL → gap if Ask Open >= SL
+                BacktestOrderSide.Short => askOpen >= sl.Value,
                 _ => false
             };
 
             if (slGapped)
             {
-                decimal intendedPrice = position.Side == BacktestOrderSide.Long ? sl.Value : sl.Value + spread;
+                decimal intendedPrice = sl.Value;
                 decimal slippage = effectiveOpen - intendedPrice;
                 decimal pnl = CalculateRealizedPnlStatic(position.Side, filledPrice, effectiveOpen, position.PositionSize);
 
@@ -272,13 +272,14 @@ internal sealed class OrderMatchingEngine(ILogger<OrderMatchingEngine> logger) :
                 // Long TP: price must rise above TP → gap if Bid Open > TP
                 BacktestOrderSide.Long => candle.Open >= tp.Value,
                 // Short TP: price must drop below TP → gap if Bid Open < TP
-                BacktestOrderSide.Short => candle.Open <= tp.Value,
+                // Short TP: price must drop below TP → gap if Ask Open <= TP
+                BacktestOrderSide.Short => askOpen <= tp.Value,
                 _ => false
             };
 
             if (tpGapped)
             {
-                decimal intendedPrice = position.Side == BacktestOrderSide.Long ? tp.Value : tp.Value + spread;
+                decimal intendedPrice = tp.Value;
                 decimal slippage = effectiveOpen - intendedPrice;
                 decimal pnl = CalculateRealizedPnlStatic(position.Side, filledPrice, effectiveOpen, position.PositionSize);
 
@@ -365,10 +366,10 @@ internal sealed class OrderMatchingEngine(ILogger<OrderMatchingEngine> logger) :
                     break;
 
                 case BacktestOrderSide.Short:
-                    // Short TP: Does Bid Low reach the TP level?
-                    if (tp.HasValue && candle.Low <= tp.Value)
+                    // Short TP: Does Ask Low reach the TP level?
+                    if (tp.HasValue && askLow <= tp.Value)
                     {
-                        decimal exitPrice = tp.Value + spread;
+                        decimal exitPrice = tp.Value;
                         decimal pnl = CalculateRealizedPnlStatic(position.Side, filledPrice, exitPrice, position.PositionSize);
                         return new OrderClose(position.Id, exitPrice, pnl, "TP Hit", candle.Timestamp);
                     }
@@ -391,10 +392,10 @@ internal sealed class OrderMatchingEngine(ILogger<OrderMatchingEngine> logger) :
                     break;
 
                 case BacktestOrderSide.Short:
-                    // Short SL: Does Bid High reach the SL level?
-                    if (sl.HasValue && candle.High >= sl.Value)
+                    // Short SL: Does Ask High reach the SL level?
+                    if (sl.HasValue && askHigh >= sl.Value)
                     {
-                        decimal exitPrice = sl.Value + spread;
+                        decimal exitPrice = sl.Value;
                         decimal pnl = CalculateRealizedPnlStatic(position.Side, filledPrice, exitPrice, position.PositionSize);
                         return new OrderClose(position.Id, exitPrice, pnl, "SL Hit", candle.Timestamp);
                     }

@@ -6,20 +6,18 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Tests.Psychology.Features.V1.Emotion;
 
-[TestFixture]
 public class GetEmotionsHandlerTests
 {
     private Mock<IEmotionTagProvider> _providerMock = null!;
     private GetEmotions.Handler _handler = null!;
 
-    [SetUp]
-    public void SetUp()
+    public GetEmotionsHandlerTests()
     {
         _providerMock = new Mock<IEmotionTagProvider>();
         _handler = new GetEmotions.Handler(_providerMock.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Emotions_When_Data_Exists()
     {
         var emotions = new List<TradingJournal.Shared.Dtos.EmotionTagCacheDto>
@@ -32,11 +30,11 @@ public class GetEmotionsHandlerTests
         var request = new GetEmotions.Request();
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Has.Count.EqualTo(2));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value.Count);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_NotFound_When_No_Data()
     {
         _providerMock.Setup(x => x.GetEmotionTagsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradingJournal.Shared.Dtos.EmotionTagCacheDto>());
@@ -44,7 +42,7 @@ public class GetEmotionsHandlerTests
         var request = new GetEmotions.Request();
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsFailure, Is.True);
+        Assert.True(result.IsFailure);
     }
 }
 

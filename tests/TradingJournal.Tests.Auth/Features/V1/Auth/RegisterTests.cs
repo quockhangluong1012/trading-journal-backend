@@ -7,12 +7,11 @@ using TradingJournal.Modules.Auth.Infrastructure;
 
 namespace TradingJournal.Tests.Auth.Features.V1.Auth;
 
-[TestFixture]
 public class RegisterValidatorTests
 {
     private static readonly Register.Validator _validator = new();
 
-    [Test]
+    [Fact]
     public void Should_Have_Error_When_Email_Is_Empty()
     {
         var request = new Register.Request("", "password123", "Test User");
@@ -20,7 +19,7 @@ public class RegisterValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Email);
     }
 
-    [Test]
+    [Fact]
     public void Should_Have_Error_When_Email_Is_Invalid()
     {
         var request = new Register.Request("not-an-email", "password123", "Test User");
@@ -28,7 +27,7 @@ public class RegisterValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Email);
     }
 
-    [Test]
+    [Fact]
     public void Should_Have_Error_When_Password_Is_Short()
     {
         var request = new Register.Request("test@example.com", "short", "Test User");
@@ -36,7 +35,7 @@ public class RegisterValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Password);
     }
 
-    [Test]
+    [Fact]
     public void Should_Have_Error_When_Password_Is_Empty()
     {
         var request = new Register.Request("test@example.com", "", "Test User");
@@ -44,7 +43,7 @@ public class RegisterValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Password);
     }
 
-    [Test]
+    [Fact]
     public void Should_Have_Error_When_FullName_Is_Empty()
     {
         var request = new Register.Request("test@example.com", "password123", "");
@@ -52,7 +51,7 @@ public class RegisterValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.FullName);
     }
 
-    [Test]
+    [Fact]
     public void Should_Not_Have_Error_When_All_Fields_Are_Valid()
     {
         var request = new Register.Request("test@example.com", "password123", "Test User");
@@ -63,20 +62,18 @@ public class RegisterValidatorTests
     }
 }
 
-[TestFixture]
 public class RegisterHandlerTests
 {
     private Mock<IAuthDbContext> _contextMock = null!;
     private Register.Handler _handler = null!;
 
-    [SetUp]
-    public void SetUp()
+    public RegisterHandlerTests()
     {
         _contextMock = new Mock<IAuthDbContext>();
         _handler = new Register.Handler(_contextMock.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Success_When_Email_Is_New()
     {
         // Arrange
@@ -93,12 +90,12 @@ public class RegisterHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.IsSuccess, Is.True);
+        Assert.True(result.IsSuccess);
         _contextMock.Verify(x => x.Users.AddAsync(It.Is<User>(u => u.Email == "new@example.com"), It.IsAny<CancellationToken>()), Times.Once);
         _contextMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Failure_When_Email_Already_Exists()
     {
         // Arrange
@@ -115,7 +112,7 @@ public class RegisterHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.IsFailure, Is.True);
+        Assert.True(result.IsFailure);
         _contextMock.Verify(x => x.Users.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

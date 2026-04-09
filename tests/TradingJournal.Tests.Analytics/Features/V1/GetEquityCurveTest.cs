@@ -7,12 +7,11 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Tests.Analytics.Features.V1;
 
-[TestFixture]
 public class GetEquityCurveValidatorTests
 {
     private static readonly GetEquityCurve.Validator _validator = new();
 
-    [Test]
+    [Fact]
     public void Should_Have_Error_When_Filter_Is_Invalid()
     {
         var request = new GetEquityCurve.Request((AnalyticsFilter)999);
@@ -20,7 +19,7 @@ public class GetEquityCurveValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Filter);
     }
 
-    [Test]
+    [Fact]
     public void Should_Not_Have_Error_When_Filter_Is_Valid()
     {
         var request = new GetEquityCurve.Request(AnalyticsFilter.OneWeek);
@@ -29,21 +28,19 @@ public class GetEquityCurveValidatorTests
     }
 }
 
-[TestFixture]
 public class GetEquityCurveHandlerTests
 {
     private Mock<ITradeProvider> _tradeProviderMock = null!;
     private GetEquityCurve.Handler _handler = null!;
     private const int UserId = 1;
 
-    [SetUp]
-    public void SetUp()
+    public GetEquityCurveHandlerTests()
     {
         _tradeProviderMock = new Mock<ITradeProvider>();
         _handler = new GetEquityCurve.Handler(_tradeProviderMock.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Equity_Points_When_Closed_Trades_Exist()
     {
         // Arrange
@@ -61,14 +58,14 @@ public class GetEquityCurveHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Has.Count.EqualTo(2));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value.Count);
         // Equity is cumulative: 50, then 50+30=80
-        Assert.That(result.Value.ElementAt(0).Profit, Is.EqualTo(50));
-        Assert.That(result.Value.ElementAt(1).Profit, Is.EqualTo(80));
+        Assert.Equal(50, result.Value.ElementAt(0).Profit);
+        Assert.Equal(80, result.Value.ElementAt(1).Profit);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Empty_When_No_Closed_Trades()
     {
         // Arrange
@@ -79,7 +76,7 @@ public class GetEquityCurveHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Is.Empty);
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value);
     }
 }

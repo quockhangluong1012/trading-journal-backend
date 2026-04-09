@@ -6,46 +6,43 @@ using TradingJournal.Modules.Psychology.Infrastructure.Persistance;
 
 namespace TradingJournal.Tests.Psychology.Features.V1.Psychology;
 
-[TestFixture]
 public class DeletePsychologyJournalValidatorTests
 {
     private static readonly DeletePsychologyJournal.Validator _validator = new();
-    [Test]
+    [Fact]
     public void Should_Not_Have_Error_When_Valid()
     {
         var request = new DeletePsychologyJournal.Request { Id = 1, UserId = 1 };
         var result = _validator.Validate(request);
-        Assert.That(result.IsValid, Is.True);
+        Assert.True(result.IsValid);
     }
 }
 
-[TestFixture]
 public class DeletePsychologyJournalHandlerTests
 {
     private Mock<IPsychologyDbContext> _contextMock = null!;
     private DeletePsychologyJournal.Handler _handler = null!;
-    [SetUp]
-    public void SetUp()
+    public DeletePsychologyJournalHandlerTests()
     {
         _contextMock = new Mock<IPsychologyDbContext>();
         _handler = new DeletePsychologyJournal.Handler(_contextMock.Object);
     }
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Failure_When_Journal_Not_Found()
     {
         var dbSet = new List<PsychologyJournal>().BuildMockDbSet();
         _contextMock.Setup(x => x.PsychologyJournals).Returns(dbSet.Object);
         var result = await _handler.Handle(new DeletePsychologyJournal.Request { Id = 99, UserId = 1 }, CancellationToken.None);
-        Assert.That(result.IsFailure, Is.True);
+        Assert.True(result.IsFailure);
     }
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Success_And_Removes_When_Found()
     {
         var journal = new PsychologyJournal { Id = 1, Date = DateTime.Now, CreatedBy = 1 };
         var dbSet = new List<PsychologyJournal> { journal }.BuildMockDbSet();
         _contextMock.Setup(x => x.PsychologyJournals).Returns(dbSet.Object);
         var result = await _handler.Handle(new DeletePsychologyJournal.Request { Id = 1, UserId = 1 }, CancellationToken.None);
-        Assert.That(result.IsSuccess, Is.True);
+        Assert.True(result.IsSuccess);
         _contextMock.Verify(x => x.PsychologyJournals.Remove(journal), Times.Once);
         _contextMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

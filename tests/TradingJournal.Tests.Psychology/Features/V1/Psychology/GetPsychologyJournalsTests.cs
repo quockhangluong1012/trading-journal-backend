@@ -7,22 +7,20 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Tests.Psychology.Features.V1.Psychology;
 
-[TestFixture]
 public class GetPsychologyJournalsHandlerTests
 {
     private Mock<IPsychologyDbContext> _contextMock = null!;
     private Mock<ICacheRepository> _cacheMock = null!;
     private GetPsychologyJournals.Handler _handler = null!;
 
-    [SetUp]
-    public void SetUp()
+    public GetPsychologyJournalsHandlerTests()
     {
         _contextMock = new Mock<IPsychologyDbContext>();
         _cacheMock = new Mock<ICacheRepository>();
         _handler = new GetPsychologyJournals.Handler(_contextMock.Object, _cacheMock.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Empty_When_No_Journals()
     {
         _contextMock.Setup(x => x.PsychologyJournals).Returns(new System.Collections.Generic.List<PsychologyJournal>().BuildMockDbSet<PsychologyJournal>().Object);
@@ -30,8 +28,8 @@ public class GetPsychologyJournalsHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value.TotalItems, Is.EqualTo(0));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(0, result.Value.TotalItems);
     }
 }
 

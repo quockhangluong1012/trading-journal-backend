@@ -7,12 +7,11 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Tests.Analytics.Features.V1;
 
-[TestFixture]
 public class GetMonthlyReturnsValidatorTests
 {
     private static readonly GetMonthlyReturns.Validator _validator = new();
 
-    [Test]
+    [Fact]
     public void Should_Have_Error_When_Filter_Is_Invalid()
     {
         var request = new GetMonthlyReturns.Request((AnalyticsFilter)999);
@@ -20,7 +19,7 @@ public class GetMonthlyReturnsValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.Filter);
     }
 
-    [Test]
+    [Fact]
     public void Should_Not_Have_Error_When_Filter_Is_Valid()
     {
         var request = new GetMonthlyReturns.Request(AnalyticsFilter.OneMonth);
@@ -29,21 +28,19 @@ public class GetMonthlyReturnsValidatorTests
     }
 }
 
-[TestFixture]
 public class GetMonthlyReturnsHandlerTests
 {
     private Mock<ITradeProvider> _tradeProviderMock = null!;
     private GetMonthlyReturns.Handler _handler = null!;
     private const int UserId = 1;
 
-    [SetUp]
-    public void SetUp()
+    public GetMonthlyReturnsHandlerTests()
     {
         _tradeProviderMock = new Mock<ITradeProvider>();
         _handler = new GetMonthlyReturns.Handler(_tradeProviderMock.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Monthly_Pnl_When_Closed_Trades_Exist()
     {
         // Arrange
@@ -59,11 +56,11 @@ public class GetMonthlyReturnsHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Has.Count.EqualTo(2));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value.Count);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Empty_When_No_Closed_Trades()
     {
         _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeCacheDto>());
@@ -71,7 +68,7 @@ public class GetMonthlyReturnsHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Is.Empty);
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value);
     }
 }

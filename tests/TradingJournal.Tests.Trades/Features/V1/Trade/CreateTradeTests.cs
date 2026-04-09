@@ -1,5 +1,4 @@
 using TradingJournal.Tests.Trades.Helpers;
-using NUnit.Framework;
 using Moq;
 using TradingJournal.Modules.Trades.Features.V1.Trade;
 using TradingJournal.Modules.Trades.Infrastructure;
@@ -10,13 +9,11 @@ using SharedEnums = TradingJournal.Shared.Common.Enum;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Trade;
 
-[TestFixture]
 public sealed class CreateTradeValidatorTests
 {
     private CreateTrade.Validator _validator = null!;
 
-    [SetUp]
-    public void SetUp()
+    public CreateTradeValidatorTests()
     {
         _validator = new CreateTrade.Validator();
     }
@@ -45,105 +42,104 @@ public sealed class CreateTradeValidatorTests
             TradingZoneId: 1,
             TradingSessionId: null);
 
-    [Test]
+    [Fact]
     public void Validate_ValidRequest_ReturnsValid()
     {
         var request = CreateValidRequest();
         var result = _validator.Validate(request);
-        Assert.That(result.IsValid, Is.True);
+        Assert.True(result.IsValid);
     }
 
-    [Test]
+    [Fact]
     public void Validate_NullAsset_ReturnsInvalid()
     {
         var request = CreateValidRequest() with { Asset = null! };
         var result = _validator.Validate(request);
-        Assert.That(result.IsValid, Is.False);
-        Assert.That(result.Errors.Any(e => e.ErrorMessage.Contains("Asset")), Is.True);
+        Assert.False(result.IsValid);
+        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("Asset")));
     }
 
-    [Test]
+    [Fact]
     public void Validate_InvalidPosition_ReturnsInvalid()
     {
         var request = CreateValidRequest() with { Position = (SharedEnums.PositionType)99 };
         var result = _validator.Validate(request);
-        Assert.That(result.IsValid, Is.False);
-        Assert.That(result.Errors.Any(e => e.ErrorMessage.Contains("Position")), Is.True);
+        Assert.False(result.IsValid);
+        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("Position")));
     }
 
-    [Test]
+    [Fact]
     public void Validate_EntryPriceZero_ReturnsInvalid()
     {
         var request = CreateValidRequest() with { EntryPrice = 0 };
         var result = _validator.Validate(request);
-        Assert.That(result.IsValid, Is.False);
-        Assert.That(result.Errors.Any(e => e.ErrorMessage.Contains("EntryPrice")), Is.True);
+        Assert.False(result.IsValid);
+        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("EntryPrice")));
     }
 
-    [Test]
+    [Fact]
     public void Validate_EntryPriceNegative_ReturnsInvalid()
     {
         var request = CreateValidRequest() with { EntryPrice = -1 };
         var result = _validator.Validate(request);
-        Assert.That(result.IsValid, Is.False);
+        Assert.False(result.IsValid);
     }
 
-    [Test]
+    [Fact]
     public void Validate_TargetTier1Zero_ReturnsInvalid()
     {
         var request = CreateValidRequest() with { TargetTier1 = 0 };
         var result = _validator.Validate(request);
-        Assert.That(result.IsValid, Is.False);
-        Assert.That(result.Errors.Any(e => e.ErrorMessage.Contains("Target Tier")), Is.True);
+        Assert.False(result.IsValid);
+        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("Target Tier")));
     }
 
-    [Test]
+    [Fact]
     public void Validate_StopLossZero_ReturnsInvalid()
     {
         var request = CreateValidRequest() with { StopLoss = 0 };
         var result = _validator.Validate(request);
-        Assert.That(result.IsValid, Is.False);
-        Assert.That(result.Errors.Any(e => e.ErrorMessage.Contains("Stop Loss")), Is.True);
+        Assert.False(result.IsValid);
+        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("Stop Loss")));
     }
 
-    [Test]
+    [Fact]
     public void Validate_NullNotes_ReturnsInvalid()
     {
         var request = CreateValidRequest() with { Notes = null! };
         var result = _validator.Validate(request);
-        Assert.That(result.IsValid, Is.False);
-        Assert.That(result.Errors.Any(e => e.ErrorMessage.Contains("notes")), Is.True);
+        Assert.False(result.IsValid);
+        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("notes")));
     }
 
-    [Test]
+    [Fact]
     public void Validate_EmptyCheckoutLists_ReturnsInvalid()
     {
         var request = CreateValidRequest() with { TradeHistoryChecklists = [] };
         var result = _validator.Validate(request);
-        Assert.That(result.IsValid, Is.False);
-        Assert.That(result.Errors.Any(e => e.ErrorMessage.Contains("checklist")), Is.True);
+        Assert.False(result.IsValid);
+        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("checklist")));
     }
 
-    [Test]
+    [Fact]
     public void Validate_TradingZoneIdZero_ReturnsInvalid()
     {
         var request = CreateValidRequest() with { TradingZoneId = 0 };
         var result = _validator.Validate(request);
-        Assert.That(result.IsValid, Is.False);
-        Assert.That(result.Errors.Any(e => e.ErrorMessage.Contains("Trading Zone")), Is.True);
+        Assert.False(result.IsValid);
+        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("Trading Zone")));
     }
 
-    [Test]
+    [Fact]
     public void Validate_InvalidStatus_ReturnsInvalid()
     {
         var request = CreateValidRequest() with { Status = (SharedEnums.TradeStatus)99 };
         var result = _validator.Validate(request);
-        Assert.That(result.IsValid, Is.False);
-        Assert.That(result.Errors.Any(e => e.ErrorMessage.Contains("Status")), Is.True);
+        Assert.False(result.IsValid);
+        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("Status")));
     }
 }
 
-[TestFixture]
 public sealed class CreateTradeHandlerTests
 {
     private Mock<ITradeDbContext> _contextMock = null!;
@@ -151,8 +147,7 @@ public sealed class CreateTradeHandlerTests
     private Mock<IHttpContextAccessor> _httpContextAccessorMock = null!;
     private CreateTrade.Handler _handler = null!;
 
-    [SetUp]
-    public void SetUp()
+    public CreateTradeHandlerTests()
     {
         _contextMock = new Mock<ITradeDbContext>();
         _envMock = new Mock<IWebHostEnvironment>();
@@ -160,7 +155,7 @@ public sealed class CreateTradeHandlerTests
         _handler = new CreateTrade.Handler(_contextMock.Object, _envMock.Object, _httpContextAccessorMock.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ValidRequest_CreatesTradeAndReturnsSuccess()
     {
         var request = new CreateTrade.Request(
@@ -183,14 +178,14 @@ public sealed class CreateTradeHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Is.GreaterThanOrEqualTo(0));
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value >= 0);
         _contextMock.Verify(c => c.BeginTransaction(), Times.Once);
         _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         _contextMock.Verify(c => c.CommitTransaction(), Times.Once);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_SaveChangesReturnsZero_ReturnsFailure()
     {
         var request = new CreateTrade.Request(
@@ -213,10 +208,10 @@ public sealed class CreateTradeHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.False);
+        Assert.False(result.IsSuccess);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ExceptionOccurs_RollbacksAndReturnsFailure()
     {
         var request = new CreateTrade.Request(
@@ -240,8 +235,8 @@ public sealed class CreateTradeHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Errors.Any(e => e.Description.Contains("DB error")), Is.True);
+        Assert.False(result.IsSuccess);
+        Assert.True(result.Errors.Any(e => e.Description.Contains("DB error")));
         _contextMock.Verify(c => c.RollbackTransaction(), Times.Once);
     }
 }

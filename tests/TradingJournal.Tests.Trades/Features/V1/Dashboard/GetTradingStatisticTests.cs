@@ -1,6 +1,4 @@
 using TradingJournal.Tests.Trades.Helpers;
-using NUnit.Framework;
-using FluentAssertions;
 using Moq;
 using TradingJournal.Modules.Trades.Features.V1.Dashboard;
 using TradingJournal.Modules.Trades.Infrastructure;
@@ -11,23 +9,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Dashboard;
 
-[TestFixture]
 public sealed class GetTradeStatisticsHandlerTests
 {
     private Mock<ITradeDbContext> _ctx = null!;
     private GetTradingStatistic.Handler _handler = null!;
-    [SetUp] public void SetUp() { _ctx = new Mock<ITradeDbContext>(); _handler = new GetTradingStatistic.Handler(_ctx.Object); }
+    public GetTradeStatisticsHandlerTests() { _ctx = new Mock<ITradeDbContext>(); _handler = new GetTradingStatistic.Handler(_ctx.Object); }
 
-    [Test] public async Task Handle_NoTrades_ReturnsEmptyStatistic()
+    [Fact] public async Task Handle_NoTrades_ReturnsEmptyStatistic()
     {
         _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
 
         var result = await _handler.Handle(new GetTradingStatistic.Request(DashboardFilter.OneMonth, 1), CancellationToken.None);
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value!.TotalTrades, Is.EqualTo(0));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(0, result.Value!.TotalTrades);
     }
 
-    [Test] public async Task Handle_HasTrades_CalculatesStatistics()
+    [Fact] public async Task Handle_HasTrades_CalculatesStatistics()
     {
         var trades = new List<TradeHistory>
         {
@@ -38,8 +35,8 @@ public sealed class GetTradeStatisticsHandlerTests
         _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(trades.AsQueryable()).Object);
 
         var result = await _handler.Handle(new GetTradingStatistic.Request(DashboardFilter.OneMonth, 1), CancellationToken.None);
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value!.TotalTrades, Is.EqualTo(3));
-        Assert.That(result.Value.OpenPositions, Is.EqualTo(1));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(3, result.Value!.TotalTrades);
+        Assert.Equal(1, result.Value.OpenPositions);
     }
 }

@@ -8,12 +8,11 @@ using TradingJournal.Modules.Psychology.Infrastructure.Persistance;
 
 namespace TradingJournal.Tests.Psychology.Features.V1.Psychology;
 
-[TestFixture]
 public class CreateTodayPsychologyValidatorTests
 {
     private static readonly CreateTodayPsychology.Validator _validator = new();
 
-    [Test]
+    [Fact]
     public void Should_Have_Error_When_ConfidentLevel_Is_Invalid()
     {
         var request = new CreateTodayPsychology.Request(new DateTime(2024, 6, 1), "", [1], 0, OverallMood.Neutral, (ConfidentLevel)99);
@@ -21,7 +20,7 @@ public class CreateTodayPsychologyValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.ConfidentLevel);
     }
 
-    [Test]
+    [Fact]
     public void Should_Not_Have_Error_When_Valid()
     {
         var request = new CreateTodayPsychology.Request(new DateTime(2024, 6, 1), "Notes", [1], 0, OverallMood.Neutral, ConfidentLevel.Neutral);
@@ -30,20 +29,18 @@ public class CreateTodayPsychologyValidatorTests
     }
 }
 
-[TestFixture]
 public class CreateTodayPsychologyHandlerTests
 {
     private Mock<IPsychologyDbContext> _contextMock = null!;
     private CreateTodayPsychology.Handler _handler = null!;
 
-    [SetUp]
-    public void SetUp()
+    public CreateTodayPsychologyHandlerTests()
     {
         _contextMock = new Mock<IPsychologyDbContext>();
         _handler = new CreateTodayPsychology.Handler(_contextMock.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Success_When_Creating_New_Journal()
     {
         var existingJournal = new PsychologyJournal { Id = 1, Date = new DateTime(2024, 5, 31) };
@@ -57,7 +54,7 @@ public class CreateTodayPsychologyHandlerTests
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
+        Assert.True(result.IsSuccess);
         _contextMock.Verify(x => x.PsychologyJournals.AddAsync(It.IsAny<PsychologyJournal>(), It.IsAny<CancellationToken>()), Times.Once);
         _contextMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

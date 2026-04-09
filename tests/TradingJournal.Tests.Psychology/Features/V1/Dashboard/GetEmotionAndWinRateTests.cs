@@ -6,22 +6,20 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Tests.Psychology.Features.V1.Dashboard;
 
-[TestFixture]
 public class GetEmotionAndWinRateHandlerTests
 {
     private Mock<ITradeProvider> _tradeProviderMock = null!;
     private Mock<IEmotionTagProvider> _emotionTagProviderMock = null!;
     private GetEmotionAndWinRate.Handler _handler = null!;
 
-    [SetUp]
-    public void SetUp()
+    public GetEmotionAndWinRateHandlerTests()
     {
         _tradeProviderMock = new Mock<ITradeProvider>();
         _emotionTagProviderMock = new Mock<IEmotionTagProvider>();
         _handler = new GetEmotionAndWinRate.Handler(_tradeProviderMock.Object, _emotionTagProviderMock.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Success_With_WinRate_Calculation()
     {
         var trades = new List<TradeCacheDto>
@@ -42,20 +40,20 @@ public class GetEmotionAndWinRateHandlerTests
         var request = new GetEmotionAndWinRate.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Has.Count.EqualTo(2));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value.Count);
 
         var confident = result.Value.First(x => x.Id == 1);
-        Assert.That(confident.WinRate, Is.EqualTo(50));
-        Assert.That(confident.Total, Is.EqualTo(2));
-        Assert.That(confident.Name, Is.EqualTo("Confident"));
+        Assert.Equal(50, confident.WinRate);
+        Assert.Equal(2, confident.Total);
+        Assert.Equal("Confident", confident.Name);
 
         var nervous = result.Value.First(x => x.Id == 2);
-        Assert.That(nervous.WinRate, Is.EqualTo(100));
-        Assert.That(nervous.Total, Is.EqualTo(1));
+        Assert.Equal(100, nervous.WinRate);
+        Assert.Equal(1, nervous.Total);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Empty_List_When_No_Closed_Trades()
     {
         var trades = new List<TradeCacheDto>
@@ -73,11 +71,11 @@ public class GetEmotionAndWinRateHandlerTests
         var request = new GetEmotionAndWinRate.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Is.Empty);
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Empty_List_When_No_Trades()
     {
         _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeCacheDto>());
@@ -86,11 +84,11 @@ public class GetEmotionAndWinRateHandlerTests
         var request = new GetEmotionAndWinRate.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Is.Empty);
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Excludes_Trades_Belonging_To_Other_Users()
     {
         var trades = new List<TradeCacheDto>
@@ -109,13 +107,13 @@ public class GetEmotionAndWinRateHandlerTests
         var request = new GetEmotionAndWinRate.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Has.Count.EqualTo(1));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value.Count);
         var item = result.Value[0];
-        Assert.That(item.Total, Is.EqualTo(1));
+        Assert.Equal(1, item.Total);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Treats_Zero_Pnl_As_Non_Win()
     {
         var trades = new List<TradeCacheDto>
@@ -134,9 +132,9 @@ public class GetEmotionAndWinRateHandlerTests
         var request = new GetEmotionAndWinRate.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Has.Count.EqualTo(1));
-        Assert.That(result.Value[0].WinRate, Is.EqualTo(50));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value.Count);
+        Assert.Equal(50, result.Value[0].WinRate);
     }
 }
 

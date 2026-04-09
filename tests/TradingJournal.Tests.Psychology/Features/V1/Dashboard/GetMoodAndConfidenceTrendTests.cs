@@ -9,22 +9,20 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Tests.Psychology.Features.V1.Dashboard;
 
-[TestFixture]
 public class GetMoodAndConfidenceTrendHandlerTests
 {
     private Mock<IPsychologyDbContext> _contextMock = null!;
     private Mock<ICacheRepository> _cacheMock = null!;
     private GetMoodAndConfidenceTrend.Handler _handler = null!;
 
-    [SetUp]
-    public void SetUp()
+    public GetMoodAndConfidenceTrendHandlerTests()
     {
         _contextMock = new Mock<IPsychologyDbContext>();
         _cacheMock = new Mock<ICacheRepository>();
         _handler = new GetMoodAndConfidenceTrend.Handler(_contextMock.Object, _cacheMock.Object);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Empty_List_When_Cache_Returns_Null()
     {
         _cacheMock
@@ -38,11 +36,11 @@ public class GetMoodAndConfidenceTrendHandlerTests
         var request = new GetMoodAndConfidenceTrend.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Is.Empty);
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Trend_When_Data_Exists()
     {
         var cachedResult = new List<MoodAndConfidenceTrendViewModel>
@@ -63,14 +61,14 @@ public class GetMoodAndConfidenceTrendHandlerTests
         var request = new GetMoodAndConfidenceTrend.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Has.Count.EqualTo(3));
-        Assert.That(result.Value[0].Date, Is.EqualTo(new DateTime(2026, 1, 1)));
-        Assert.That(result.Value[0].Mood, Is.EqualTo((int)OverallMood.Good));
-        Assert.That(result.Value[0].Confidence, Is.EqualTo((int)TradingJournal.Modules.Psychology.Domain.ConfidentLevel.High));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(3, result.Value.Count);
+        Assert.Equal(new DateTime(2026, 1, 1), result.Value[0].Date);
+        Assert.Equal((int)OverallMood.Good, result.Value[0].Mood);
+        Assert.Equal((int)TradingJournal.Modules.Psychology.Domain.ConfidentLevel.High, result.Value[0].Confidence);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_Returns_Empty_When_No_Journals()
     {
         var emptyResult = new List<MoodAndConfidenceTrendViewModel>();
@@ -84,9 +82,7 @@ public class GetMoodAndConfidenceTrendHandlerTests
         var request = new GetMoodAndConfidenceTrend.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Value, Is.Empty);
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value);
     }
 }
-
-
