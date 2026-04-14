@@ -5,7 +5,6 @@ using TradingJournal.Modules.Trades.Infrastructure;
 using TradingJournal.Modules.Trades.Domain;
 using Microsoft.AspNetCore.Hosting;
 using SharedEnums = TradingJournal.Shared.Common.Enum;
-using Microsoft.EntityFrameworkCore;
 using TradingJournal.Modules.Trades.Common.Enum;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Trade;

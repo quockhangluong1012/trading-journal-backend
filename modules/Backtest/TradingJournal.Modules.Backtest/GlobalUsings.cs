@@ -14,5 +14,3 @@ global using TradingJournal.Modules.Backtest.Domain;
 global using TradingJournal.Modules.Backtest.Infrastructure;
 global using TradingJournal.Modules.Backtest.Services;
 global using Carter;
-global using TradingJournal.Shared.Interfaces;
-global using TradingJournal.Shared.Common.Enum;

@@ -1,8 +1,6 @@
 using TradingJournal.Tests.Trades.Helpers;
 using FluentValidation.TestHelper;
-using Microsoft.EntityFrameworkCore;
 using Moq;
-using System.Linq.Expressions;
 using TradingJournal.Modules.Trades.Domain;
 using TradingJournal.Modules.Trades.Features.V1.ChecklistModels;
 using TradingJournal.Modules.Trades.Infrastructure;

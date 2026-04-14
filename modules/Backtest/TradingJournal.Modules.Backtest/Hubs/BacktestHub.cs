@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TradingJournal.Modules.Backtest.Dto;
-using TradingJournal.Modules.Backtest.Services;
 
 namespace TradingJournal.Modules.Backtest.Hubs;
 

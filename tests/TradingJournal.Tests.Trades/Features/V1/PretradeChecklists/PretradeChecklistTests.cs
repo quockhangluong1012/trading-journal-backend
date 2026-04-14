@@ -4,7 +4,6 @@ using TradingJournal.Modules.Trades.Common.Enum;
 using TradingJournal.Modules.Trades.Domain;
 using TradingJournal.Modules.Trades.Features.V1.PretradeChecklists;
 using TradingJournal.Modules.Trades.Infrastructure;
-using TradingJournal.Shared.Interfaces;
 using TradingJournal.Tests.Trades.Helpers;
 
 namespace TradingJournal.Tests.Trades.Features.V1.PretradeChecklists;

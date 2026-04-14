@@ -1,5 +1,4 @@
 using TradingJournal.Modules.Backtest.Dto;
-using TradingJournal.Modules.Backtest.Services;
 
 namespace TradingJournal.Modules.Backtest.Features.V1.Playback;
 

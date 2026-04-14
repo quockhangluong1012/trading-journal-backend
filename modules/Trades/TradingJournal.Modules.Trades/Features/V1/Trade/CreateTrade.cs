@@ -1,5 +1,6 @@
-﻿using Mapster;
+using Mapster;
 using Microsoft.AspNetCore.Hosting;
+using TradingJournal.Shared.Extensions;
 
 namespace TradingJournal.Modules.Trades.Features.V1.Trade;
 
@@ -98,6 +99,12 @@ public sealed class CreateTrade
 
                 TradeHistory tradeHistory = request.Adapt<TradeHistory>();
 
+                int userId = httpContextAccessor.HttpContext?.User.GetCurrentUserId() ?? 0;
+                if (userId > 0)
+                {
+                    await EvaluateDisciplineRules(tradeHistory, userId, context, cancellationToken);
+                }
+
                 tradeHistory.TradeTechnicalAnalysisTags = [];
                 tradeHistory.TradeScreenShots = [];
                 tradeHistory.TradeEmotionTags = [];
@@ -185,6 +192,64 @@ public sealed class CreateTrade
             }
 
             return $"/screenshots/{fileName}";
+        }
+
+        private async Task EvaluateDisciplineRules(TradeHistory tradeHistory, int userId, ITradeDbContext dbContext, CancellationToken cancellationToken)
+        {
+            var profile = await dbContext.TradingProfiles.AsNoTracking().FirstOrDefaultAsync(x => x.CreatedBy == userId, cancellationToken);
+            
+            if (profile == null || !profile.IsDisciplineEnabled) return;
+
+            List<string> brokenReasons = [];
+
+            // Max Trades Per Day
+            if (profile.MaxTradesPerDay.HasValue && profile.MaxTradesPerDay > 0)
+            {
+                var today = DateTime.UtcNow.Date;
+                var tradesToday = await dbContext.TradeHistories
+                    .AsNoTracking()
+                    .CountAsync(x => x.CreatedBy == userId && x.CreatedDate >= today, cancellationToken);
+
+                if (tradesToday >= profile.MaxTradesPerDay.Value)
+                {
+                    brokenReasons.Add($"Exceeded max trades per day ({profile.MaxTradesPerDay.Value}).");
+                }
+            }
+
+            // Max Consecutive Losses
+            if (profile.MaxConsecutiveLosses.HasValue && profile.MaxConsecutiveLosses > 0)
+            {
+                var recentTrades = await dbContext.TradeHistories
+                    .AsNoTracking()
+                    .Where(x => x.CreatedBy == userId && x.Status == TradeStatus.Closed)
+                    .OrderByDescending(x => x.ClosedDate ?? x.CreatedDate)
+                    .Take(profile.MaxConsecutiveLosses.Value + 1)
+                    .ToListAsync(cancellationToken);
+
+                int consecutiveLosses = 0;
+                foreach (var trade in recentTrades)
+                {
+                    if (trade.Pnl < 0 || trade.TradingResult == "Loss")
+                    {
+                        consecutiveLosses++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                if (consecutiveLosses >= profile.MaxConsecutiveLosses.Value)
+                {
+                    brokenReasons.Add($"Exceeded max consecutive losses ({profile.MaxConsecutiveLosses.Value}).");
+                }
+            }
+
+            if (brokenReasons.Count > 0)
+            {
+                tradeHistory.IsRuleBroken = true;
+                tradeHistory.RuleBreakReason = string.Join("; ", brokenReasons);
+            }
         }
     }
 

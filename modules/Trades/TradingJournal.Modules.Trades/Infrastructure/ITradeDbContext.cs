@@ -27,6 +27,8 @@ public interface ITradeDbContext
 
     DbSet<TradingReview> TradingReviews { get; set; }
 
+    DbSet<TradingProfile> TradingProfiles { get; set; }
+
     Task BeginTransaction();
 
     Task CommitTransaction();

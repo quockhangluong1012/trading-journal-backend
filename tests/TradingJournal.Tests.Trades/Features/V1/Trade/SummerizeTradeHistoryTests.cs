@@ -5,7 +5,6 @@ using TradingJournal.Modules.Trades.Infrastructure;
 using TradingJournal.Modules.Trades.Services;
 using TradingJournal.Modules.Trades.Dto;
 using TradingJournal.Modules.Trades.Domain;
-using Microsoft.EntityFrameworkCore;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Trade;
 

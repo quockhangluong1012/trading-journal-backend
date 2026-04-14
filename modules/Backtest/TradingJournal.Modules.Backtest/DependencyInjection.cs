@@ -3,7 +3,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TradingJournal.Modules.Backtest.EventHandlers;
 using TradingJournal.Modules.Backtest.Events;
-using TradingJournal.Modules.Backtest.Services;
 using TradingJournal.Shared.Behaviors;
 using TradingJournal.Shared.MediatR;
 

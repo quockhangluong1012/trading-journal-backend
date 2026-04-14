@@ -1,7 +1,5 @@
 using Moq;
-using TradingJournal.Modules.Psychology.Domain;
 using TradingJournal.Modules.Psychology.Features.V1.Emotion;
-using TradingJournal.Modules.Psychology.Infrastructure.Persistance;
 using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Tests.Psychology.Features.V1.Emotion;

@@ -1,5 +1,4 @@
 using FluentValidation.TestHelper;
-using Microsoft.EntityFrameworkCore;
 using Moq;
 using TradingJournal.Modules.Auth;
 using TradingJournal.Modules.Auth.Features.V1.Auth;

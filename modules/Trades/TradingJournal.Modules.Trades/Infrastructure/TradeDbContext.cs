@@ -33,6 +33,8 @@ internal sealed class TradeDbContext(DbContextOptions<TradeDbContext> options, I
 
     public DbSet<TradingReview> TradingReviews { get; set; } = null!;
 
+    public DbSet<TradingProfile> TradingProfiles { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

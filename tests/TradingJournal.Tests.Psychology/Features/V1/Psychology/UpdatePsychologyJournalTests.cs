@@ -1,5 +1,4 @@
 using Moq;
-using MockQueryable.Moq;
 using TradingJournal.Modules.Psychology.Domain;
 using TradingJournal.Modules.Psychology.Common.Enum;
 using TradingJournal.Modules.Psychology.Features.V1.Psychology;

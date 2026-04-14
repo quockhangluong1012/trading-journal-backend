@@ -48,6 +48,10 @@ public sealed class TradeHistory : EntityBase<int>
 
     public double StopLoss { get; set; }
 
+    public bool IsRuleBroken { get; set; } = false;
+
+    public string? RuleBreakReason { get; set; }
+
     #endregion
 
     #region Psychology & Emotions

@@ -1,10 +1,6 @@
 using Moq;
-using TradingJournal.Modules.Psychology.Domain;
 using TradingJournal.Modules.Psychology.Features.V1.Dashboard;
-using TradingJournal.Modules.Psychology.Infrastructure.Persistance;
 using TradingJournal.Shared.Interfaces;
-using TradingJournal.Modules.Psychology.ViewModel;
-using MockQueryable.Moq;
 
 namespace TradingJournal.Tests.Psychology.Features.V1.Dashboard;
 

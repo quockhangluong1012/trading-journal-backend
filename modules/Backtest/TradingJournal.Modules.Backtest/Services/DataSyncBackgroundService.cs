@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using TradingJournal.Modules.Backtest.Services;
 
 namespace TradingJournal.Modules.Backtest.Services;
 

@@ -3,7 +3,6 @@ using FluentValidation.TestHelper;
 using Moq;
 using TradingJournal.Modules.Trades.Domain;
 using TradingJournal.Modules.Trades.Features.V1.ChecklistModels;
-using TradingJournal.Shared.Dtos;
 using TradingJournal.Modules.Trades.Infrastructure;
 
 namespace TradingJournal.Tests.Trades.Features.V1.ChecklistModels;

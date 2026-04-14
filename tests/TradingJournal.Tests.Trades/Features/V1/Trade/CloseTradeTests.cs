@@ -1,6 +1,5 @@
 using TradingJournal.Tests.Trades.Helpers;
 using Moq;
-using Microsoft.EntityFrameworkCore;
 using TradingJournal.Messaging.Shared.Abstractions;
 using TradingJournal.Modules.Trades.Features.V1.Trade;
 using TradingJournal.Modules.Trades.Infrastructure;

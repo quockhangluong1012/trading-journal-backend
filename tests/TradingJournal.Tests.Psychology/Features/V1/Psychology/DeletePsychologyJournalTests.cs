@@ -1,4 +1,3 @@
-using FluentValidation.TestHelper;
 using Moq;
 using TradingJournal.Modules.Psychology.Domain;
 using TradingJournal.Modules.Psychology.Features.V1.Psychology;

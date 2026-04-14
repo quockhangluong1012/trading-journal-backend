@@ -90,8 +90,9 @@ internal sealed class PlaybackEngine(
         // ── Persist fills ──
         foreach (OrderFill fill in result.Fills)
         {
-            BacktestOrder order = pendingOrders.FirstOrDefault(o => o.Id == fill.OrderId)
-                ?? activePositions.First(o => o.Id == fill.OrderId);
+            BacktestOrder? order = await context.BacktestOrders.FindAsync([fill.OrderId], cancellationToken);
+            if (order is null) continue;
+
             order.Status = BacktestOrderStatus.Active;
             order.FilledPrice = fill.FilledPrice;
             order.FilledAt = fill.FilledAt;
@@ -100,8 +101,8 @@ internal sealed class PlaybackEngine(
         // ── Persist closes ──
         foreach (OrderClose close in result.Closes)
         {
-            BacktestOrder order = activePositions.Concat(pendingOrders)
-                .First(o => o.Id == close.OrderId);
+            BacktestOrder? order = await context.BacktestOrders.FindAsync([close.OrderId], cancellationToken);
+            if (order is null) continue;
 
             order.Status = BacktestOrderStatus.Closed;
             order.ExitPrice = close.ExitPrice;
@@ -232,9 +233,18 @@ internal sealed class PlaybackEngine(
             HashSet<int> closedOrderIds = m1Result.Closes.Select(c => c.OrderId).ToHashSet();
             activePositions.RemoveAll(p => closedOrderIds.Contains(p.Id));
 
-            // Remove filled orders from pending (they moved to active during EvaluateCandle)
+            // Move filled orders from pending to active (so next M1 candles evaluate their TP/SL)
             HashSet<int> filledOrderIds = m1Result.Fills.Select(f => f.OrderId).ToHashSet();
+            var newlyFilled = pendingOrders.Where(p => filledOrderIds.Contains(p.Id)).ToList();
             pendingOrders.RemoveAll(p => filledOrderIds.Contains(p.Id));
+
+            foreach (var filled in newlyFilled)
+            {
+                var fillData = m1Result.Fills.First(f => f.OrderId == filled.Id);
+                filled.FilledPrice = fillData.FilledPrice;
+                filled.FilledAt = fillData.FilledAt;
+                activePositions.Add(filled);
+            }
         }
 
         return new MatchingResult(allFills, allCloses, unrealizedPnl, equity, isLiquidated);

@@ -1,9 +1,5 @@
-using FluentValidation.TestHelper;
-using Moq;
 using TradingJournal.Modules.Analytics.Features.V1;
 using TradingJournal.Shared.Common.Enum;
-using TradingJournal.Shared.Dtos;
-using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Tests.Analytics.Features.V1;
 

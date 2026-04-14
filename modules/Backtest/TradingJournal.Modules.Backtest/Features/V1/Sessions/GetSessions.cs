@@ -1,5 +1,4 @@
 using TradingJournal.Modules.Backtest.Dto;
-using TradingJournal.Shared.Extensions;
 
 namespace TradingJournal.Modules.Backtest.Features.V1.Sessions;
 

@@ -1,7 +1,5 @@
 using FluentValidation.TestHelper;
-using Microsoft.EntityFrameworkCore;
 using Moq;
-using System.Text;
 using TradingJournal.Modules.Trades.Common.Enum;
 using TradingJournal.Modules.Trades.Domain;
 using TradingJournal.Modules.Trades.Features.V1.Review;

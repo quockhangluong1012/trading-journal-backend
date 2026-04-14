@@ -7,7 +7,7 @@ namespace TradingJournal.Modules.Auth.Features.V1.Auth;
 
 public sealed class StaffLogin
 {
-    internal sealed record Request(string Email, string Password) : IQuery<Result<AuthResponse>>;
+    internal sealed record Request(string Email, string Password, bool RememberMe = false) : IQuery<Result<AuthResponse>>;
 
     internal sealed record AuthResponse(string Token, string Email, string FullName, DateTime Expiry, bool IsAdmin);
 
@@ -44,18 +44,19 @@ public sealed class StaffLogin
                 return Result<AuthResponse>.Failure(Error.Create("Admin account is disabled."));
             }
 
-            string token = GenerateJwtToken(staff, configuration);
-            DateTime expiry = DateTime.UtcNow.AddMinutes(configuration.GetValue<int>("Jwt:ExpiryMinutes", 60));
+            string token = GenerateJwtToken(staff, configuration, request.RememberMe);
+            int expiryMinutes = request.RememberMe ? 30 * 24 * 60 : configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
+            DateTime expiry = DateTime.UtcNow.AddMinutes(expiryMinutes);
 
             return Result<AuthResponse>.Success(new AuthResponse(token, staff.Email, staff.FullName, expiry, true));
         }
 
-        private static string GenerateJwtToken(Staff staff, IConfiguration configuration)
+        private static string GenerateJwtToken(Staff staff, IConfiguration configuration, bool rememberMe)
         {
             string secret = configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT Secret is not configured.");
             string issuer = configuration["Jwt:Issuer"] ?? "TradingJournal";
             string audience = configuration["Jwt:Audience"] ?? "TradingJournal";
-            int expiryMinutes = configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
+            int expiryMinutes = rememberMe ? 30 * 24 * 60 : configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
 
             SymmetricSecurityKey key = new(Encoding.UTF8.GetBytes(secret));
             SigningCredentials creds = new(key, SecurityAlgorithms.HmacSha256);

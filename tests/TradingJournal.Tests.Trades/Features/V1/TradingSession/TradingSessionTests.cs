@@ -1,5 +1,4 @@
 using FluentValidation.TestHelper;
-using Microsoft.EntityFrameworkCore;
 using Moq;
 using TradingJournal.Modules.Trades.Domain;
 using TradingJournal.Modules.Trades.Features.V1.TradingSession;

@@ -1,5 +1,4 @@
 using FluentValidation.TestHelper;
-using Microsoft.EntityFrameworkCore;
 using Moq;
 using TradingJournal.Modules.Psychology.Domain;
 using TradingJournal.Modules.Psychology.Features.V1.Emotion;

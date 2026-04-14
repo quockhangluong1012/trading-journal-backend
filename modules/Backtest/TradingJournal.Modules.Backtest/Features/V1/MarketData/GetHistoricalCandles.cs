@@ -33,11 +33,12 @@ public sealed class GetHistoricalCandles
             // Use the asset symbol as stored (already normalized when asset was created)
             string symbol = session.Asset;
 
+            DateTime fromDate = session.StartDate;
+
             // CRITICAL: Only return candles up to the current simulated timestamp
-            // to prevent look-ahead bias.
-            // Uses CandleAggregationService to compute higher timeframes from M1 data.
+            // to prevent look-ahead bias. We load from session.StartDate to start the chart empty.
             List<OhlcvCandle> aggregated = await aggregationService.AggregateAsync(
-                symbol, tf, session.StartDate, session.CurrentTimestamp, cancellationToken);
+                symbol, tf, fromDate, session.CurrentTimestamp, cancellationToken);
 
             List<CandleDto> candles = aggregated
                 .Skip((request.Page - 1) * request.PageSize)
