@@ -27,6 +27,18 @@ public sealed class BacktestSession : EntityBase<int>
     public int PlaybackSpeed { get; set; } = 1;
 
     /// <summary>
+    /// Leverage applied to trades in this session (e.g., 50 means 50:1).
+    /// </summary>
+    public int Leverage { get; set; } = 50;
+
+    /// <summary>
+    /// The percentage of margin that must be maintained. Liquidation triggers if Equity drops below Maintenance Margin (Trade Value / Leverage * Percentage).
+    /// E.g. 0.50 means 50%.
+    /// </summary>
+    [Column(TypeName = "decimal(5,4)")]
+    public decimal MaintenanceMarginPercentage { get; set; } = 0.50m;
+
+    /// <summary>
     /// Spread in absolute price units applied during simulation.
     /// Calculated at session creation: DefaultSpreadPips * PipSize.
     /// OHLC data represents BID prices; Ask = Bid + Spread.

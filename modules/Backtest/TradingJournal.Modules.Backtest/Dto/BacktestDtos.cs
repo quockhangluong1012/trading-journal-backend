@@ -25,6 +25,8 @@ public record SessionDetailDto(
     DateTime CurrentTimestamp,
     string ActiveTimeframe,
     int PlaybackSpeed,
+    int Leverage,
+    decimal MaintenanceMarginPercentage,
     bool IsDataReady,
     int TotalOrders,
     int OpenPositions,

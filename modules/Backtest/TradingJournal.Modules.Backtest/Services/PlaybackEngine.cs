@@ -84,7 +84,7 @@ internal sealed class PlaybackEngine(
         {
             // No orders to evaluate, or already on M1 — use the display candle directly
             result = matchingEngine.EvaluateCandle(
-                displayCandle, pendingOrders, activePositions, session.CurrentBalance, session.Spread);
+                displayCandle, pendingOrders, activePositions, session.CurrentBalance, session.Spread, session.Leverage, session.MaintenanceMarginPercentage);
         }
 
         // ── Persist fills ──
@@ -176,31 +176,16 @@ internal sealed class PlaybackEngine(
         int bucketMinutes = (int)session.ActiveTimeframe;
         DateTime periodStart = displayCandle.Timestamp;
         DateTime periodEnd = periodStart.AddMinutes(bucketMinutes);
-
-        // Load all M1 candles within this display candle's period
-        List<OhlcvCandle> m1Candles = await context.OhlcvCandles
+        
+        // Stream M1 candles within this display candle's period to save memory
+        IAsyncEnumerable<OhlcvCandle> m1Candles = context.OhlcvCandles
             .Where(c => c.Asset == session.Asset && c.Timeframe == Timeframe.M1
                         && c.Timestamp >= periodStart && c.Timestamp < periodEnd)
             .OrderBy(c => c.Timestamp)
             .AsNoTracking()
-            .ToListAsync(cancellationToken);
+            .AsAsyncEnumerable();
 
-        if (m1Candles.Count == 0)
-        {
-            // Fallback: no M1 data available, use the display candle directly
-            logger.LogWarning(
-                "No M1 data for intra-bar evaluation of {Asset} at {Timestamp}. Falling back to display candle.",
-                session.Asset, displayCandle.Timestamp);
-            return matchingEngine.EvaluateCandle(
-                displayCandle, pendingOrders, activePositions, session.CurrentBalance, session.Spread);
-        }
-
-        logger.LogDebug(
-            "Intra-bar evaluation: {M1Count} M1 candles for {Timeframe} candle at {Timestamp}",
-            m1Candles.Count, session.ActiveTimeframe, displayCandle.Timestamp);
-
-        // Iterate through each M1 candle chronologically
-        // Accumulate all fills/closes across the M1 candles
+        bool hasM1Data = false;
         List<OrderFill> allFills = [];
         List<OrderClose> allCloses = [];
         decimal balance = session.CurrentBalance;
@@ -208,8 +193,10 @@ internal sealed class PlaybackEngine(
         decimal equity = balance;
         bool isLiquidated = false;
 
-        foreach (OhlcvCandle m1Candle in m1Candles)
+        await foreach (OhlcvCandle m1Candle in m1Candles.WithCancellation(cancellationToken))
         {
+            hasM1Data = true;
+
             if (isLiquidated) break;
 
             // Only evaluate if there are still pending/active orders
@@ -217,7 +204,7 @@ internal sealed class PlaybackEngine(
                 break;
 
             MatchingResult m1Result = matchingEngine.EvaluateCandle(
-                m1Candle, pendingOrders, activePositions, balance, session.Spread);
+                m1Candle, pendingOrders, activePositions, balance, session.Spread, session.Leverage, session.MaintenanceMarginPercentage);
 
             // Collect results
             allFills.AddRange(m1Result.Fills);
@@ -245,6 +232,16 @@ internal sealed class PlaybackEngine(
                 filled.FilledAt = fillData.FilledAt;
                 activePositions.Add(filled);
             }
+        }
+
+        if (!hasM1Data)
+        {
+            // Fallback: no M1 data available, use the display candle directly
+            logger.LogWarning(
+                "No M1 data for intra-bar evaluation of {Asset} at {Timestamp}. Falling back to display candle.",
+                session.Asset, displayCandle.Timestamp);
+            return matchingEngine.EvaluateCandle(
+                displayCandle, pendingOrders, activePositions, session.CurrentBalance, session.Spread, session.Leverage, session.MaintenanceMarginPercentage);
         }
 
         return new MatchingResult(allFills, allCloses, unrealizedPnl, equity, isLiquidated);

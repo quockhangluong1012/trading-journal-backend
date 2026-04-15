@@ -9,7 +9,8 @@ public sealed class CreateSession
         string Asset,
         DateTime StartDate,
         DateTime? EndDate,
-        decimal InitialBalance) : ICommand<Result<int>>
+        decimal InitialBalance,
+        int Leverage = 50) : ICommand<Result<int>>
     {
         public int UserId { get; set; }
     }
@@ -34,6 +35,10 @@ public sealed class CreateSession
                 .Cascade(CascadeMode.Stop)
                 .GreaterThan(0).WithErrorCode(nameof(HttpStatusCode.BadRequest))
                 .WithMessage("Initial balance must be greater than 0.");
+
+            RuleFor(x => x.Leverage)
+                .GreaterThan(0).WithErrorCode(nameof(HttpStatusCode.BadRequest))
+                .WithMessage("Leverage must be greater than 0.");
         }
     }
 
@@ -63,6 +68,8 @@ public sealed class CreateSession
                     EndDate = endDate,
                     InitialBalance = request.InitialBalance,
                     CurrentBalance = request.InitialBalance,
+                    Leverage = request.Leverage,
+                    MaintenanceMarginPercentage = 0.50m,
                     Status = BacktestSessionStatus.InProgress,
                     CurrentTimestamp = request.StartDate,
                     ActiveTimeframe = Timeframe.M15,

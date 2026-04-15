@@ -42,5 +42,7 @@ public interface IOrderMatchingEngine
         List<BacktestOrder> pendingOrders,
         List<BacktestOrder> activePositions,
         decimal currentBalance,
-        decimal spread);
+        decimal spread,
+        int leverage,
+        decimal maintenanceMarginPct);
 }

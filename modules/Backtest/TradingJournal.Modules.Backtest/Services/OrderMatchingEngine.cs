@@ -37,7 +37,9 @@ internal sealed class OrderMatchingEngine(ILogger<OrderMatchingEngine> logger) :
         List<BacktestOrder> pendingOrders,
         List<BacktestOrder> activePositions,
         decimal currentBalance,
-        decimal spread)
+        decimal spread,
+        int leverage,
+        decimal maintenanceMarginPct)
     {
         List<OrderFill> fills = [];
         List<OrderClose> closes = [];
@@ -118,13 +120,21 @@ internal sealed class OrderMatchingEngine(ILogger<OrderMatchingEngine> logger) :
         decimal equity = balance + unrealizedPnl;
 
         // ─────────────────────────────────────────────────
-        // 4. Liquidation check
+        // 4. Liquidation check (Maintenance Margin)
         // ─────────────────────────────────────────────────
-        bool isLiquidated = equity <= 0m;
+        decimal totalMarginUsed = 0m;
+        foreach (var pos in remainingPositions)
+        {
+            decimal entry = pos.FilledPrice ?? pos.EntryPrice;
+            totalMarginUsed += (pos.PositionSize * entry) / leverage;
+        }
+
+        decimal maintenanceMarginRequired = totalMarginUsed * maintenanceMarginPct;
+        bool isLiquidated = equity <= maintenanceMarginRequired;
 
         if (isLiquidated)
         {
-            logger.LogWarning("LIQUIDATION triggered. Equity: {Equity}, Balance: {Balance}", equity, balance);
+            logger.LogWarning("LIQUIDATION triggered. Equity: {Equity}, Maintenance Margin: {Margin}, Balance: {Balance}", equity, maintenanceMarginRequired, balance);
 
             // Force close all remaining positions at current candle close (Bid/Ask adjusted)
             foreach (BacktestOrder position in remainingPositions)

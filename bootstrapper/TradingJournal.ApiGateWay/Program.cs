@@ -109,7 +109,7 @@ app.UseStaticFiles();
 app.UseCustomExceptionHandler();
 
 app.UseCors(cors => cors
-    .WithOrigins("http://localhost:3000")
+    .WithOrigins("http://localhost:3000", "https://trading-journal-ui-woad.vercel.app")
     .AllowAnyMethod()
     .AllowAnyHeader()
     .AllowCredentials());

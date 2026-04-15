@@ -29,6 +29,8 @@ public sealed class GetSessionDetail
                     s.CurrentTimestamp,
                     s.ActiveTimeframe.ToString(),
                     s.PlaybackSpeed,
+                    s.Leverage,
+                    s.MaintenanceMarginPercentage,
                     s.IsDataReady,
                     s.Orders.Count,
                     s.Orders.Count(o => o.Status == BacktestOrderStatus.Active),

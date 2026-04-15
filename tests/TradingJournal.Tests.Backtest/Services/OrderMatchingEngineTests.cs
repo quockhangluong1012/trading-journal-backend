@@ -116,7 +116,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 1.1040m, high: 1.1060m, low: 1.0990m, close: 1.1020m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert
         Assert.Equal(1, result.Closes.Count);
@@ -136,7 +136,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 1.1060m, high: 1.1120m, low: 1.1040m, close: 1.1090m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert
         Assert.Equal(1, result.Closes.Count);
@@ -158,7 +158,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 1.1060m, high: 1.1099m, low: 1.1040m, close: 1.1070m);
 
         // Act: Ask High = 1.1099 + 0.0002 = 1.1101 >= SL 1.1100 â†’ HIT
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert
         Assert.Equal(1, result.Closes.Count);
@@ -179,7 +179,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 1.1060m, high: 1.1090m, low: 1.1040m, close: 1.1070m);
 
         // Act: Ask High = 1.1090 + 0.0002 = 1.1092 < SL 1.1100 â†’ NO HIT
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert
         Assert.Empty(result.Closes);
@@ -198,7 +198,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 1.1040m, high: 1.1060m, low: 1.0990m, close: 1.1020m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert
         Assert.Equal(1, result.Closes.Count);
@@ -218,7 +218,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 1.1040m, high: 1.1060m, low: 1.0990m, close: 1.1020m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread, 1, 0.05m);
 
         // Assert
         Assert.Equal(1, result.Fills.Count);
@@ -237,7 +237,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 1.1040m, high: 1.1060m, low: 1.0990m, close: 1.1020m);
 
         // Act: Ask Low = 1.0990 + 0.0010 = 1.1000 > 1.0980 â†’ NO FILL
-        MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread, 1, 0.05m);
 
         // Assert
         Assert.Empty(result.Fills);
@@ -254,7 +254,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 1.1040m, high: 1.1120m, low: 1.1020m, close: 1.1050m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread, 1, 0.05m);
 
         // Assert
         Assert.Equal(1, result.Fills.Count);
@@ -278,7 +278,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 95m, high: 98m, low: 93m, close: 96m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert
         Assert.Equal(1, result.Closes.Count);
@@ -300,7 +300,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 105m, high: 108m, low: 104m, close: 106m);
 
         // Act: Ask Open = 105 + 0.5 = 105.5 >= SL 100 â†’ gapped
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert
         Assert.Equal(1, result.Closes.Count);
@@ -321,7 +321,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 125m, high: 128m, low: 124m, close: 126m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert
         Assert.Equal(1, result.Closes.Count);
@@ -343,7 +343,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 75m, high: 78m, low: 73m, close: 76m);
 
         // Act: Ask Open = 75.5 <= TP 80 â†’ beneficial gap
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert
         Assert.Equal(1, result.Closes.Count);
@@ -362,7 +362,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 95m, high: 98m, low: 93m, close: 96m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread, 1, 0.05m);
 
         // Assert
         Assert.Equal(1, result.Fills.Count);
@@ -380,7 +380,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 105m, high: 108m, low: 104m, close: 106m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread, 1, 0.05m);
 
         // Assert
         Assert.Equal(1, result.Fills.Count);
@@ -406,7 +406,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 98m, high: 112m, low: 94m, close: 108m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert: SL should win because bullish path hits Low first
         Assert.Equal(1, result.Closes.Count);
@@ -429,7 +429,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 108m, high: 112m, low: 94m, close: 96m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert: TP should win because bearish path hits High first
         Assert.Equal(1, result.Closes.Count);
@@ -451,7 +451,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 98m, high: 112m, low: 94m, close: 108m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert: TP should win because bullish path hits Low first â†’ Short TP at Low
         Assert.Equal(1, result.Closes.Count);
@@ -473,7 +473,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 108m, high: 112m, low: 94m, close: 96m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert: SL should win because bearish path hits High first â†’ Short SL at High
         Assert.Equal(1, result.Closes.Count);
@@ -500,7 +500,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 98m, high: 112m, low: 90m, close: 108m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert: TP wins (bullish, Low first, Short TP at Low)
         Assert.Equal(1, result.Closes.Count);
@@ -522,7 +522,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 90m, high: 125m, low: 88m, close: 122m);
 
         // Act: Open=90 <= SL=100 â†’ gap SL triggers FIRST
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert: SL (gapped) wins, not TP
         Assert.Equal(1, result.Closes.Count);
@@ -543,7 +543,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 99m, high: 101m, low: 94m, close: 97m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert
         Assert.Equal(1, result.Closes.Count);
@@ -569,7 +569,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 101m, high: 103m, low: 99m, close: 102m);
 
         // Act â€” Use large balance to avoid triggering liquidation
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [longPos, shortPos], 1_000_000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [longPos, shortPos], 1_000_000m, spread, 1, 0m);
 
         // Assert: No closes
         Assert.Empty(result.Closes);
@@ -593,7 +593,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 180m, high: 210m, low: 175m, close: 200m);
 
         // Act: Balance = 50, Equity = 50 + (-10100) = -10050 â†’ LIQUIDATED
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 50m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 50m, spread, 1, 0.05m);
 
         // Assert
         Assert.True(result.IsLiquidated);
@@ -616,7 +616,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 100m, high: 112m, low: 94m, close: 100m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [position], 10000m, spread, 1, 0.05m);
 
         // Assert: SL wins (bullish â†’ Low first â†’ Long SL)
         Assert.Equal(1, result.Closes.Count);
@@ -638,7 +638,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 99m, high: 101m, low: 94m, close: 97m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [], [longSL, shortTP], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [], [longSL, shortTP], 10000m, spread, 1, 0.05m);
 
         // Assert: Both should close
         Assert.Equal(2, result.Closes.Count);
@@ -660,7 +660,7 @@ public class OrderMatchingEngineTests
         OhlcvCandle candle = MakeCandle(open: 99m, high: 101m, low: 92m, close: 94m);
 
         // Act
-        MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread);
+        MatchingResult result = _engine.EvaluateCandle(candle, [limit], [], 10000m, spread, 1, 0.05m);
 
         // Assert
         Assert.Equal(1, result.Fills.Count);
