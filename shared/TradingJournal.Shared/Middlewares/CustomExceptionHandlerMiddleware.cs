@@ -20,7 +20,7 @@ public static class CustomExceptionHandlerMiddlewareExtensions
 
 public class CustomExceptionHandlerMiddleware
 {
-    private static readonly JsonSerializerSettings _jsonSerializerSettings = new()
+    private static readonly JsonSerializerSettings JsonSerializerSettings = new()
     {
         ContractResolver = new DefaultContractResolver
         {
@@ -58,7 +58,7 @@ public class CustomExceptionHandlerMiddleware
             
             Result<IEnumerable<Error>> errorResult = Result<IEnumerable<Error>>.Failure(errors);
             
-            await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(errorResult, _jsonSerializerSettings));
+            await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(errorResult, JsonSerializerSettings));
         }
         catch (BusinessRuleException ex)
         {
@@ -67,7 +67,7 @@ public class CustomExceptionHandlerMiddleware
             httpContext.Response.StatusCode = (int)HttpStatusCode.UnprocessableEntity;
             Error error = new(ex.ErrorCode, ex.Message);
             
-            await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(error, _jsonSerializerSettings));
+            await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(error, JsonSerializerSettings));
         }
         catch (NotFoundException ex)
         {
@@ -92,9 +92,14 @@ public class CustomExceptionHandlerMiddleware
         context.Response.ContentType = "application/json";
         
         context.Response.StatusCode = statusCode;
+
+        string errorCode = Enum.GetName(typeof(HttpStatusCode), statusCode) ?? nameof(HttpStatusCode.InternalServerError);
+        string message = statusCode >= (int)HttpStatusCode.InternalServerError
+            ? "An unexpected error occurred while processing your request."
+            : exception.Message;
         
-        Error error = new(nameof(HttpStatusCode.InternalServerError), exception.Message);
+        Error error = new(errorCode, message);
         
-        await context.Response.WriteAsync(JsonConvert.SerializeObject(error, _jsonSerializerSettings));
+        await context.Response.WriteAsync(JsonConvert.SerializeObject(error, JsonSerializerSettings));
     }
 }

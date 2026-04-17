@@ -5,6 +5,7 @@ using TradingJournal.Modules.Trades.Infrastructure;
 using TradingJournal.Modules.Trades.Domain;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 using SharedEnums = TradingJournal.Shared.Common.Enum;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Trade;
@@ -155,9 +156,42 @@ public sealed class CreateTradeHandlerTests
         _handler = new CreateTrade.Handler(_contextMock.Object, _envMock.Object, _httpContextAccessorMock.Object);
     }
 
+    private void SetCurrentUser(int userId)
+    {
+        var httpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity(
+            [
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString())
+            ], "TestAuth"))
+        };
+
+        _httpContextAccessorMock.Setup(x => x.HttpContext).Returns(httpContext);
+    }
+
+    private void SetupAccessibleChecklists(int userId, params int[] checklistIds)
+    {
+        var model = new ChecklistModel { Id = 1, Name = "Model", CreatedBy = userId };
+        var checklists = checklistIds.Select(checklistId => new PretradeChecklist
+        {
+            Id = checklistId,
+            Name = $"Checklist {checklistId}",
+            ChecklistModelId = model.Id,
+            ChecklistModel = model,
+        }).ToList();
+
+        _contextMock.Setup(c => c.PretradeChecklists).Returns(DbSetMockHelper.CreateMockDbSet(checklists.AsQueryable()).Object);
+    }
+
+    private void SetupTradingProfiles()
+    {
+        _contextMock.Setup(c => c.TradingProfiles).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradingProfile>().AsQueryable()).Object);
+    }
+
     [Fact]
     public async Task Handle_ValidRequest_CreatesTradeAndReturnsSuccess()
     {
+        SetCurrentUser(42);
         var request = new CreateTrade.Request(
             Asset: "EURUSD", Position: SharedEnums.PositionType.Long, EntryPrice: 1.0850,
             TargetTier1: 1.0900, TargetTier2: null, TargetTier3: null, StopLoss: 1.0800,
@@ -172,6 +206,8 @@ public sealed class CreateTradeHandlerTests
         _contextMock.Setup(c => c.TradeEmotionTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeEmotionTag>().AsQueryable()).Object);
         _contextMock.Setup(c => c.TradeHistoryChecklist).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistoryChecklist>().AsQueryable()).Object);
         _contextMock.Setup(c => c.TradeTechnicalAnalysisTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeTechnicalAnalysisTag>().AsQueryable()).Object);
+        SetupAccessibleChecklists(42, 1);
+        SetupTradingProfiles();
         _contextMock.Setup(c => c.BeginTransaction()).Returns(Task.CompletedTask);
         _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         _contextMock.Setup(c => c.CommitTransaction()).Returns(Task.CompletedTask);
@@ -188,6 +224,7 @@ public sealed class CreateTradeHandlerTests
     [Fact]
     public async Task Handle_SaveChangesReturnsZero_ReturnsFailure()
     {
+        SetCurrentUser(42);
         var request = new CreateTrade.Request(
             Asset: "EURUSD", Position: SharedEnums.PositionType.Long, EntryPrice: 1.0850,
             TargetTier1: 1.0900, TargetTier2: null, TargetTier3: null, StopLoss: 1.0800,
@@ -202,6 +239,8 @@ public sealed class CreateTradeHandlerTests
         _contextMock.Setup(c => c.TradeEmotionTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeEmotionTag>().AsQueryable()).Object);
         _contextMock.Setup(c => c.TradeHistoryChecklist).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistoryChecklist>().AsQueryable()).Object);
         _contextMock.Setup(c => c.TradeTechnicalAnalysisTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeTechnicalAnalysisTag>().AsQueryable()).Object);
+        SetupAccessibleChecklists(42, 1);
+        SetupTradingProfiles();
         _contextMock.Setup(c => c.BeginTransaction()).Returns(Task.CompletedTask);
         _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(0);
         _contextMock.Setup(c => c.RollbackTransaction()).Returns(Task.CompletedTask);
@@ -214,6 +253,7 @@ public sealed class CreateTradeHandlerTests
     [Fact]
     public async Task Handle_ExceptionOccurs_RollbacksAndReturnsFailure()
     {
+        SetCurrentUser(42);
         var request = new CreateTrade.Request(
             Asset: "EURUSD", Position: SharedEnums.PositionType.Long, EntryPrice: 1.0850,
             TargetTier1: 1.0900, TargetTier2: null, TargetTier3: null, StopLoss: 1.0800,
@@ -228,6 +268,8 @@ public sealed class CreateTradeHandlerTests
         _contextMock.Setup(c => c.TradeEmotionTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeEmotionTag>().AsQueryable()).Object);
         _contextMock.Setup(c => c.TradeHistoryChecklist).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistoryChecklist>().AsQueryable()).Object);
         _contextMock.Setup(c => c.TradeTechnicalAnalysisTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeTechnicalAnalysisTag>().AsQueryable()).Object);
+        SetupAccessibleChecklists(42, 1);
+        SetupTradingProfiles();
         _contextMock.Setup(c => c.BeginTransaction()).Returns(Task.CompletedTask);
         _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("DB error"));
@@ -237,6 +279,31 @@ public sealed class CreateTradeHandlerTests
 
         Assert.False(result.IsSuccess);
         Assert.True(result.Errors.Any(e => e.Description.Contains("DB error")));
+        _contextMock.Verify(c => c.RollbackTransaction(), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_Checklist_From_Another_User_Returns_Failure()
+    {
+        SetCurrentUser(42);
+        var request = new CreateTrade.Request(
+            Asset: "EURUSD", Position: SharedEnums.PositionType.Long, EntryPrice: 1.0850,
+            TargetTier1: 1.0900, TargetTier2: null, TargetTier3: null, StopLoss: 1.0800,
+            Notes: "Test", Date: DateTime.UtcNow, Status: SharedEnums.TradeStatus.Open,
+            ExitPrice: null, Pnl: null, ClosedDate: null, Screenshots: [],
+            TradeTechnicalAnalysisTags: [], EmotionTags: null,
+            ConfidenceLevel: TradingJournal.Modules.Trades.Common.Enum.ConfidenceLevel.Neutral, PsychologyNotes: null,
+            TradeHistoryChecklists: [1], TradingZoneId: 1, TradingSessionId: null);
+
+        _contextMock.Setup(c => c.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
+        _contextMock.Setup(c => c.BeginTransaction()).Returns(Task.CompletedTask);
+        _contextMock.Setup(c => c.RollbackTransaction()).Returns(Task.CompletedTask);
+        SetupAccessibleChecklists(7, 1);
+
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         _contextMock.Verify(c => c.RollbackTransaction(), Times.Once);
     }
 }

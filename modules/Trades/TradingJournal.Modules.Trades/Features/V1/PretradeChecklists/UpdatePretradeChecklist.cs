@@ -2,7 +2,7 @@ namespace TradingJournal.Modules.Trades.Features.V1.PretradeChecklists;
 
 public sealed class UpdatePretradeChecklist
 {
-    public record Request(int Id, string Name, PretradeChecklistType Type, int UserId = 0) : ICommand<Result>;
+    public record Request(int Id, string Name, PretradeChecklistType Type, int ChecklistModelId, int UserId = 0) : ICommand<Result>;
 
     public sealed class Validator : AbstractValidator<Request>
     {
@@ -23,6 +23,10 @@ public sealed class UpdatePretradeChecklist
                 .Must(type => Enum.IsDefined(type))
                 .WithErrorCode(HttpStatusCode.BadRequest.ToString())
                 .WithMessage("Checklist type must be a valid PretradeChecklistType value.");
+            RuleFor(x => x.ChecklistModelId)
+                .Cascade(CascadeMode.Stop)
+                .GreaterThan(0).WithErrorCode(HttpStatusCode.BadRequest.ToString())
+                .WithMessage("Checklist model id must be greater than 0.");
         }
     }
 
@@ -31,15 +35,24 @@ public sealed class UpdatePretradeChecklist
         public async Task<Result> Handle(Request request, CancellationToken cancellationToken)
         {
             PretradeChecklist? checklist = await context.PretradeChecklists
-                .FirstOrDefaultAsync(c => c.Id == request.Id && c.CreatedBy == request.UserId, cancellationToken);
+                .FirstOrDefaultAsync(c => c.Id == request.Id && c.ChecklistModel.CreatedBy == request.UserId, cancellationToken);
 
             if (checklist is null)
             {
                 return Result.Failure(Error.Create("Pretrade Checklist not found."));
             }
 
+            bool modelExists = await context.ChecklistModels
+                .AnyAsync(model => model.Id == request.ChecklistModelId && model.CreatedBy == request.UserId, cancellationToken);
+
+            if (!modelExists)
+            {
+                return Result.Failure(Error.Create($"Checklist model with id {request.ChecklistModelId} not found."));
+            }
+
             checklist.Name = request.Name;
             checklist.CheckListType = request.Type;
+            checklist.ChecklistModelId = request.ChecklistModelId;
 
             int affectedRows = await context.SaveChangesAsync(cancellationToken);
 
@@ -66,7 +79,7 @@ public sealed class UpdatePretradeChecklist
             .Produces(StatusCodes.Status500InternalServerError)
             .WithSummary("Update an existing pretrade checklist by its Id.")
             .WithTags(Tags.PretradeChecklists)
-            .RequireAuthorization("AdminOnly");
+            .RequireAuthorization();
         }
     }
 }

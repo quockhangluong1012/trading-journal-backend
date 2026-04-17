@@ -46,7 +46,11 @@ public class GetChecklistModelsHandlerTests
     [Fact]
     public async Task Handle_Returns_Paginated_Results()
     {
-        var models = new List<ChecklistModel> { new ChecklistModel { Id = 1, Name = "Test1", CreatedBy = 1 }, new ChecklistModel { Id = 2, Name = "Test2", CreatedBy = 1 } };
+        var models = new List<ChecklistModel>
+        {
+            new() { Id = 1, Name = "Test1", CreatedBy = 1 },
+            new() { Id = 2, Name = "Test2", CreatedBy = 1 },
+        };
         _dbMock.Setup(x => x.ChecklistModels).Returns(DbSetMockHelper.CreateMockDbSet(models.AsQueryable()).Object);
 
         var request = new GetChecklistModels.Request { PageIndex = 1, PageSize = 10, UserId = 1 };
@@ -57,12 +61,18 @@ public class GetChecklistModelsHandlerTests
     [Fact]
     public async Task Handle_Filters_By_UserId()
     {
-        var models = new List<ChecklistModel> { new ChecklistModel { Id = 1, Name = "Test1", CreatedBy = 1 }, new ChecklistModel { Id = 2, Name = "Test2", CreatedBy = 2 } };
+        var models = new List<ChecklistModel>
+        {
+            new() { Id = 1, Name = "Test1", CreatedBy = 1 },
+            new() { Id = 2, Name = "Test2", CreatedBy = 2 },
+        };
         _dbMock.Setup(x => x.ChecklistModels).Returns(DbSetMockHelper.CreateMockDbSet(models.AsQueryable()).Object);
 
         var request = new GetChecklistModels.Request { PageIndex = 1, PageSize = 10, UserId = 1 };
         var result = await _handler.Handle(request, CancellationToken.None);
+
         Assert.True(result.IsSuccess);
-        Assert.Equal(2, result.Value.Count);
+        Assert.Single(result.Value);
+        Assert.Equal(1, result.Value.Single().Id);
     }
 }

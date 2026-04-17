@@ -2,7 +2,7 @@ namespace TradingJournal.Modules.Trades.Features.V1.ChecklistModels;
 
 public sealed class AddCriteriaToModel
 {
-    public record Request(int ModelId, string Name, PretradeChecklistType Type) : ICommand<Result<int>>;
+    public record Request(int ModelId, string Name, PretradeChecklistType Type, int UserId = 0) : ICommand<Result<int>>;
 
     public sealed class Validator : AbstractValidator<Request>
     {
@@ -32,7 +32,7 @@ public sealed class AddCriteriaToModel
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {
             bool modelExists = await context.ChecklistModels
-                .AnyAsync(m => m.Id == request.ModelId, cancellationToken);
+                .AnyAsync(m => m.Id == request.ModelId && m.CreatedBy == request.UserId, cancellationToken);
 
             if (!modelExists)
                 return Result<int>.Failure(Error.Create($"Checklist model with id {request.ModelId} not found."));
@@ -70,7 +70,7 @@ public sealed class AddCriteriaToModel
             .WithSummary("Add a new criteria to a checklist model.")
             .WithDescription("Adds a new pretrade checklist criteria to the specified model.")
             .WithTags(Tags.ChecklistModels)
-            .RequireAuthorization("AdminOnly");
+            .RequireAuthorization();
         }
     }
 

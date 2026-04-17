@@ -22,7 +22,7 @@ public sealed class GetChecklistModelDetail
             ChecklistModel? model = await context.ChecklistModels
                 .AsNoTracking()
                 .Include(m => m.Criteria)
-            .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
+                .FirstOrDefaultAsync(m => m.Id == request.Id && m.CreatedBy == request.UserId, cancellationToken);
 
             if (model is null)
                 return Result<ChecklistModelDetailViewModel>.Failure(
@@ -32,7 +32,12 @@ public sealed class GetChecklistModelDetail
                 model.Id,
                 model.Name,
                 model.Description,
-                [.. model.Criteria.Select(c => new PretradeChecklistViewModel(c.Id, c.Name, c.CheckListType))]);
+                [.. model.Criteria.Select(c => new PretradeChecklistViewModel(
+                    c.Id,
+                    c.Name,
+                    c.CheckListType,
+                    c.ChecklistModelId,
+                    model.Name))]);
 
             return Result<ChecklistModelDetailViewModel>.Success(viewModel);
         }

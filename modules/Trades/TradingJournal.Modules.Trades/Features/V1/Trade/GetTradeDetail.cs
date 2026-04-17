@@ -29,7 +29,7 @@ public class GetTradeDetail
                 .Include(x => x.TradeChecklists)
                 .Include(x => x.TradeTechnicalAnalysisTags)
                 .Include(x => x.TradingSummary)
-                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken: cancellationToken);
+                .FirstOrDefaultAsync(x => x.Id == request.Id && x.CreatedBy == request.UserId, cancellationToken: cancellationToken);
 
             if (trade == null)
             {

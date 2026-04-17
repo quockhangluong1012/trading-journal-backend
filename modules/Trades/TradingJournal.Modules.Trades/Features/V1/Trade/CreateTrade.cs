@@ -97,9 +97,27 @@ public sealed class CreateTrade
             {
                 await context.BeginTransaction();
 
+                int userId = httpContextAccessor.HttpContext?.User.GetCurrentUserId() ?? 0;
+                if (userId <= 0)
+                {
+                    await context.RollbackTransaction();
+                    return Result<int>.Failure(Error.Create("Unauthorized."));
+                }
+
+                List<int> checklistIds = [.. request.TradeHistoryChecklists.Distinct()];
+
+                int accessibleChecklistCount = await context.PretradeChecklists
+                    .AsNoTracking()
+                    .CountAsync(checklist => checklistIds.Contains(checklist.Id) && checklist.ChecklistModel.CreatedBy == userId, cancellationToken);
+
+                if (accessibleChecklistCount != checklistIds.Count)
+                {
+                    await context.RollbackTransaction();
+                    return Result<int>.Failure(Error.Create("One or more pretrade checklist items are invalid for the current user."));
+                }
+
                 TradeHistory tradeHistory = request.Adapt<TradeHistory>();
 
-                int userId = httpContextAccessor.HttpContext?.User.GetCurrentUserId() ?? 0;
                 if (userId > 0)
                 {
                     await EvaluateDisciplineRules(tradeHistory, userId, context, cancellationToken);
@@ -112,7 +130,7 @@ public sealed class CreateTrade
 
                 await context.TradeHistories.AddAsync(tradeHistory, cancellationToken);
 
-                await context.TradeHistoryChecklist.AddRangeAsync(request.TradeHistoryChecklists.Select(checklistId => new TradeHistoryChecklist
+                await context.TradeHistoryChecklist.AddRangeAsync(checklistIds.Select(checklistId => new TradeHistoryChecklist
                 {
                     Id = 0,
                     PretradeChecklistId = checklistId,

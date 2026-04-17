@@ -19,6 +19,7 @@ public sealed class GetChecklistModels
         {
             IReadOnlyCollection<ChecklistModelViewModel> models = await context.ChecklistModels
                 .AsNoTracking()
+                .Where(m => m.CreatedBy == request.UserId)
                 .Select(m => new ChecklistModelViewModel(
                     m.Id,
                     m.Name,

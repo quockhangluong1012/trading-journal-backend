@@ -22,6 +22,14 @@ public sealed class SummerizeTradeHistory
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
         {
+            TradeHistory? tradeHistory = await context.TradeHistories
+                .FirstOrDefaultAsync(x => x.Id == request.TradeId && x.CreatedBy == request.UserId, cancellationToken);
+
+            if (tradeHistory is null)
+            {
+                return Result<bool>.Failure(Error.NotFound);
+            }
+
             TradeAnalysisResultDto? result = await googleGenAIService.GenerateTradingOrderSummary(request.TradeId, cancellationToken);
 
             if (result is null)
@@ -48,14 +56,9 @@ public sealed class SummerizeTradeHistory
 
             await context.SaveChangesAsync(cancellationToken);
 
-            TradeHistory? tradeHistory = await context.TradeHistories.FirstOrDefaultAsync(x => x.Id == request.TradeId && x.CreatedBy == request.UserId, cancellationToken);
-
-            if (tradeHistory is not null)
-            {
-                tradeHistory.TradingSummaryId = tradingSummary.Id;
-                context.TradeHistories.Update(tradeHistory);
-                await context.SaveChangesAsync(cancellationToken);
-            }
+            tradeHistory.TradingSummaryId = tradingSummary.Id;
+            context.TradeHistories.Update(tradeHistory);
+            await context.SaveChangesAsync(cancellationToken);
 
             return Result<bool>.Success(true);
         }
@@ -67,8 +70,8 @@ public sealed class SummerizeTradeHistory
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradeHistory);
 
-            group.MapPost("/summarize/{tradeId:int}", async (int tradeId, int userId, ISender sender) => {
-                Result<bool> result = await sender.Send(new SummerizeTradeHistory.Request(tradeId, userId));
+            group.MapPost("/summarize/{tradeId:int}", async (int tradeId, ISender sender) => {
+                Result<bool> result = await sender.Send(new SummerizeTradeHistory.Request(tradeId));
 
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);
             })

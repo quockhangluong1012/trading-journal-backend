@@ -2,7 +2,7 @@ namespace TradingJournal.Modules.Trades.Features.V1.PretradeChecklists;
 
 public sealed class CreatePretradeChecklist
 {
-    public record Request(string Name, PretradeChecklistType Type, int UserId = 0) : ICommand<Result<int>>;
+    public record Request(string Name, PretradeChecklistType Type, int ChecklistModelId, int UserId = 0) : ICommand<Result<int>>;
 
     public sealed class Validator : AbstractValidator<Request>
     {
@@ -19,6 +19,10 @@ public sealed class CreatePretradeChecklist
                 .Must(type => Enum.IsDefined(type))
                 .WithErrorCode(HttpStatusCode.BadRequest.ToString())
                 .WithMessage("Checklist type must be a valid PretradeChecklistType value.");
+            RuleFor(x => x.ChecklistModelId)
+                .Cascade(CascadeMode.Stop)
+                .GreaterThan(0).WithErrorCode(HttpStatusCode.BadRequest.ToString())
+                .WithMessage("Checklist model id must be greater than 0.");
         }
     }
 
@@ -31,12 +35,20 @@ public sealed class CreatePretradeChecklist
                 return Result<int>.Failure(Error.Create("Unauthorized."));
             }
 
+            bool modelExists = await context.ChecklistModels
+                .AnyAsync(model => model.Id == request.ChecklistModelId && model.CreatedBy == request.UserId, cancellationToken);
+
+            if (!modelExists)
+            {
+                return Result<int>.Failure(Error.Create($"Checklist model with id {request.ChecklistModelId} not found."));
+            }
+
             PretradeChecklist checklist = new()
             {
                 Id = 0,
                 Name = request.Name,
                 CheckListType = request.Type,
-                CreatedBy = request.UserId,
+                ChecklistModelId = request.ChecklistModelId,
             };
 
             await context.PretradeChecklists.AddAsync(checklist, cancellationToken);
@@ -66,7 +78,7 @@ public sealed class CreatePretradeChecklist
             .WithSummary("Create a new pretrade checklist.")
             .WithDescription("Creates a new pretrade checklist with the given details.")
             .WithTags(Tags.PretradeChecklists)
-            .RequireAuthorization("AdminOnly");
+            .RequireAuthorization();
         }
     }
 }

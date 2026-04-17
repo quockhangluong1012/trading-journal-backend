@@ -71,6 +71,7 @@ public sealed class Register
             })
             .Produces<Result<int>>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest)
+            .RequireRateLimiting("auth")
             .WithSummary("Register a new user.")
             .WithDescription("Creates a new user account and returns the user ID.")
             .WithTags(AuthConstants.Tags.Auth)

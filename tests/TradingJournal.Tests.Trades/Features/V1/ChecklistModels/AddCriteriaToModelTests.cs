@@ -10,17 +10,19 @@ namespace TradingJournal.Tests.Trades.Features.V1.ChecklistModels;
 public class AddCriteriaToModelValidatorTests
 {
     private static readonly AddCriteriaToModel.Validator _validator = new();
+
     [Fact]
     public void Should_Have_Error_When_ChecklistModelId_Is_Zero()
     {
-        var request = new AddCriteriaToModel.Request(0, "test", Modules.Trades.Common.Enum.PretradeChecklistType.MarketStructure);
+        var request = new AddCriteriaToModel.Request(0, "test", Modules.Trades.Common.Enum.PretradeChecklistType.MarketStructure, 1);
         var result = _validator.TestValidate(request);
         result.ShouldHaveValidationErrorFor(x => x.ModelId);
     }
+
     [Fact]
     public void Should_Not_Have_Error_When_Valid()
     {
-        var request = new AddCriteriaToModel.Request(1, "test", Modules.Trades.Common.Enum.PretradeChecklistType.MarketStructure);
+        var request = new AddCriteriaToModel.Request(1, "test", Modules.Trades.Common.Enum.PretradeChecklistType.MarketStructure, 1);
         var result = _validator.TestValidate(request);
         result.ShouldNotHaveAnyValidationErrors();
     }
@@ -39,9 +41,10 @@ public class AddCriteriaToModelHandlerTests
     public async Task Handle_Returns_Failure_When_Model_Not_Found()
     {
         _dbMock.Setup(x => x.ChecklistModels).Returns(DbSetMockHelper.CreateMockDbSet(new List<ChecklistModel>().AsQueryable()).Object);
-        var result = await _handler.Handle(new AddCriteriaToModel.Request(99, "test", Modules.Trades.Common.Enum.PretradeChecklistType.MarketStructure), CancellationToken.None);
+        var result = await _handler.Handle(new AddCriteriaToModel.Request(99, "test", Modules.Trades.Common.Enum.PretradeChecklistType.MarketStructure, 1), CancellationToken.None);
         Assert.True(result.IsFailure);
     }
+
     [Fact]
     public async Task Handle_Returns_Success_When_Model_Exists()
     {
@@ -49,7 +52,20 @@ public class AddCriteriaToModelHandlerTests
         _dbMock.Setup(x => x.ChecklistModels).Returns(DbSetMockHelper.CreateMockDbSet(new List<ChecklistModel> { model }.AsQueryable()).Object);
         _dbMock.Setup(x => x.PretradeChecklists).Returns(DbSetMockHelper.CreateMockDbSet(new List<PretradeChecklist>().AsQueryable()).Object);
         _dbMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-        var result = await _handler.Handle(new AddCriteriaToModel.Request(1, "test", Modules.Trades.Common.Enum.PretradeChecklistType.MarketStructure), CancellationToken.None);
+
+        var result = await _handler.Handle(new AddCriteriaToModel.Request(1, "test", Modules.Trades.Common.Enum.PretradeChecklistType.MarketStructure, 1), CancellationToken.None);
+
         Assert.True(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task Handle_Returns_Failure_When_Model_Belongs_To_Another_User()
+    {
+        var model = new ChecklistModel { Id = 1, Name = "Test", CreatedBy = 2 };
+        _dbMock.Setup(x => x.ChecklistModels).Returns(DbSetMockHelper.CreateMockDbSet(new List<ChecklistModel> { model }.AsQueryable()).Object);
+
+        var result = await _handler.Handle(new AddCriteriaToModel.Request(1, "test", Modules.Trades.Common.Enum.PretradeChecklistType.MarketStructure, 1), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
     }
 }

@@ -96,6 +96,7 @@ public sealed class StaffLogin
             })
             .Produces<Result<AuthResponse>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
+            .RequireRateLimiting("auth")
             .WithSummary("Login and get JWT token for Staff.")
             .WithDescription("Authenticates a staff user and returns a JWT token.")
             .WithTags(AuthConstants.Tags.Auth)

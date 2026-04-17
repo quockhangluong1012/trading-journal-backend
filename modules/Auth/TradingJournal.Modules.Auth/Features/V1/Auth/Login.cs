@@ -95,6 +95,7 @@ public sealed class Login
             })
             .Produces<Result<AuthResponse>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
+            .RequireRateLimiting("auth")
             .WithSummary("Login and get JWT token.")
             .WithDescription("Authenticates a user and returns a JWT token for subsequent API calls.")
             .WithTags(AuthConstants.Tags.Auth)

@@ -108,6 +108,10 @@ public sealed class UpdateTradeHandlerTests
         var trade = new TradeHistory { Id = 1, CreatedBy = 42, Asset = "GBPUSD",
             TradeEmotionTags = [], TradeChecklists = [], TradeTechnicalAnalysisTags = [], TradeScreenShots = [] };
         _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory> { trade }.AsQueryable()).Object);
+        _ctx.Setup(x => x.PretradeChecklists).Returns(DbSetMockHelper.CreateMockDbSet(new List<PretradeChecklist>
+        {
+            new() { Id = 1, Name = "Checklist 1", ChecklistModelId = 1, ChecklistModel = new ChecklistModel { Id = 1, Name = "Model", CreatedBy = 42 } }
+        }.AsQueryable()).Object);
 
         _ctx.Setup(x => x.TradeEmotionTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeEmotionTag>().AsQueryable()).Object);
         _ctx.Setup(x => x.TradeHistoryChecklist).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistoryChecklist>().AsQueryable()).Object);
@@ -120,5 +124,38 @@ public sealed class UpdateTradeHandlerTests
         Assert.True(result.IsSuccess, $"Error: {result.Errors?.FirstOrDefault()?.Description}");
         Assert.True(result.Value);
         Assert.Equal("Updated", trade.Notes);
+    }
+
+    [Fact]
+    public async Task Handle_Checklist_From_Another_User_ReturnsFailure()
+    {
+        var request = new UpdateTrade.Request(
+            1, "EURUSD", SharedEnums.PositionType.Long, 1.0850, 1.0900,
+            null, null, 1.0800, "Updated", DateTime.UtcNow,
+            SharedEnums.TradeStatus.Open, null, null, null, [],
+            null, null, ConfidenceLevel.Neutral, null,
+            [1], 1, null, UserId: 42);
+
+        var trade = new TradeHistory
+        {
+            Id = 1,
+            CreatedBy = 42,
+            Asset = "GBPUSD",
+            TradeEmotionTags = [],
+            TradeChecklists = [],
+            TradeTechnicalAnalysisTags = [],
+            TradeScreenShots = []
+        };
+
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory> { trade }.AsQueryable()).Object);
+        _ctx.Setup(x => x.PretradeChecklists).Returns(DbSetMockHelper.CreateMockDbSet(new List<PretradeChecklist>
+        {
+            new() { Id = 1, Name = "Checklist 1", ChecklistModelId = 1, ChecklistModel = new ChecklistModel { Id = 1, Name = "Model", CreatedBy = 7 } }
+        }.AsQueryable()).Object);
+
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        _ctx.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

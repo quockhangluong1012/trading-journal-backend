@@ -110,6 +110,17 @@ public sealed class UpdateTrade
                     return Result<bool>.Failure(Error.NotFound);
                 }
 
+                List<int> checklistIds = [.. request.TradeHistoryChecklists.Distinct()];
+
+                int accessibleChecklistCount = await context.PretradeChecklists
+                    .AsNoTracking()
+                    .CountAsync(checklist => checklistIds.Contains(checklist.Id) && checklist.ChecklistModel.CreatedBy == request.UserId, cancellationToken);
+
+                if (accessibleChecklistCount != checklistIds.Count)
+                {
+                    return Result<bool>.Failure(Error.Create("One or more pretrade checklist items are invalid for the current user."));
+                }
+
                 tradeHistory.Asset = request.Asset;
                 tradeHistory.Position = request.Position;
                 tradeHistory.EntryPrice = request.EntryPrice;
@@ -132,7 +143,7 @@ public sealed class UpdateTrade
                 context.TradeHistoryChecklist.RemoveRange(tradeHistory.TradeChecklists);
                 context.TradeTechnicalAnalysisTags.RemoveRange(tradeHistory.TradeTechnicalAnalysisTags);
 
-                await context.TradeHistoryChecklist.AddRangeAsync(request.TradeHistoryChecklists.Select(checklistId => new TradeHistoryChecklist
+                await context.TradeHistoryChecklist.AddRangeAsync(checklistIds.Select(checklistId => new TradeHistoryChecklist
                 {
                     Id = 0,
                     TradeHistoryId = tradeHistory.Id,

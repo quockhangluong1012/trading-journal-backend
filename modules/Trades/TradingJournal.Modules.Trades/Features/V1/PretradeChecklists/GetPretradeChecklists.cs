@@ -2,19 +2,22 @@
 
 public sealed class GetPretradeChecklists
 {
-    public record Request() : ICommand<Result<IReadOnlyCollection<PretradeChecklistViewModel>>>;
+    public record Request(int UserId = 0) : ICommand<Result<IReadOnlyCollection<PretradeChecklistViewModel>>>;
 
     public sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<IReadOnlyCollection<PretradeChecklistViewModel>>>
     {
         public async Task<Result<IReadOnlyCollection<PretradeChecklistViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            List<PretradeChecklist> checklists = await context.PretradeChecklists
+            IReadOnlyCollection<PretradeChecklistViewModel> checklistViewModels = await context.PretradeChecklists
                 .AsNoTracking()
+                .Where(checklist => checklist.ChecklistModel.CreatedBy == request.UserId)
+                .Select(checklist => new PretradeChecklistViewModel(
+                    checklist.Id,
+                    checklist.Name,
+                    checklist.CheckListType,
+                    checklist.ChecklistModelId,
+                    checklist.ChecklistModel.Name))
                 .ToListAsync(cancellationToken);
-
-            IReadOnlyCollection<PretradeChecklistViewModel> checklistViewModels = [.. checklists.Select(checklist => new PretradeChecklistViewModel(Id: checklist.Id,
-                Name: checklist.Name,
-                CheckListType: checklist.CheckListType))];
 
             return Result<IReadOnlyCollection<PretradeChecklistViewModel>>.Success(checklistViewModels);
         }

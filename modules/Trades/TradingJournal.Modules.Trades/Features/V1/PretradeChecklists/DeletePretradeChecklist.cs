@@ -19,12 +19,22 @@ public sealed class DeletePretradeChecklist
         public async Task<Result> Handle(Request request, CancellationToken cancellationToken)
         {
             PretradeChecklist? checklist = await context.PretradeChecklists
-                .FirstOrDefaultAsync(c => c.Id == request.Id && c.CreatedBy == request.UserId, cancellationToken);
+                .FirstOrDefaultAsync(c => c.Id == request.Id && c.ChecklistModel.CreatedBy == request.UserId, cancellationToken);
 
             if (checklist is null)
             {
                 return Result.Failure(Error.Create("Pretrade Checklist not found."));
             }
+
+            bool isUsedInTradeHistory = await context.TradeHistoryChecklist
+                .AsNoTracking()
+                .AnyAsync(link => link.PretradeChecklistId == request.Id, cancellationToken);
+
+            if (isUsedInTradeHistory)
+            {
+                return Result.Failure(Error.Create("Pretrade Checklist is already used in trade history and cannot be deleted."));
+            }
+
             context.PretradeChecklists.Remove(checklist);
 
             int affectedRows = await context.SaveChangesAsync(cancellationToken);
@@ -50,7 +60,7 @@ public sealed class DeletePretradeChecklist
             .Produces(StatusCodes.Status500InternalServerError)
             .WithSummary("Delete a pretrade checklist by its Id.")
             .WithTags(Tags.PretradeChecklists)
-            .RequireAuthorization("AdminOnly");
+            .RequireAuthorization();
         }
     }
 }

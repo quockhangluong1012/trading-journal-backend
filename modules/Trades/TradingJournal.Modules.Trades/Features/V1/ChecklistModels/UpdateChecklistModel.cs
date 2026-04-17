@@ -57,7 +57,7 @@ public sealed class UpdateChecklistModel
             .Produces(StatusCodes.Status400BadRequest)
             .WithSummary("Update an existing checklist model.")
             .WithTags(Tags.ChecklistModels)
-            .RequireAuthorization("AdminOnly");
+            .RequireAuthorization();
         }
     }
 }

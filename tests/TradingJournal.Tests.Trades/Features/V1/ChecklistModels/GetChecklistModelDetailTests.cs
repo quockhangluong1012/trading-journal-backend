@@ -43,10 +43,36 @@ public class GetChecklistModelDetailHandlerTests
     [Fact]
     public async Task Handle_Returns_Success_When_Found()
     {
-        var checklistModel = new ChecklistModel { Id = 1, Name = "Test", Criteria = new List<PretradeChecklist>(), CreatedBy = 1 };
+        var checklistModel = new ChecklistModel
+        {
+            Id = 1,
+            Name = "Test",
+            Criteria = new List<PretradeChecklist>(),
+            CreatedBy = 1,
+        };
+
         _dbMock.Setup(x => x.ChecklistModels).Returns(DbSetMockHelper.CreateMockDbSet(new List<ChecklistModel> { checklistModel }.AsQueryable()).Object);
         var result = await _handler.Handle(new GetChecklistModelDetail.Request(1, 1), CancellationToken.None);
+
         Assert.True(result.IsSuccess);
         Assert.Equal("Test", result.Value.Name);
+    }
+
+    [Fact]
+    public async Task Handle_Returns_Failure_When_Model_Belongs_To_Another_User()
+    {
+        var checklistModel = new ChecklistModel
+        {
+            Id = 1,
+            Name = "Test",
+            Criteria = new List<PretradeChecklist>(),
+            CreatedBy = 2,
+        };
+
+        _dbMock.Setup(x => x.ChecklistModels).Returns(DbSetMockHelper.CreateMockDbSet(new List<ChecklistModel> { checklistModel }.AsQueryable()).Object);
+
+        var result = await _handler.Handle(new GetChecklistModelDetail.Request(1, 1), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
     }
 }

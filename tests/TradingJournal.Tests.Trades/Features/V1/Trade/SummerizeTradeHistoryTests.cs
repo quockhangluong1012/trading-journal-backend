@@ -40,8 +40,12 @@ public sealed class SummerizeTradeHistoryHandlerTests
     [Fact]
     public async Task Handle_AiReturnsNull_ReturnsFailure()
     {
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>
+        {
+            new() { Id = 1, CreatedBy = 1 }
+        }.AsQueryable()).Object);
         _ai.Setup(x => x.GenerateTradingOrderSummary(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((TradeAnalysisResultDto?)null);
-        var result = await _handler.Handle(new SummerizeTradeHistory.Request(1), CancellationToken.None);
+        var result = await _handler.Handle(new SummerizeTradeHistory.Request(1, 1), CancellationToken.None);
         Assert.False(result.IsSuccess);
     }
     [Fact]
@@ -53,9 +57,26 @@ public sealed class SummerizeTradeHistoryHandlerTests
         _ctx.Setup(x => x.TradingSummaries).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradingSummary>().AsQueryable()).Object);
         _ctx.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>
+        {
+            new() { Id = 1, CreatedBy = 1 }
+        }.AsQueryable()).Object);
 
-        var result = await _handler.Handle(new SummerizeTradeHistory.Request(1), CancellationToken.None);
+        var result = await _handler.Handle(new SummerizeTradeHistory.Request(1, 1), CancellationToken.None);
         Assert.True(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task Handle_Trade_Belongs_To_Another_User_ReturnsFailure_Without_Calling_Ai()
+    {
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>
+        {
+            new() { Id = 1, CreatedBy = 7 }
+        }.AsQueryable()).Object);
+
+        var result = await _handler.Handle(new SummerizeTradeHistory.Request(1, 1), CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        _ai.Verify(x => x.GenerateTradingOrderSummary(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
