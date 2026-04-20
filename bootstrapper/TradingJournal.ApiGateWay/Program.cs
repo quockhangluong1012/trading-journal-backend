@@ -237,14 +237,7 @@ static void ValidateJwtConfiguration(string secret, string issuer, string audien
 
 static string[] GetAllowedOrigins(IConfiguration configuration)
 {
-    string[] origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-
-    if (origins.Length == 0)
-    {
-        throw new InvalidOperationException("At least one CORS allowed origin must be configured.");
-    }
-
-    return origins;
+    return CorsOriginNormalizer.Normalize(configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? []);
 }
 
 static int GetPositiveIntConfigurationValue(IConfiguration configuration, string key, int fallback)

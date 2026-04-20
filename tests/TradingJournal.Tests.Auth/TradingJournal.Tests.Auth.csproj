@@ -28,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\bootstrapper\TradingJournal.ApiGateWay\TradingJournal.ApiGateWay.csproj" />
     <ProjectReference Include="..\..\modules\Auth\TradingJournal.Modules.Auth\TradingJournal.Modules.Auth.csproj" />
   </ItemGroup>
 
