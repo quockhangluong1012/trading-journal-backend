@@ -27,21 +27,44 @@ public sealed class GenerateReviewSummary
         }
     }
 
-    public sealed class Handler(ITradeDbContext context, IEventBus eventBus)
+    public sealed class Handler(
+        ITradeDbContext context,
+        IEventBus eventBus,
+        IReviewSnapshotBuilder reviewSnapshotBuilder)
         : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
         {
-            // Set generating flag on existing review (or create one)
+            ReviewSnapshot snapshot = await reviewSnapshotBuilder.BuildAsync(
+                request.PeriodType,
+                request.PeriodStart,
+                request.UserId,
+                cancellationToken);
+            ReviewSnapshotMetrics metrics = snapshot.Metrics;
+
             TradingReview? existing = await context.TradingReviews
                 .FirstOrDefaultAsync(r =>
                     r.CreatedBy == request.UserId &&
                     r.PeriodType == request.PeriodType &&
-                    r.PeriodStart == request.PeriodStart,
+                    r.PeriodStart == snapshot.PeriodStart,
                     cancellationToken);
 
             if (existing is not null)
             {
+                existing.PeriodEnd = snapshot.PeriodEnd;
+                existing.TotalPnl = metrics.TotalPnl;
+                existing.WinRate = metrics.WinRate;
+                existing.TotalTrades = metrics.TotalTrades;
+                existing.Wins = metrics.Wins;
+                existing.Losses = metrics.Losses;
+
+                if (existing.AiSummaryGenerating)
+                {
+                    context.TradingReviews.Update(existing);
+                    await context.SaveChangesAsync(cancellationToken);
+                    return Result<bool>.Success(true);
+                }
+
                 existing.AiSummaryGenerating = true;
                 context.TradingReviews.Update(existing);
             }
@@ -51,8 +74,13 @@ public sealed class GenerateReviewSummary
                 {
                     Id = 0,
                     PeriodType = request.PeriodType,
-                    PeriodStart = request.PeriodStart,
-                    PeriodEnd = request.PeriodEnd,
+                    PeriodStart = snapshot.PeriodStart,
+                    PeriodEnd = snapshot.PeriodEnd,
+                    TotalPnl = metrics.TotalPnl,
+                    WinRate = metrics.WinRate,
+                    TotalTrades = metrics.TotalTrades,
+                    Wins = metrics.Wins,
+                    Losses = metrics.Losses,
                     AiSummaryGenerating = true,
                 };
 
@@ -61,14 +89,13 @@ public sealed class GenerateReviewSummary
 
             await context.SaveChangesAsync(cancellationToken);
 
-            // Publish event for background processing
             await eventBus.PublishAsync(
                 new GenerateReviewSummaryEvent(
                     Guid.NewGuid(),
                     DateTime.UtcNow,
                     request.PeriodType,
-                    request.PeriodStart,
-                    request.PeriodEnd,
+                    snapshot.PeriodStart,
+                    snapshot.PeriodEnd,
                     request.UserId),
                 cancellationToken);
 
@@ -88,7 +115,7 @@ public sealed class GenerateReviewSummary
 
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);
             })
-            .Produces<Result<bool>>(StatusCodes.Status200OK)
+            .Produces<Result<bool>>()
             .Produces(StatusCodes.Status400BadRequest)
             .WithSummary("Generate AI review summary.")
             .WithDescription("Publishes an event to generate a review summary asynchronously. Poll the status endpoint for results.")

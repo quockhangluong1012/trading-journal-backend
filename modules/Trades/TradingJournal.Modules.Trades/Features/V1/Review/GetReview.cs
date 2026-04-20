@@ -1,5 +1,3 @@
-using TradingJournal.Shared.Dtos;
-
 namespace TradingJournal.Modules.Trades.Features.V1.Review;
 
 public sealed class GetReview
@@ -27,7 +25,21 @@ public sealed class GetReview
         double WinRate,
         int TotalTrades,
         int Wins,
-        int Losses);
+        int Losses,
+        double AverageWin,
+        double AverageLoss,
+        double BestTradePnl,
+        double WorstTradePnl,
+        double BestDayPnl,
+        double WorstDayPnl,
+        int LongTrades,
+        int ShortTrades,
+        int RuleBreakTrades,
+        int HighConfidenceTrades,
+        string? TopAsset,
+        string? PrimaryTradingZone,
+        string? DominantEmotion,
+        string? TopTechnicalTheme);
 
     public sealed class Validator : AbstractValidator<Request>
     {
@@ -40,97 +52,67 @@ public sealed class GetReview
         }
     }
 
-    public sealed class Handler(ITradeDbContext context, ITradeProvider tradeProvider) : IQueryHandler<Request, Result<ReviewViewModel>>
+    public sealed class Handler(ITradeDbContext context, IReviewSnapshotBuilder reviewSnapshotBuilder) : IQueryHandler<Request, Result<ReviewViewModel>>
     {
         public async Task<Result<ReviewViewModel>> Handle(Request request, CancellationToken cancellationToken)
         {
-            // Try to find existing saved review
+            ReviewSnapshot snapshot = await reviewSnapshotBuilder.BuildAsync(
+                request.PeriodType,
+                request.PeriodStart,
+                request.UserId,
+                cancellationToken);
+
             TradingReview? existingReview = await context.TradingReviews
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r =>
                     r.CreatedBy == request.UserId &&
                     r.PeriodType == request.PeriodType &&
-                    r.PeriodStart == request.PeriodStart,
+                    r.PeriodStart == snapshot.PeriodStart,
                     cancellationToken);
 
-            if (existingReview is not null)
-            {
-                return Result<ReviewViewModel>.Success(new ReviewViewModel(
-                    existingReview.Id,
-                    existingReview.PeriodType,
-                    existingReview.PeriodStart,
-                    existingReview.PeriodEnd,
-                    existingReview.UserNotes,
-                    existingReview.AiSummary,
-                    existingReview.AiStrengths,
-                    existingReview.AiWeaknesses,
-                    existingReview.AiActionItems,
-                    existingReview.AiTechnicalInsights,
-                    existingReview.AiPsychologyAnalysis,
-                    existingReview.AiCriticalMistakesTechnical,
-                    existingReview.AiCriticalMistakesPsychological,
-                    existingReview.AiWhatToImprove,
-                    existingReview.AiSummaryGenerating,
-                    existingReview.TotalPnl,
-                    existingReview.WinRate,
-                    existingReview.TotalTrades,
-                    existingReview.Wins,
-                    existingReview.Losses));
-            }
-
-            // No saved review — compute metrics from cached trades
-            DateTime periodEnd = GetPeriodEnd(request.PeriodType, request.PeriodStart);
-
-            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(cancellationToken);
-            List<TradeCacheDto> periodTrades = [.. allTrades
-                .Where(t => t.CreatedBy == request.UserId)
-                .Where(t => t.Status == TradeStatus.Closed && t.Pnl.HasValue)
-                .Where(t => t.ClosedDate.HasValue && t.ClosedDate.Value >= request.PeriodStart && t.ClosedDate.Value <= periodEnd)];
-
-            int wins = periodTrades.Count(t => t.Pnl > 0);
-            int losses = periodTrades.Count(t => t.Pnl <= 0);
-            double totalPnl = periodTrades.Sum(t => (double)t.Pnl!.Value);
-            double winRate = periodTrades.Count > 0 ? (double)wins / periodTrades.Count * 100 : 0;
-
-            TradingReview newReview = new()
-            {
-                Id = 0,
-                PeriodType = request.PeriodType,
-                PeriodStart = request.PeriodStart,
-                PeriodEnd = periodEnd,
-                TotalPnl = Math.Round(totalPnl, 2),
-                WinRate = Math.Round(winRate, 1),
-                TotalTrades = periodTrades.Count,
-                Wins = wins,
-                Losses = losses
-            };
-
-            await context.TradingReviews.AddAsync(newReview, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
-
-            return Result<ReviewViewModel>.Success(new ReviewViewModel(
-                newReview.Id,
-                request.PeriodType,
-                request.PeriodStart,
-                periodEnd,
-                null, null, null, null, null,
-                null, null, null, null, null,
-                false,
-                newReview.TotalPnl,
-                newReview.WinRate,
-                newReview.TotalTrades,
-                newReview.Wins,
-                newReview.Losses));
+            return Result<ReviewViewModel>.Success(ToViewModel(existingReview, snapshot));
         }
 
-        private static DateTime GetPeriodEnd(ReviewPeriodType periodType, DateTime periodStart) => periodType switch
+        private static ReviewViewModel ToViewModel(TradingReview? review, ReviewSnapshot snapshot)
         {
-            ReviewPeriodType.Daily => periodStart.Date.AddDays(1).AddTicks(-1),
-            ReviewPeriodType.Weekly => periodStart.Date.AddDays(7).AddTicks(-1),
-            ReviewPeriodType.Monthly => periodStart.Date.AddMonths(1).AddTicks(-1),
-            ReviewPeriodType.Quarterly => periodStart.Date.AddMonths(3).AddTicks(-1),
-            _ => periodStart.Date.AddDays(1).AddTicks(-1)
-        };
+            ReviewSnapshotMetrics metrics = snapshot.Metrics;
+
+            return new ReviewViewModel(
+                review?.Id,
+                snapshot.PeriodType,
+                snapshot.PeriodStart,
+                snapshot.PeriodEnd,
+                review?.UserNotes,
+                review?.AiSummary,
+                review?.AiStrengths,
+                review?.AiWeaknesses,
+                review?.AiActionItems,
+                review?.AiTechnicalInsights,
+                review?.AiPsychologyAnalysis,
+                review?.AiCriticalMistakesTechnical,
+                review?.AiCriticalMistakesPsychological,
+                review?.AiWhatToImprove,
+                review?.AiSummaryGenerating ?? false,
+                metrics.TotalPnl,
+                metrics.WinRate,
+                metrics.TotalTrades,
+                metrics.Wins,
+                metrics.Losses,
+                metrics.AverageWin,
+                metrics.AverageLoss,
+                metrics.BestTradePnl,
+                metrics.WorstTradePnl,
+                metrics.BestDayPnl,
+                metrics.WorstDayPnl,
+                metrics.LongTrades,
+                metrics.ShortTrades,
+                metrics.RuleBreakTrades,
+                metrics.HighConfidenceTrades,
+                metrics.TopAsset,
+                metrics.PrimaryTradingZone,
+                metrics.DominantEmotion,
+                metrics.TopTechnicalTheme);
+        }
     }
 
     public sealed class Endpoint : ICarterModule
@@ -145,7 +127,7 @@ public sealed class GetReview
 
                 return result.IsSuccess ? Results.Ok(result) : Results.Problem(result.Errors[0].Description);
             })
-            .Produces<Result<ReviewViewModel>>(StatusCodes.Status200OK)
+            .Produces<Result<ReviewViewModel>>()
             .Produces(StatusCodes.Status400BadRequest)
             .WithSummary("Get review for a period.")
             .WithDescription("Retrieves a review for the specified period type and start date.")

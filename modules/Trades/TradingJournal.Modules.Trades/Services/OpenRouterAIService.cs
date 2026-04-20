@@ -2,19 +2,21 @@ using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Globalization;
 using TradingJournal.Modules.Trades.Dto;
 using TradingJournal.Modules.Trades.Extensions;
+using TradingJournal.Modules.Trades.Features.V1.Review;
 using TradingJournal.Modules.Trades.Options;
 using TradingJournal.Shared.Dtos;
 
 namespace TradingJournal.Modules.Trades.Services;
 
-internal sealed class OpenRouterAIService(
+internal sealed class OpenRouterAiService(
     IPromptService promptService,
     ITradeDbContext context,
     IEmotionTagProvider emotionTagProvider,
     IPsychologyProvider psychologyProvider,
-    ITradeProvider tradeProvider,
+    IReviewSnapshotBuilder reviewSnapshotBuilder,
     HttpClient httpClient,
     IImageHelper imageHelper,
     IOptions<OpenRouterOptions> options,
@@ -123,22 +125,22 @@ internal sealed class OpenRouterAIService(
         {
             { "{{Asset}}", summary.Asset },
             { "{{Position}}", summary.Position },
-            { "{{EntryPrice}}", summary.EntryPrice.ToString() },
-            { "{{TargetTier1}}", summary.TargetTier1.ToString() },
-            { "{{TargetTier2}}", summary.TargetTier2?.ToString() ?? string.Empty },
-            { "{{TargetTier3}}", summary.TargetTier3?.ToString() ?? string.Empty },
-            { "{{StopLoss}}", summary.StopLoss.ToString() },
+            { "{{EntryPrice}}", summary.EntryPrice.ToString(CultureInfo.InvariantCulture) },
+            { "{{TargetTier1}}", summary.TargetTier1.ToString(CultureInfo.InvariantCulture) },
+            { "{{TargetTier2}}", summary.TargetTier2?.ToString(CultureInfo.InvariantCulture) ?? string.Empty },
+            { "{{TargetTier3}}", summary.TargetTier3?.ToString(CultureInfo.InvariantCulture) ?? string.Empty },
+            { "{{StopLoss}}", summary.StopLoss.ToString(CultureInfo.InvariantCulture) },
             { "{{Notes}}", summary.Notes },
-            { "{{ExitPrice}}", summary.ExitPrice?.ToString() ?? string.Empty },
-            { "{{Pnl}}", summary.Pnl?.ToString() ?? string.Empty },
+            { "{{ExitPrice}}", summary.ExitPrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty },
+            { "{{Pnl}}", summary.Pnl?.ToString(CultureInfo.InvariantCulture) ?? string.Empty },
             { "{{ConfidenceLevel}}", summary.ConfidenceLevel },
             { "{{TradingZone}}", summary.TradingZone },
             { "{{Date}}", summary.OpenDate.ToShortDateString() },
             { "{{ClosedDate}}", summary.ClosedDate.ToShortDateString() },
             { "{{TradeTechnicalAnalysisTags}}", string.Join(", ", summary.TradeTechnicalAnalysisTags ?? []) },
-            { "{{TradeHistoryChecklists}}", string.Join(", ", summary.TradeHistoryChecklists ?? []) },
+            { "{{TradeHistoryChecklists}}", string.Join(", ", summary.TradeHistoryChecklists) },
             { "{{EmotionTags}}", string.Join(", ", summary.EmotionTags ?? []) },
-            { "{{PsychologyNotes}}", string.Join(", ", psychologyNotes ?? []) }
+            { "{{PsychologyNotes}}", string.Join(", ", psychologyNotes) }
         };
 
         return ReplacePlaceholders(template, replacements);
@@ -276,54 +278,160 @@ internal sealed class OpenRouterAIService(
             throw new InvalidOperationException("Not Found Review Prompt File.");
         }
 
-        var (metrics, tradesList) = await BuildReviewMetricsAndTrades(request, cancellationToken);
+        ReviewSnapshot snapshot = await reviewSnapshotBuilder.BuildAsync(
+            request.PeriodType,
+            request.PeriodStart,
+            request.UserId,
+            cancellationToken);
+        ReviewSnapshotMetrics metrics = snapshot.Metrics;
 
-        // Gather psychology notes for the period
-        List<string> psychologyNotes = await psychologyProvider.GetPsychologyByDate(request.PeriodStart, cancellationToken);
-
-        // Build prompt
         Dictionary<string, string> replacements = new()
         {
             { "{{PeriodType}}", request.PeriodType.ToString() },
-            { "{{PeriodStart}}", request.PeriodStart.ToShortDateString() },
-            { "{{PeriodEnd}}", request.PeriodEnd.ToShortDateString() },
-            { "{{TotalPnl}}", metrics.TotalPnl.ToString("F2") },
-            { "{{WinRate}}", metrics.WinRate.ToString("F1") },
+            { "{{PeriodStart}}", FormatPromptDate(snapshot.PeriodStart) },
+            { "{{PeriodEnd}}", FormatPromptDate(snapshot.PeriodEnd) },
+            { "{{TotalPnl}}", FormatPromptNumber(metrics.TotalPnl, 2) },
+            { "{{WinRate}}", FormatPromptNumber(metrics.WinRate, 1) },
             { "{{TotalTrades}}", metrics.TotalTrades.ToString() },
             { "{{Wins}}", metrics.Wins.ToString() },
             { "{{Losses}}", metrics.Losses.ToString() },
-            { "{{TradesList}}", tradesList },
-            { "{{PsychologyNotes}}", string.Join(", ", psychologyNotes ?? []) }
+            { "{{AverageWin}}", FormatPromptNumber(metrics.AverageWin, 2) },
+            { "{{AverageLoss}}", FormatPromptNumber(metrics.AverageLoss, 2) },
+            { "{{BestTradePnl}}", FormatPromptNumber(metrics.BestTradePnl, 2) },
+            { "{{WorstTradePnl}}", FormatPromptNumber(metrics.WorstTradePnl, 2) },
+            { "{{BestDayPnl}}", FormatPromptNumber(metrics.BestDayPnl, 2) },
+            { "{{WorstDayPnl}}", FormatPromptNumber(metrics.WorstDayPnl, 2) },
+            { "{{LongTrades}}", metrics.LongTrades.ToString() },
+            { "{{ShortTrades}}", metrics.ShortTrades.ToString() },
+            { "{{RuleBreakTrades}}", metrics.RuleBreakTrades.ToString() },
+            { "{{HighConfidenceTrades}}", metrics.HighConfidenceTrades.ToString() },
+            { "{{TopAsset}}", metrics.TopAsset ?? "Không có dữ liệu" },
+            { "{{PrimaryTradingZone}}", metrics.PrimaryTradingZone ?? "Không có dữ liệu" },
+            { "{{DominantEmotion}}", metrics.DominantEmotion ?? "Không có dữ liệu" },
+            { "{{TopTechnicalTheme}}", metrics.TopTechnicalTheme ?? "Không có dữ liệu" },
+            { "{{TradeCaseStudies}}", BuildReviewTradeCaseStudies(snapshot.Trades) },
+            { "{{TradesList}}", BuildReviewTradeList(snapshot.Trades) },
+            { "{{PsychologyNotes}}", BuildPsychologyDigest(snapshot.PsychologyNotes) }
         };
 
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
 
-        // Send to AI (text only, no images for review)
         string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
 
         return ParseReviewAiResponse(responseText);
     }
 
-    private async Task<((int TotalTrades, int Wins, int Losses, double TotalPnl, double WinRate) Metrics, string TradesList)> BuildReviewMetricsAndTrades(
-        ReviewSummaryRequestDto request, CancellationToken cancellationToken)
+    private static string BuildReviewTradeList(IReadOnlyList<ReviewTradeInsight> trades)
     {
-        List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(cancellationToken);
-        List<TradeCacheDto> periodTrades = [.. allTrades
-            .Where(t => t.CreatedBy == request.UserId)
-            .Where(t => t.Status == TradeStatus.Closed && t.Pnl.HasValue)
-            .Where(t => t.ClosedDate.HasValue && t.ClosedDate.Value >= request.PeriodStart && t.ClosedDate.Value <= request.PeriodEnd)];
+        if (trades.Count == 0)
+        {
+            return "Không có lệnh nào được đóng trong kỳ này.";
+        }
 
-        int wins = periodTrades.Count(t => t.Pnl > 0);
-        int losses = periodTrades.Count(t => t.Pnl <= 0);
-        double totalPnl = periodTrades.Sum(t => (double)t.Pnl!.Value);
-        double winRate = periodTrades.Count > 0 ? (double)wins / periodTrades.Count * 100 : 0;
+        List<string> lines = [];
 
-        string tradesList = periodTrades.Count > 0
-            ? string.Join("\n", periodTrades.Select(t =>
-                $"- {t.Asset} | {t.Position} | Entry: {t.EntryPrice} | PnL: {t.Pnl} | Closed: {t.ClosedDate?.ToShortDateString()}"))
-            : "Không có lệnh nào được đóng trong kỳ này.";
+        if (trades.Count > 12)
+        {
+            lines.Add($"- Đang hiển thị 12 lệnh gần nhất trên tổng {trades.Count} lệnh đã đóng. Các chỉ số hiệu suất phía trên vẫn phản ánh toàn bộ kỳ review.");
+        }
 
-        return ((periodTrades.Count, wins, losses, totalPnl, winRate), tradesList);
+        lines.AddRange(trades
+            .OrderByDescending(trade => trade.ClosedDate)
+            .Take(12)
+            .Select(BuildTradeLine));
+
+        return string.Join("\n", lines);
+    }
+
+    private static string BuildReviewTradeCaseStudies(IReadOnlyList<ReviewTradeInsight> trades)
+    {
+        if (trades.Count == 0)
+        {
+            return "Không có trade case nào để phân tích trong kỳ này.";
+        }
+
+        List<string> sections = [];
+
+        AppendTradeSection(
+            sections,
+            "Best trades",
+            trades.Where(trade => trade.Pnl > 0)
+                .OrderByDescending(trade => trade.Pnl)
+                .Take(3));
+
+        AppendTradeSection(
+            sections,
+            "Worst trades",
+            trades.Where(trade => trade.Pnl <= 0)
+                .OrderBy(trade => trade.Pnl)
+                .Take(3));
+
+        AppendTradeSection(
+            sections,
+            "Rule-break trades",
+            trades.Where(trade => trade.IsRuleBroken)
+                .OrderByDescending(trade => Math.Abs(trade.Pnl))
+                .Take(3));
+
+        return sections.Count > 0
+            ? string.Join("\n", sections)
+            : "Không có trade case nào để phân tích trong kỳ này.";
+    }
+
+    private static void AppendTradeSection(
+        ICollection<string> sections,
+        string title,
+        IEnumerable<ReviewTradeInsight> trades)
+    {
+        List<ReviewTradeInsight> tradeList = [.. trades];
+
+        if (tradeList.Count == 0)
+        {
+            return;
+        }
+
+        sections.Add($"### {title}");
+
+        foreach (ReviewTradeInsight trade in tradeList)
+        {
+            sections.Add(BuildTradeLine(trade));
+        }
+    }
+
+    private static string BuildTradeLine(ReviewTradeInsight trade)
+    {
+        string technicalThemes = JoinOrFallback(trade.TechnicalThemes);
+        string emotionTags = JoinOrFallback(trade.EmotionTags);
+        string checklistItems = JoinOrFallback(trade.ChecklistItems);
+        string zone = string.IsNullOrWhiteSpace(trade.TradingZone) ? "Unknown zone" : trade.TradingZone;
+        string notes = string.IsNullOrWhiteSpace(trade.Notes) ? "No note" : trade.Notes;
+        string ruleBreak = trade.IsRuleBroken
+            ? $"Yes ({(string.IsNullOrWhiteSpace(trade.RuleBreakReason) ? "No reason logged" : trade.RuleBreakReason)})"
+            : "No";
+
+        return $"- {FormatPromptDate(trade.ClosedDate)} | {trade.Asset} | {trade.Position} | PnL: {FormatPromptNumber(trade.Pnl, 2)} | Confidence: {trade.ConfidenceLevel} | Zone: {zone} | Rule break: {ruleBreak} | Technical: {technicalThemes} | Emotions: {emotionTags} | Checklist: {checklistItems} | Note: {notes}";
+    }
+
+    private static string BuildPsychologyDigest(IReadOnlyList<string> psychologyNotes)
+    {
+        return psychologyNotes.Count > 0
+            ? string.Join("\n", psychologyNotes)
+            : "Không có nhật ký tâm lý nào trong kỳ này.";
+    }
+
+    private static string JoinOrFallback(IReadOnlyList<string> values)
+    {
+        return values.Count > 0 ? string.Join(", ", values) : "None";
+    }
+
+    private static string FormatPromptDate(DateTime value)
+    {
+        return value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    }
+
+    private static string FormatPromptNumber(double value, int decimals)
+    {
+        return value.ToString($"F{decimals}", CultureInfo.InvariantCulture);
     }
 
     private static ReviewSummaryResultDto? ParseReviewAiResponse(string responseText)

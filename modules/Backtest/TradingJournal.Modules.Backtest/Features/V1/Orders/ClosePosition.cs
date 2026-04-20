@@ -1,10 +1,3 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.EntityFrameworkCore;
-using TradingJournal.Modules.Backtest.Domain;
-using TradingJournal.Modules.Backtest.Infrastructure;
-
 namespace TradingJournal.Modules.Backtest.Features.V1.Orders;
 
 public sealed class ClosePosition
@@ -29,9 +22,11 @@ public sealed class ClosePosition
             if (order.Status != BacktestOrderStatus.Active)
                 return Result.Failure(Error.Create("Only active orders can be closed."));
 
+            DateTime closeTimestamp = order.Session.CurrentTimestamp;
+
             order.Status = BacktestOrderStatus.Closed;
             order.ExitPrice = request.ExitPrice;
-            order.ClosedAt = DateTime.UtcNow;
+            order.ClosedAt = closeTimestamp;
 
             decimal entryPrice = order.FilledPrice ?? order.EntryPrice;
             
@@ -56,7 +51,7 @@ public sealed class ClosePosition
                 Pnl = order.Pnl.Value,
                 BalanceAfter = order.Session.CurrentBalance,
                 EntryTime = order.FilledAt ?? order.OrderedAt,
-                ExitTime = order.ClosedAt.Value,
+                ExitTime = closeTimestamp,
                 ExitReason = "Manual"
             };
 

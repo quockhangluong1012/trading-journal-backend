@@ -5,6 +5,7 @@ using System.Reflection;
 using TradingJournal.Modules.Trades.EventHandlers;
 using TradingJournal.Modules.Trades.Events;
 using TradingJournal.Modules.Trades.Extensions;
+using TradingJournal.Modules.Trades.Features.V1.Review;
 using TradingJournal.Modules.Trades.Options;
 using TradingJournal.Modules.Trades.Services;
 using TradingJournal.Shared.Behaviors;
@@ -68,8 +69,9 @@ public static class DependencyInjection
 
     private static IServiceCollection AddOpenRouterAI(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddHttpClient<IOpenRouterAIService, OpenRouterAIService>();
+        services.AddHttpClient<IOpenRouterAIService, OpenRouterAiService>();
         services.AddTransient<IPromptService, PromptService>();
+        services.AddScoped<IReviewSnapshotBuilder, ReviewSnapshotBuilder>();
 
         services.Configure<OpenRouterOptions>(configuration.GetSection(OpenRouterOptions.BindLocator));
 

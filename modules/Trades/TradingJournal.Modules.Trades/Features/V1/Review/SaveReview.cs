@@ -1,5 +1,3 @@
-using TradingJournal.Shared.Dtos;
-
 namespace TradingJournal.Modules.Trades.Features.V1.Review;
 
 public sealed class SaveReview
@@ -27,39 +25,34 @@ public sealed class SaveReview
         }
     }
 
-    public sealed class Handler(ITradeDbContext context, ITradeProvider tradeProvider)
+    public sealed class Handler(ITradeDbContext context, IReviewSnapshotBuilder reviewSnapshotBuilder)
         : ICommandHandler<Request, Result<int>>
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {
-            // Compute fresh metrics
-            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(cancellationToken);
-            List<TradeCacheDto> periodTrades = [.. allTrades
-                .Where(t => t.CreatedBy == request.UserId)
-                .Where(t => t.Status == TradeStatus.Closed && t.Pnl.HasValue)
-                .Where(t => t.ClosedDate.HasValue && t.ClosedDate.Value >= request.PeriodStart && t.ClosedDate.Value <= request.PeriodEnd)];
+            ReviewSnapshot snapshot = await reviewSnapshotBuilder.BuildAsync(
+                request.PeriodType,
+                request.PeriodStart,
+                request.UserId,
+                cancellationToken);
+            ReviewSnapshotMetrics metrics = snapshot.Metrics;
 
-            int wins = periodTrades.Count(t => t.Pnl > 0);
-            int losses = periodTrades.Count(t => t.Pnl <= 0);
-            double totalPnl = periodTrades.Sum(t => (double)t.Pnl!.Value);
-            double winRate = periodTrades.Count > 0 ? (double)wins / periodTrades.Count * 100 : 0;
-
-            // Upsert
             TradingReview? existing = await context.TradingReviews
                 .FirstOrDefaultAsync(r =>
                     r.CreatedBy == request.UserId &&
                     r.PeriodType == request.PeriodType &&
-                    r.PeriodStart == request.PeriodStart,
+                    r.PeriodStart == snapshot.PeriodStart,
                     cancellationToken);
 
             if (existing is not null)
             {
+                existing.PeriodEnd = snapshot.PeriodEnd;
                 existing.UserNotes = request.UserNotes;
-                existing.TotalPnl = Math.Round(totalPnl, 2);
-                existing.WinRate = Math.Round(winRate, 1);
-                existing.TotalTrades = periodTrades.Count;
-                existing.Wins = wins;
-                existing.Losses = losses;
+                existing.TotalPnl = metrics.TotalPnl;
+                existing.WinRate = metrics.WinRate;
+                existing.TotalTrades = metrics.TotalTrades;
+                existing.Wins = metrics.Wins;
+                existing.Losses = metrics.Losses;
 
                 context.TradingReviews.Update(existing);
                 await context.SaveChangesAsync(cancellationToken);
@@ -70,14 +63,14 @@ public sealed class SaveReview
             {
                 Id = 0,
                 PeriodType = request.PeriodType,
-                PeriodStart = request.PeriodStart,
-                PeriodEnd = request.PeriodEnd,
+                PeriodStart = snapshot.PeriodStart,
+                PeriodEnd = snapshot.PeriodEnd,
                 UserNotes = request.UserNotes,
-                TotalPnl = Math.Round(totalPnl, 2),
-                WinRate = Math.Round(winRate, 1),
-                TotalTrades = periodTrades.Count,
-                Wins = wins,
-                Losses = losses,
+                TotalPnl = metrics.TotalPnl,
+                WinRate = metrics.WinRate,
+                TotalTrades = metrics.TotalTrades,
+                Wins = metrics.Wins,
+                Losses = metrics.Losses,
             };
 
             await context.TradingReviews.AddAsync(review, cancellationToken);
@@ -99,7 +92,7 @@ public sealed class SaveReview
 
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);
             })
-            .Produces<Result<int>>(StatusCodes.Status200OK)
+            .Produces<Result<int>>()
             .Produces(StatusCodes.Status400BadRequest)
             .WithSummary("Save a review.")
             .WithDescription("Creates or updates a review for the specified period.")

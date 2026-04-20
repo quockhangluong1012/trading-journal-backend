@@ -19,7 +19,11 @@ public sealed class GetReviewTrades
         DateTime Date,
         DateTime? ClosedDate,
         double EntryPrice,
-        double? ExitPrice);
+        double? ExitPrice,
+        int ConfidenceLevel,
+        string? TradingZone,
+        bool IsRuleBroken,
+        string? RuleBreakReason);
 
     public sealed class Validator : AbstractValidator<Request>
     {
@@ -64,7 +68,11 @@ public sealed class GetReviewTrades
                     th.Date,
                     th.ClosedDate,
                     th.EntryPrice,
-                    th.ExitPrice))
+                    th.ExitPrice,
+                    (int)th.ConfidenceLevel,
+                    th.TradingZoneId.HasValue ? th.TradingZone.Name : null,
+                    th.IsRuleBroken,
+                    th.RuleBreakReason))
                 .ToListAsync(cancellationToken);
 
             PaginationViewModel<ReviewTradeViewModel> result = new()
@@ -90,7 +98,7 @@ public sealed class GetReviewTrades
 
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);
             })
-            .Produces<Result<PaginationViewModel<ReviewTradeViewModel>>>(StatusCodes.Status200OK)
+            .Produces<Result<PaginationViewModel<ReviewTradeViewModel>>>()
             .Produces(StatusCodes.Status400BadRequest)
             .WithSummary("Get trades for a review period.")
             .WithDescription("Retrieves paginated trade histories for the specified date range.")

@@ -14,11 +14,29 @@ Nhiệm vụ của bạn là phân tích dữ liệu giao dịch trong một kho
 - **Total Trades:** {{TotalTrades}}
 - **Wins:** {{Wins}}
 - **Losses:** {{Losses}}
+- **Average Win:** {{AverageWin}}
+- **Average Loss:** {{AverageLoss}}
+- **Best Trade:** {{BestTradePnl}}
+- **Worst Trade:** {{WorstTradePnl}}
+- **Best Day:** {{BestDayPnl}}
+- **Worst Day:** {{WorstDayPnl}}
+- **Long / Short Mix:** {{LongTrades}} / {{ShortTrades}}
+- **Rule-Break Trades:** {{RuleBreakTrades}}
+- **High-Confidence Trades:** {{HighConfidenceTrades}}
 
-## 3. TRADES LIST (DANH SÁCH CÁC LỆNH)
+## 3. REVIEW SIGNALS (TÍN HIỆU NỔI BẬT)
+- **Top Asset:** {{TopAsset}}
+- **Primary Trading Zone:** {{PrimaryTradingZone}}
+- **Dominant Emotion:** {{DominantEmotion}}
+- **Top Technical Theme:** {{TopTechnicalTheme}}
+
+## 4. HIGHEST-SIGNAL TRADE CASES (CÁC CASE QUAN TRỌNG)
+{{TradeCaseStudies}}
+
+## 5. RECENT CLOSED TRADES (CÁC LỆNH GẦN NHẤT)
 {{TradesList}}
 
-## 4. PSYCHOLOGY NOTES (GHI CHÚ TÂM LÝ TRONG KỲ)
+## 6. PSYCHOLOGY NOTES (GHI CHÚ TÂM LÝ TRONG KỲ)
 {{PsychologyNotes}}
 
 ---
@@ -30,16 +48,19 @@ Dựa trên dữ liệu giao dịch và tâm lý trong kỳ, hãy phân tích th
 - Tóm tắt tổng quan hiệu suất giao dịch trong kỳ (3-5 câu).
 - Đánh giá mức độ nhất quán (consistency) trong việc tuân thủ hệ thống và kỷ luật giao dịch.
 - So sánh kết quả với kỳ vọng hợp lý dựa trên dữ liệu.
+- BẮT BUỘC phản ánh các chỉ số Average Win / Average Loss, Best/Worst Trade và Best/Worst Day khi chúng có ý nghĩa.
 
 ### [2] ĐIỂM MẠNH (STRENGTHS)
 - Chỉ ra 2-3 điểm mạnh nổi bật trong kỳ giao dịch này.
 - Phân tích cụ thể: lệnh nào / ngày nào là ví dụ tốt nhất cho kỷ luật tốt hoặc kỹ thuật tốt.
 - Đánh giá tâm lý tích cực nào đã đóng góp vào hiệu suất.
+- Ưu tiên trích dẫn từ các trade case ở phần Highest-Signal Trade Cases.
 
 ### [3] ĐIỂM YẾU (WEAKNESSES)
 - Chỉ ra 2-3 điểm yếu chính cần cải thiện.
 - Phân tích mối quan hệ giữa tâm lý tiêu cực (nếu có) và các lệnh thua lỗ.
 - Xác định pattern lặp lại của các lỗi sai (nếu có).
+- Nếu có Rule-Break Trades > 0, phải chỉ rõ lỗi nào lặp lại nhiều nhất và liên hệ tới trade cụ thể.
 
 ### [4] HÀNH ĐỘNG CẢI THIỆN (ACTION ITEMS)
 - Đưa ra 3-5 hành động CỤ THỂ, ĐO LƯỜNG ĐƯỢC cho kỳ giao dịch tiếp theo.
@@ -52,12 +73,14 @@ Dựa trên dữ liệu giao dịch và tâm lý trong kỳ, hãy phân tích th
 - Phân tích các order block, fair value gaps, liquidity sweeps đã được sử dụng.
 - Nhận xét về timing entry/exit và quản lý vị thế theo framework ICT.
 - Đề xuất cải thiện kỹ thuật cụ thể dựa trên dữ liệu giao dịch.
+- Ưu tiên sử dụng Top Technical Theme và các trade case để tránh phân tích chung chung.
 
 ### [6] PHÂN TÍCH TÂM LÝ VÀ KỶ LUẬT (PSYCHOLOGY ANALYSIS)
 - Đánh giá chi tiết trạng thái tâm lý tổng quan trong kỳ giao dịch.
 - Phân tích mối tương quan giữa emotion tags và kết quả giao dịch.
 - Nhận xét về mức độ kỷ luật tuân thủ trading plan.
 - Xác định các trigger tâm lý dẫn đến quyết định sai.
+- Phải sử dụng Dominant Emotion, Psychology Notes và Rule-Break Trades làm bằng chứng trực tiếp.
 
 ### [7] CÁC LỖI NGHIÊM TRỌNG (CRITICAL MISTAKES)
 - Liệt kê các lỗi kỹ thuật nghiêm trọng (technical): entry sai vùng, không đặt stop loss, bỏ qua confirmation, v.v.

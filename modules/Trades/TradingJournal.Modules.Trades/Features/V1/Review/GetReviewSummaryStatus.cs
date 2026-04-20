@@ -22,12 +22,14 @@ public sealed class GetReviewSummaryStatus
     {
         public async Task<Result<ReviewSummaryStatusViewModel>> Handle(Request request, CancellationToken cancellationToken)
         {
+            ReviewPeriodBounds period = ReviewPeriodCalculator.GetBounds(request.PeriodType, request.PeriodStart);
+
             TradingReview? review = await context.TradingReviews
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r =>
                     r.CreatedBy == request.UserId &&
                     r.PeriodType == request.PeriodType &&
-                    r.PeriodStart == request.PeriodStart,
+                    r.PeriodStart == period.Start,
                     cancellationToken);
 
             if (review is null)
