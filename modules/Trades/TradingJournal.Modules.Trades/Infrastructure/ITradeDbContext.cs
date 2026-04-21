@@ -5,6 +5,12 @@ public interface ITradeDbContext
     DbSet<TradeHistory> TradeHistories { get; set; }
 
     DbSet<ChecklistModel> ChecklistModels { get; set; }
+
+    DbSet<TradingSetup> TradingSetups { get; set; }
+
+    DbSet<SetupStep> SetupSteps { get; set; }
+
+    DbSet<SetupConnection> SetupConnections { get; set; }
     
     DbSet<PretradeChecklist> PretradeChecklists { get; set; }
 

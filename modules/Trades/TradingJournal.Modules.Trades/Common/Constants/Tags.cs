@@ -35,6 +35,8 @@ public static class ApiGroup
 
         internal const string ChecklistModels = "api/v1/checklist-models";
 
+        internal const string TradingSetups = "api/v1/trading-setups";
+
         internal const string Dashboard = "api/v1/dashboard";
 
         internal const string PretradeChecklists = "api/v1/pretrade-checklists";
