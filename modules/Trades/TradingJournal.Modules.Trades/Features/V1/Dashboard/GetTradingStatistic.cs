@@ -22,12 +22,12 @@ public sealed class GetTradingStatistic
 
             List<TradeHistory> closedTrades = [.. trades.Where(t => t.Status == TradeStatus.Closed)];
 
-            double totalPnL = closedTrades.Where(t => t.Pnl.HasValue).Sum(t => t.Pnl ?? 0);
+            decimal totalPnL = closedTrades.Where(t => t.Pnl.HasValue).Sum(t => t.Pnl ?? 0);
 
             int totalWin = closedTrades.Count(t => t.Pnl is > 0);
             int totalLoss = closedTrades.Count(t => t.Pnl is < 0);
 
-            double winRate = closedTrades.Count == 0 ? 0 : (double)totalWin / (totalWin + totalLoss) * 100;
+            decimal winRate = closedTrades.Count == 0 ? 0 : (decimal)totalWin / (totalWin + totalLoss) * 100;
 
             int totalTrades = trades.Count;
 
@@ -51,9 +51,9 @@ public sealed class GetTradingStatistic
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Dashboard);
 
-            group.MapGet("/statistics", async (DashboardFilter filter, IMediator sender) =>
+            group.MapGet("/statistics", async (DashboardFilter filter, ClaimsPrincipal user, IMediator sender) =>
             {
-                Result<TradingStatisticViewModel> result = await sender.Send(new Request(filter));
+                Result<TradingStatisticViewModel> result = await sender.Send(new Request(filter) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result.Value) : Results.Problem(result.Errors[0].Description);
             })

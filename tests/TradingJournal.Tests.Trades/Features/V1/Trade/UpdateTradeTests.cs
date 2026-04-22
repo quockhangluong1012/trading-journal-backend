@@ -16,8 +16,8 @@ public sealed class UpdateTradeValidatorTests
     public UpdateTradeValidatorTests() => _validator = new UpdateTrade.Validator();
 
     private UpdateTrade.Request CreateValidRequest() =>
-        new(1, "EURUSD", SharedEnums.PositionType.Long, 1.0850, 1.0900,
-            null, null, 1.0800, "Notes", DateTime.UtcNow,
+        new(1, "EURUSD", SharedEnums.PositionType.Long, 1.0850m, 1.0900m,
+            null, null, 1.0800m, "Notes", DateTime.UtcNow,
             SharedEnums.TradeStatus.Open, null, null, null, [],
             null, null, ConfidenceLevel.Neutral, null,
             [1], 1, null);
@@ -82,8 +82,8 @@ public sealed class UpdateTradeHandlerTests
     public async Task Handle_TradeNotFound_ReturnsFailure()
     {
         var request = new UpdateTrade.Request(
-            1, "EURUSD", SharedEnums.PositionType.Long, 1.0850, 1.0900,
-            null, null, 1.0800, "Notes", DateTime.UtcNow,
+            1, "EURUSD", SharedEnums.PositionType.Long, 1.0850m, 1.0900m,
+            null, null, 1.0800m, "Notes", DateTime.UtcNow,
             SharedEnums.TradeStatus.Open, null, null, null, [],
             null, null, ConfidenceLevel.Neutral, null,
             [1], 1, null, UserId: 42);
@@ -99,8 +99,8 @@ public sealed class UpdateTradeHandlerTests
     public async Task Handle_TradeFound_UpdatesAndReturnsSuccess()
     {
         var request = new UpdateTrade.Request(
-            1, "EURUSD", SharedEnums.PositionType.Long, 1.0850, 1.0900,
-            null, null, 1.0800, "Updated", DateTime.UtcNow,
+            1, "EURUSD", SharedEnums.PositionType.Long, 1.0850m, 1.0900m,
+            null, null, 1.0800m, "Updated", DateTime.UtcNow,
             SharedEnums.TradeStatus.Open, null, null, null, [],
             null, null, ConfidenceLevel.Neutral, null,
             [1], 1, null, UserId: 42);
@@ -130,8 +130,8 @@ public sealed class UpdateTradeHandlerTests
     public async Task Handle_Checklist_From_Another_User_ReturnsFailure()
     {
         var request = new UpdateTrade.Request(
-            1, "EURUSD", SharedEnums.PositionType.Long, 1.0850, 1.0900,
-            null, null, 1.0800, "Updated", DateTime.UtcNow,
+            1, "EURUSD", SharedEnums.PositionType.Long, 1.0850m, 1.0900m,
+            null, null, 1.0800m, "Updated", DateTime.UtcNow,
             SharedEnums.TradeStatus.Open, null, null, null, [],
             null, null, ConfidenceLevel.Neutral, null,
             [1], 1, null, UserId: 42);
@@ -159,3 +159,4 @@ public sealed class UpdateTradeHandlerTests
         _ctx.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }
+

@@ -1,14 +1,10 @@
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Storage;
-using TradingJournal.Shared.Extensions;
+using TradingJournal.Shared.Infrastructure;
 
 namespace TradingJournal.Modules.Backtest.Infrastructure;
 
 internal sealed class BacktestDbContext(DbContextOptions<BacktestDbContext> options, IHttpContextAccessor httpContextAccessor)
-    : DbContext(options), IBacktestDbContext
+    : AuditableDbContext(options, httpContextAccessor), IBacktestDbContext
 {
-    private IDbContextTransaction? _transaction;
-
     public DbSet<BacktestSession> BacktestSessions { get; set; } = null!;
 
     public DbSet<BacktestOrder> BacktestOrders { get; set; } = null!;
@@ -118,47 +114,5 @@ internal sealed class BacktestDbContext(DbContextOptions<BacktestDbContext> opti
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
-
-    public async Task BeginTransaction()
-    {
-        _transaction = await Database.BeginTransactionAsync();
-    }
-
-    public async Task CommitTransaction()
-    {
-        if (_transaction == null) return;
-        await _transaction.CommitAsync();
-        await _transaction.DisposeAsync();
-        _transaction = null;
-    }
-
-    public async Task RollbackTransaction()
-    {
-        if (_transaction == null) return;
-        await _transaction.RollbackAsync();
-        await _transaction.DisposeAsync();
-        _transaction = null;
-    }
-
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        int userId = httpContextAccessor.HttpContext?.User.GetCurrentUserId() ?? 0;
-
-        foreach (EntityEntry<EntityBase<int>> entry in ChangeTracker.Entries<EntityBase<int>>())
-        {
-            switch (entry.State)
-            {
-                case EntityState.Added:
-                    entry.Entity.CreatedDate = DateTime.UtcNow;
-                    entry.Entity.CreatedBy = userId;
-                    break;
-                case EntityState.Modified:
-                    entry.Entity.UpdatedDate = DateTime.UtcNow;
-                    entry.Entity.UpdatedBy = userId;
-                    break;
-            }
-        }
-
-        return base.SaveChangesAsync(cancellationToken);
-    }
 }
+

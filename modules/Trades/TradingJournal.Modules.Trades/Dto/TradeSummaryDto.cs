@@ -1,15 +1,15 @@
-﻿namespace TradingJournal.Modules.Trades.Dto;
+namespace TradingJournal.Modules.Trades.Dto;
 
-public sealed record TradeSumamryDto(string Asset,
+public sealed record TradeSummaryDto(string Asset,
         string Position,
-        double EntryPrice,
-        double TargetTier1,
-        double? TargetTier2,
-        double? TargetTier3,
-        double StopLoss,
+        decimal EntryPrice,
+        decimal TargetTier1,
+        decimal? TargetTier2,
+        decimal? TargetTier3,
+        decimal StopLoss,
         string Notes,
-        double? ExitPrice,
-        double? Pnl,
+        decimal? ExitPrice,
+        decimal? Pnl,
         List<string>? TradeTechnicalAnalysisTags,
         List<string>? EmotionTags,
         string ConfidenceLevel,
@@ -17,4 +17,3 @@ public sealed record TradeSumamryDto(string Asset,
         string TradingZone,
         DateTime OpenDate,
         DateTime ClosedDate);
-

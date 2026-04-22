@@ -35,9 +35,9 @@ public sealed class CancelOrder
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Orders);
 
-            group.MapDelete("/{orderId:int}", async (int orderId, ISender sender) =>
+            group.MapDelete("/{orderId:int}", async (int orderId, ClaimsPrincipal user, ISender sender) =>
             {
-                Result result = await sender.Send(new Request(orderId));
+                Result result = await sender.Send(new Request(orderId) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.NoContent() : Results.BadRequest(result);
             })

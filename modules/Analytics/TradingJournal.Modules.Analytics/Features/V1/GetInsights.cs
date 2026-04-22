@@ -23,8 +23,7 @@ public sealed class GetInsights
     {
         public async Task<Result<IReadOnlyCollection<InsightViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(cancellationToken);
-            List<TradeCacheDto> trades = [.. allTrades.Where(t => t.CreatedBy == request.UserId)];
+            List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
             DateTime fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
 
             List<TradeCacheDto> closed = [.. trades
@@ -41,28 +40,28 @@ public sealed class GetInsights
             List<TradeCacheDto> wins = [.. closed.Where(t => t.Pnl > 0)];
             List<TradeCacheDto> losses = [.. closed.Where(t => t.Pnl <= 0)];
 
-            double winRate = (double)wins.Count / closed.Count * 100;
-            double avgWin = wins.Count > 0 ? wins.Average(t => (double)t.Pnl!.Value) : 0;
-            double avgLoss = losses.Count > 0 ? Math.Abs(losses.Average(t => (double)t.Pnl!.Value)) : 0;
+            decimal winRate = (decimal)wins.Count / closed.Count * 100;
+            decimal avgWin = wins.Count > 0 ? wins.Average(t => (decimal)t.Pnl!.Value) : 0;
+            decimal avgLoss = losses.Count > 0 ? Math.Abs(losses.Average(t => (decimal)t.Pnl!.Value)) : 0;
 
-            double grossProfit = wins.Sum(t => (double)t.Pnl!.Value);
-            double grossLoss = Math.Abs(losses.Sum(t => (double)t.Pnl!.Value));
-            double profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (grossProfit > 0 ? double.MaxValue : 0);
+            decimal grossProfit = wins.Sum(t => (decimal)t.Pnl!.Value);
+            decimal grossLoss = Math.Abs(losses.Sum(t => (decimal)t.Pnl!.Value));
+            decimal profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (grossProfit > 0 ? decimal.MaxValue : 0);
 
             // Max drawdown
             List<TradeCacheDto> sorted = [.. closed
                 .Where(t => t.ClosedDate.HasValue)
                 .OrderBy(t => t.ClosedDate!.Value)];
 
-            double peak = 0, equity = 0, maxDDPct = 0;
+            decimal peak = 0, equity = 0, maxDDPct = 0;
             foreach (TradeCacheDto t in sorted)
             {
-                equity += (double)t.Pnl!.Value;
+                equity += (decimal)t.Pnl!.Value;
                 if (equity > peak) peak = equity;
-                double dd = peak - equity;
+                decimal dd = peak - equity;
                 if (dd > 0 && peak > 0)
                 {
-                    double ddPct = dd / peak * 100;
+                    decimal ddPct = dd / peak * 100;
                     if (ddPct > maxDDPct) maxDDPct = ddPct;
                 }
             }
@@ -78,38 +77,38 @@ public sealed class GetInsights
             // Long vs Short
             List<TradeCacheDto> longs = [.. closed.Where(t => t.Position == PositionType.Long)];
             List<TradeCacheDto> shorts = [.. closed.Where(t => t.Position == PositionType.Short)];
-            double longsWinRate = longs.Count > 0 ? (double)longs.Count(t => t.Pnl > 0) / longs.Count * 100 : 0;
-            double shortsWinRate = shorts.Count > 0 ? (double)shorts.Count(t => t.Pnl > 0) / shorts.Count * 100 : 0;
+            decimal longsWinRate = longs.Count > 0 ? (decimal)longs.Count(t => t.Pnl > 0) / longs.Count * 100 : 0;
+            decimal shortsWinRate = shorts.Count > 0 ? (decimal)shorts.Count(t => t.Pnl > 0) / shorts.Count * 100 : 0;
 
             // Avg holding days
             double[] holdingDays = [.. closed
                 .Where(t => t.ClosedDate.HasValue)
                 .Select(t => (t.ClosedDate!.Value - t.Date).TotalDays)];
-            double avgHoldingDays = holdingDays.Length > 0 ? holdingDays.Average() : 0;
+            decimal avgHoldingDays = holdingDays.Length > 0 ? (decimal)holdingDays.Average() : 0;
 
             // Avg risk-reward
             double[] rrValues = [.. closed
                 .Where(t => t.StopLoss > 0 && t.TargetTier1 > 0 && t.EntryPrice > 0)
                 .Select(t =>
                 {
-                    double risk = Math.Abs(t.EntryPrice - t.StopLoss);
-                    double reward = Math.Abs(t.TargetTier1 - t.EntryPrice);
-                    return risk > 0 ? reward / risk : 0;
+                    decimal risk = Math.Abs(t.EntryPrice - t.StopLoss);
+                    decimal reward = Math.Abs(t.TargetTier1 - t.EntryPrice);
+                    return risk > 0 ? (double)(reward / risk) : 0;
                 })
                 .Where(r => r > 0)];
-            double avgRiskReward = rrValues.Length > 0 ? rrValues.Average() : 0;
+            decimal avgRiskReward = rrValues.Length > 0 ? (decimal)rrValues.Average() : 0;
 
             // Sharpe
             double[] returns = [.. sorted.Select(t => (double)t.Pnl!.Value)];
-            double meanReturn = returns.Length > 0 ? returns.Average() : 0;
-            double stdDev = returns.Length > 1
-                ? Math.Sqrt(returns.Sum(r => Math.Pow(r - meanReturn, 2)) / (returns.Length - 1))
+            decimal meanReturn = returns.Length > 0 ? (decimal)returns.Average() : 0;
+            decimal stdDev = returns.Length > 1
+                ? (decimal)Math.Sqrt(returns.Sum(r => Math.Pow(r - (double)meanReturn, 2)) / (returns.Length - 1))
                 : 0;
-            double sharpeRatio = stdDev > 0 ? meanReturn / stdDev * Math.Sqrt(252) : 0;
+            decimal sharpeRatio = stdDev > 0 ? meanReturn / stdDev * (decimal)Math.Sqrt(252) : 0;
 
             // Best/worst asset
             var assetPnl = closed.GroupBy(t => t.Asset)
-                .Select(g => new { Asset = g.Key, Pnl = g.Sum(t => (double)t.Pnl!.Value) })
+                .Select(g => new { Asset = g.Key, Pnl = g.Sum(t => (decimal)t.Pnl!.Value) })
                 .ToList();
             var bestAsset = assetPnl.OrderByDescending(a => a.Pnl).FirstOrDefault();
             var worstAsset = assetPnl.OrderBy(a => a.Pnl).FirstOrDefault();
@@ -130,9 +129,9 @@ public sealed class GetInsights
                 insights.Add(new("warning", "Low win rate", $"{winRate:F1}% win rate suggests reviewing entry confluences. Consider adding more confirmation filters."));
 
             // Risk reward
-            if (avgRiskReward >= 2.5)
+            if (avgRiskReward >= 2.5m)
                 insights.Add(new("success", "Great risk-to-reward", $"Average R:R of {avgRiskReward:F1}:1 means you capture large moves relative to risk."));
-            else if (avgRiskReward > 0 && avgRiskReward < 1.5)
+            else if (avgRiskReward > 0 && avgRiskReward < 1.5m)
                 insights.Add(new("warning", "Low risk-to-reward", $"Average R:R of {avgRiskReward:F1}:1 requires a very high win rate to stay profitable. Aim for 2:1 or better."));
 
             // Drawdown
@@ -163,7 +162,7 @@ public sealed class GetInsights
                 insights.Add(new("warning", $"Underperformer: {worstAsset.Asset}", $"{worstAsset.Asset} lost ${Math.Abs(worstAsset.Pnl):N0}. Evaluate if this market suits your strategy."));
 
             // Sharpe
-            if (sharpeRatio > 1.5)
+            if (sharpeRatio > 1.5m)
                 insights.Add(new("success", "Strong risk-adjusted returns", $"Sharpe ratio of {sharpeRatio:F2} indicates good returns relative to volatility."));
 
             if (insights.Count == 0)
@@ -179,9 +178,9 @@ public sealed class GetInsights
         {
             RouteGroupBuilder group = app.MapGroup("api/v1/analytics");
 
-            group.MapGet("/insights", async (AnalyticsFilter filter, ISender sender) =>
+            group.MapGet("/insights", async (AnalyticsFilter filter, ClaimsPrincipal user, ISender sender) =>
             {
-                var result = await sender.Send(new Request(filter));
+                var result = await sender.Send(new Request(filter) with { UserId = user.GetCurrentUserId() });
                 return result.IsSuccess ? Results.Ok(result) : Results.Problem(result.Errors[0].Description);
             })
             .Produces<Result<IReadOnlyCollection<InsightViewModel>>>(StatusCodes.Status200OK)

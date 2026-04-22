@@ -6,7 +6,7 @@ public sealed class GetTradingProfile
 {
     public record Request() : IQuery<Result<Response>>;
 
-    public record Response(int Id, int? MaxTradesPerDay, double? MaxDailyLossPercentage, int? MaxConsecutiveLosses, bool IsDisciplineEnabled);
+    public record Response(int Id, int? MaxTradesPerDay, decimal? MaxDailyLossPercentage, int? MaxConsecutiveLosses, bool IsDisciplineEnabled);
 
     public sealed class Handler(ITradeDbContext context, IHttpContextAccessor httpContextAccessor) : IQueryHandler<Request, Result<Response>>
     {
@@ -39,7 +39,7 @@ public sealed class GetTradingProfile
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradingProfiles);
 
-            group.MapGet("/", async (ISender sender) =>
+            group.MapGet("/", async (ClaimsPrincipal user, ISender sender) =>
             {
                 Result<Response> result = await sender.Send(new Request());
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);

@@ -148,7 +148,7 @@ public class OrderMatchingEngineTests
     public void Short_SL_Hit_At_Ask_Price()
     {
         // Arrange: Short position, SL at 1.1100
-        // Bid High = 1.1090, Ask High = 1.1090 + 0.0002 = 1.1092
+        // Bid High = 1.1090m, Ask High = 1.1090 + 0.0002 = 1.1092
         // The SL should be checked against ASK High. Ask High = 1.1092 < SL 1.1100 â†’ NO HIT
         // Now with Bid High = 1.1099, Ask High = 1.1101 â†’ HIT
         decimal spread = 0.0002m;
@@ -170,7 +170,7 @@ public class OrderMatchingEngineTests
     public void Short_SL_NOT_Hit_When_Ask_High_Below_SL()
     {
         // Arrange: Short position, SL at 1.1100
-        // Bid High = 1.1090, Ask High = 1.1090 + 0.0002 = 1.1092 < SL 1.1100
+        // Bid High = 1.1090m, Ask High = 1.1090 + 0.0002 = 1.1092 < SL 1.1100
         // SL should NOT trigger because Ask High doesn't reach SL
         decimal spread = 0.0002m;
         BacktestOrder position = MakeActivePosition(
@@ -671,3 +671,4 @@ public class OrderMatchingEngineTests
         Assert.Equal("SL Hit", result.Closes[0].Reason);
     }
 }
+

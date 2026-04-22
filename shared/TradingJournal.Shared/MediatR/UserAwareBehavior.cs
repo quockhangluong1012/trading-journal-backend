@@ -1,5 +1,5 @@
-using System.Reflection;
 using MediatR;
+using TradingJournal.Shared.CQRS;
 using TradingJournal.Shared.Security;
 
 namespace TradingJournal.Shared.MediatR;
@@ -9,11 +9,9 @@ public sealed class UserAwareBehavior<TRequest, TResponse>(IUserContext userCont
 {
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        PropertyInfo? userIdProperty = typeof(TRequest).GetProperty("UserId");
-        
-        if (userIdProperty != null && userIdProperty.CanWrite && userIdProperty.PropertyType == typeof(int))
+        if (request is IUserAwareRequest userAwareRequest)
         {
-            userIdProperty.SetValue(request, userContext.UserId);
+            userAwareRequest.UserId = userContext.UserId;
         }
 
         return await next(cancellationToken);

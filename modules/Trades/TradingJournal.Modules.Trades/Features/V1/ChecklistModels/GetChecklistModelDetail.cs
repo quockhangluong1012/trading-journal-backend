@@ -49,9 +49,9 @@ public sealed class GetChecklistModelDetail
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.ChecklistModels);
 
-            group.MapGet("/{id:int}", async (int id, ISender sender) =>
+            group.MapGet("/{id:int}", async (int id, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<ChecklistModelDetailViewModel> result = await sender.Send(new Request(id));
+                Result<ChecklistModelDetailViewModel> result = await sender.Send(new Request(id) with { UserId = user.GetCurrentUserId() });
                 return result.IsSuccess ? Results.Ok(result)
                     : Results.NotFound(result);
             })

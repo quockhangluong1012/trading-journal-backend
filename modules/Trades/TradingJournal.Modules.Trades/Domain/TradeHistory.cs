@@ -11,15 +11,15 @@ public sealed class TradeHistory : EntityBase<int>
     
     public PositionType Position { get; set; }
 
-    public double EntryPrice { get; set; }
+    public decimal EntryPrice { get; set; }
 
     public DateTime Date { get; set; }
 
     public TradeStatus Status { get; set; }
 
-    public double? ExitPrice { get; set; }
+    public decimal? ExitPrice { get; set; }
 
-    public double? Pnl { get; set; }
+    public decimal? Pnl { get; set; }
 
     public DateTime? ClosedDate { get; set; }
 
@@ -40,13 +40,13 @@ public sealed class TradeHistory : EntityBase<int>
 
     #region Risk Management & Guardrails
 
-    public double TargetTier1 { get; set; }
+    public decimal TargetTier1 { get; set; }
 
-    public double? TargetTier2 { get; set; }
+    public decimal? TargetTier2 { get; set; }
 
-    public double? TargetTier3 { get; set; }
+    public decimal? TargetTier3 { get; set; }
 
-    public double StopLoss { get; set; }
+    public decimal StopLoss { get; set; }
 
     public bool IsRuleBroken { get; set; } = false;
 

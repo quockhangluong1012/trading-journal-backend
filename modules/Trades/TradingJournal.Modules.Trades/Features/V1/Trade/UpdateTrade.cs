@@ -9,16 +9,16 @@ public sealed class UpdateTrade
         int Id,
         string Asset,
         PositionType Position,
-        double EntryPrice,
-        double TargetTier1,
-        double? TargetTier2,
-        double? TargetTier3,
-        double StopLoss,
+        decimal EntryPrice,
+        decimal TargetTier1,
+        decimal? TargetTier2,
+        decimal? TargetTier3,
+        decimal StopLoss,
         string Notes,
         DateTime Date,
         TradeStatus Status,
-        double? ExitPrice,
-        double? Pnl,
+        decimal? ExitPrice,
+        decimal? Pnl,
         DateTime? ClosedDate,
         List<string>? Screenshots,
         List<int>? TradeTechnicalAnalysisTags,
@@ -95,10 +95,7 @@ public sealed class UpdateTrade
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
         {
-
-            try
-            {
-                TradeHistory? tradeHistory = await context.TradeHistories
+            TradeHistory? tradeHistory = await context.TradeHistories
                     .Include(th => th.TradeScreenShots)
                     .Include(th => th.TradeEmotionTags)
                     .Include(th => th.TradeChecklists)
@@ -195,14 +192,9 @@ public sealed class UpdateTrade
                 }
                 #endregion
 
-                await context.SaveChangesAsync(cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
 
-                return Result<bool>.Success(true);
-            }
-            catch
-            {
-                throw;
-            }
+            return Result<bool>.Success(true);
         }
 
         private static bool IsBase64Image(string value)
@@ -254,8 +246,8 @@ public sealed class UpdateTrade
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradeHistory);
 
-            group.MapPut("/", async ([FromBody] Request request, ISender sender) => {
-                Result<bool> result = await sender.Send(request);
+            group.MapPut("/", async ([FromBody] Request request, ClaimsPrincipal user, ISender sender) => {
+                Result<bool> result = await sender.Send(request with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);
             })

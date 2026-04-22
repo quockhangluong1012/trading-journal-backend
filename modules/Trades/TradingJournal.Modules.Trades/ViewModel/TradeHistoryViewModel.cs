@@ -10,15 +10,15 @@ public class TradeHistoryViewModel
 
     public PositionType Position { get; set; }
 
-    public double EntryPrice { get; set; }
+    public decimal EntryPrice { get; set; }
 
     public DateTime Date { get; set; }
 
     public TradeStatus Status { get; set; }
 
-    public double? ExitPrice { get; set; }
+    public decimal? ExitPrice { get; set; }
 
-    public double? Pnl { get; set; }
+    public decimal? Pnl { get; set; }
 
     public DateTime? ClosedDate { get; set; }
 

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TradingJournal.Modules.Trades.Domain;
 
@@ -11,7 +11,7 @@ public sealed class TradingSession : EntityBase<int>
 
     public string? Duration { get; set; } = string.Empty;
 
-    public double? PnL { get; set; }
+    public decimal? PnL { get; set; }
 
     public string? Note { get; set; } = string.Empty;
 

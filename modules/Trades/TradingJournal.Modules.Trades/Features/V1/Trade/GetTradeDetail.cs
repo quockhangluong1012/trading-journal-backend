@@ -60,7 +60,7 @@ public class GetTradeDetail
                 ScreenShots = [.. trade.TradeScreenShots.Select(x => x.Url)],
                 SelectedChecklists = [.. trade.TradeChecklists.Select(x => x.PretradeChecklistId)],
                 TechnicalAnalysisTags = [.. trade.TradeTechnicalAnalysisTags.Select(x => x.TechnicalAnalysisId)],
-                TradeSumamry = trade.TradingSummary.Adapt<TradeSumamryViewModel>()
+                TradeSummary = trade.TradingSummary.Adapt<TradeSummaryViewModel>()
             };
 
             return Result<TradeHistoryDetailViewModel>.Success(tradeHistoryDetailViewModel);
@@ -73,8 +73,8 @@ public class GetTradeDetail
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradeHistory);
 
-            group.MapGet("/{id}", async ([FromRoute] int id, ISender sender) => {
-                Result<TradeHistoryDetailViewModel> result = await sender.Send(new Request(id));
+            group.MapGet("/{id}", async ([FromRoute] int id, ClaimsPrincipal user, ISender sender) => {
+                Result<TradeHistoryDetailViewModel> result = await sender.Send(new Request(id) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) 
                     : Results.BadRequest(result);

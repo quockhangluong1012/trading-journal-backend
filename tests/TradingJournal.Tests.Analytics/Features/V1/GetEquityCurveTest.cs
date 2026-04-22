@@ -43,10 +43,10 @@ public class GetEquityCurveHandlerTests
         var now = DateTime.UtcNow;
         var trades = new List<TradeCacheDto>
         {
-            new() { Id = 1, Asset = "EURUSD", Position = PositionType.Long, EntryPrice = 1.1, ExitPrice = 1.105, Pnl = 50, StopLoss = 1.098, TargetTier1 = 1.11, Status = TradeStatus.Closed, Date = now.AddDays(-3), ClosedDate = now.AddDays(-2), CreatedBy = UserId },
-            new() { Id = 2, Asset = "EURUSD", Position = PositionType.Long, EntryPrice = 1.1, ExitPrice = 1.105, Pnl = 30, StopLoss = 1.098, TargetTier1 = 1.11, Status = TradeStatus.Closed, Date = now.AddDays(-2), ClosedDate = now.AddDays(-1), CreatedBy = UserId },
+            new() { Id = 1, Asset = "EURUSD", Position = PositionType.Long, EntryPrice = 1.1m, ExitPrice = 1.105m, Pnl = 50m, StopLoss = 1.098m, TargetTier1 = 1.11m, Status = TradeStatus.Closed, Date = now.AddDays(-3), ClosedDate = now.AddDays(-2), CreatedBy = UserId },
+            new() { Id = 2, Asset = "EURUSD", Position = PositionType.Long, EntryPrice = 1.1m, ExitPrice = 1.105m, Pnl = 30m, StopLoss = 1.098m, TargetTier1 = 1.11m, Status = TradeStatus.Closed, Date = now.AddDays(-2), ClosedDate = now.AddDays(-1), CreatedBy = UserId },
         };
-        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(trades);
+        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(trades);
 
         var request = new GetEquityCurve.Request(AnalyticsFilter.AllTime, UserId);
 
@@ -65,7 +65,7 @@ public class GetEquityCurveHandlerTests
     public async Task Handle_Returns_Empty_When_No_Closed_Trades()
     {
         // Arrange
-        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeCacheDto>());
+        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeCacheDto>());
         var request = new GetEquityCurve.Request(AnalyticsFilter.AllTime, UserId);
 
         // Act
@@ -76,3 +76,5 @@ public class GetEquityCurveHandlerTests
         Assert.Empty(result.Value);
     }
 }
+
+

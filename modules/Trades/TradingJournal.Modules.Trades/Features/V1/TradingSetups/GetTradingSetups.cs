@@ -42,9 +42,9 @@ public sealed class GetTradingSetups
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradingSetups);
 
-            group.MapGet("/", async (ISender sender) =>
+            group.MapGet("/", async (ClaimsPrincipal user, ISender sender) =>
             {
-                Result<IReadOnlyCollection<TradingSetupViewModel>> result = await sender.Send(new Request());
+                Result<IReadOnlyCollection<TradingSetupViewModel>> result = await sender.Send(new Request(user.GetCurrentUserId()));
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);
             })
             .Produces<Result<IReadOnlyCollection<TradingSetupViewModel>>>()

@@ -16,18 +16,18 @@ public sealed class CloseTradeValidatorTests
 
     [Fact] public void Validate_ValidRequest_ReturnsValid()
     {
-        var result = _validator.Validate(new CloseTrade.Request(1, 1.1, 50.0, "ok", false, 42));
+        var result = _validator.Validate(new CloseTrade.Request(1, 1.1m, 50.0m, "ok", false, 42));
         Assert.True(result.IsValid);
     }
     [Fact] public void Validate_TradeIdZero_ReturnsInvalid()
     {
-        var r = _validator.Validate(new CloseTrade.Request(0, 1.1, 50.0, null, false, 42));
+        var r = _validator.Validate(new CloseTrade.Request(0, 1.1m, 50.0m, null, false, 42));
         Assert.False(r.IsValid);
         Assert.True(r.Errors.Any(e => e.ErrorMessage.Contains("Trade ID")));
     }
     [Fact] public void Validate_ExitPriceZero_ReturnsInvalid()
     {
-        var r = _validator.Validate(new CloseTrade.Request(1, 0, 50.0, null, false, 42));
+        var r = _validator.Validate(new CloseTrade.Request(1, 0m, 50.0m, null, false, 42));
         Assert.False(r.IsValid);
         Assert.True(r.Errors.Any(e => e.ErrorMessage.Contains("Exit price")));
     }
@@ -49,7 +49,7 @@ public sealed class CloseTradeHandlerTests
     public async Task Handle_TradeNotFound_ReturnsFailure()
     {
         _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
-        var result = await _handler.Handle(new CloseTrade.Request(1, 1.1, 50.0, null, false, 42), CancellationToken.None);
+        var result = await _handler.Handle(new CloseTrade.Request(1, 1.1m, 50.0m, null, false, 42), CancellationToken.None);
         Assert.False(result.IsSuccess);
     }
 
@@ -60,11 +60,12 @@ public sealed class CloseTradeHandlerTests
         _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory> { trade }.AsQueryable()).Object);
         _ctx.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         eventBus.Setup(x => x.PublishAsync(It.IsAny<SummarizeTradingOrderEvent>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-        var result = await _handler.Handle(new CloseTrade.Request(1, 1.1, 50.0, "ok", false, 42), CancellationToken.None);
+        var result = await _handler.Handle(new CloseTrade.Request(1, 1.1m, 50.0m, "ok", false, 42), CancellationToken.None);
         Assert.True(result.IsSuccess);
-        Assert.Equal(1.1, trade.ExitPrice);
+        Assert.Equal(1.1m, trade.ExitPrice);
         Assert.Equal(SharedEnums.TradeStatus.Closed, trade.Status);
         Assert.NotNull(trade.ClosedDate);
         eventBus.Verify(x => x.PublishAsync(It.IsAny<SummarizeTradingOrderEvent>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }
+

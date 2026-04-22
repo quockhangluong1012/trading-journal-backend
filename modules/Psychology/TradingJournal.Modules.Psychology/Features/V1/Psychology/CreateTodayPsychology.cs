@@ -1,4 +1,4 @@
-﻿namespace TradingJournal.Modules.Psychology.Features.V1.Psychology;
+namespace TradingJournal.Modules.Psychology.Features.V1.Psychology;
 
 public sealed class CreateTodayPsychology
 {
@@ -48,9 +48,9 @@ public sealed class CreateTodayPsychology
         {
             RouteGroupBuilder group = app.MapGroup("api/v1/psychology-journals");
 
-            group.MapPost("/", async (Request request, IMediator mediator) =>
+            group.MapPost("/", async (Request request, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<int> result = await mediator.Send(request);
+                Result<int> result = await sender.Send(request with { UserId = user.GetCurrentUserId() });
                 return result;
             })
             .Produces<Result<int>>(StatusCodes.Status201Created)

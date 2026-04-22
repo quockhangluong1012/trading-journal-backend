@@ -19,7 +19,7 @@ public class GetPsychologyHeatmapHandlerTests
     [Fact]
     public async Task Handle_Returns_Empty_Heatmap_When_No_Data()
     {
-        _contextMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new System.Collections.Generic.List<TradingJournal.Shared.Dtos.TradeCacheDto>());
+        _contextMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(new System.Collections.Generic.List<TradingJournal.Shared.Dtos.TradeCacheDto>());
         _cacheMock.Setup(x => x.GetEmotionTagsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new System.Collections.Generic.List<TradingJournal.Shared.Dtos.EmotionTagCacheDto>());
         var request = new GetPsychologyHeatmap.Request(1);
         var result = await _handler.Handle(request, CancellationToken.None);
@@ -27,3 +27,4 @@ public class GetPsychologyHeatmapHandlerTests
         Assert.Empty(result.Value);
     }
 }
+

@@ -6,7 +6,7 @@ public sealed class GetAssetBreakdown
 {
     internal sealed record Request(AnalyticsFilter Filter, int UserId = 0) : IQuery<Result<IReadOnlyCollection<AssetBreakdownViewModel>>>;
 
-    internal sealed record AssetBreakdownViewModel(string Asset, double Pnl, int Count, double WinRate);
+    internal sealed record AssetBreakdownViewModel(string Asset, decimal Pnl, int Count, decimal WinRate);
 
     internal sealed class Validator : AbstractValidator<Request>
     {
@@ -23,8 +23,7 @@ public sealed class GetAssetBreakdown
     {
         public async Task<Result<IReadOnlyCollection<AssetBreakdownViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(cancellationToken);
-            List<TradeCacheDto> trades = [.. allTrades.Where(t => t.CreatedBy == request.UserId)];
+            List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
             DateTime fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
 
             List<TradeCacheDto> closed = [.. trades
@@ -35,9 +34,9 @@ public sealed class GetAssetBreakdown
                 .GroupBy(t => t.Asset)
                 .Select(g => new AssetBreakdownViewModel(
                     g.Key,
-                    Math.Round(g.Sum(t => (double)t.Pnl!.Value), 2),
+                    Math.Round(g.Sum(t => (decimal)t.Pnl!.Value), 2),
                     g.Count(),
-                    Math.Round((double)g.Count(t => t.Pnl > 0) / g.Count() * 100, 1)))
+                    Math.Round((decimal)g.Count(t => t.Pnl > 0) / g.Count() * 100, 1)))
                 .OrderByDescending(a => a.Pnl)
                 .ToList();
 
@@ -51,9 +50,9 @@ public sealed class GetAssetBreakdown
         {
             RouteGroupBuilder group = app.MapGroup("api/v1/analytics");
 
-            group.MapGet("/asset-breakdown", async (AnalyticsFilter filter, ISender sender) =>
+            group.MapGet("/asset-breakdown", async (AnalyticsFilter filter, ClaimsPrincipal user, ISender sender) =>
             {
-                var result = await sender.Send(new Request(filter));
+                var result = await sender.Send(new Request(filter) with { UserId = user.GetCurrentUserId() });
                 return result.IsSuccess ? Results.Ok(result) : Results.Problem(result.Errors[0].Description);
             })
             .Produces<Result<IReadOnlyCollection<AssetBreakdownViewModel>>>(StatusCodes.Status200OK)

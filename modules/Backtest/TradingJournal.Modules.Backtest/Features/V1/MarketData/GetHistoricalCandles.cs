@@ -58,13 +58,13 @@ public sealed class GetHistoricalCandles
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.MarketData);
 
             group.MapGet("/{sessionId:int}/candles", async (int sessionId,
-                [FromQuery] string? timeframe, [FromQuery] int page, [FromQuery] int pageSize, ISender sender) =>
+                [FromQuery] string? timeframe, [FromQuery] int page, [FromQuery] int pageSize, ClaimsPrincipal user, ISender sender) =>
             {
                 if (page <= 0) page = 1;
                 if (pageSize <= 0 || pageSize > 2000) pageSize = 500;
 
                 Result<List<CandleDto>> result = await sender.Send(
-                    new Request(sessionId, timeframe, page, pageSize));
+                    new Request(sessionId, timeframe, page, pageSize) { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);
             })

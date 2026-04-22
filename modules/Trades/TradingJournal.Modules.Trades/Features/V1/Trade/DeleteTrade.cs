@@ -52,19 +52,21 @@ public class DeleteTrade
 
         private void DeleteScreenshotFile(string url)
         {
-            if (string.IsNullOrEmpty(url) || !url.StartsWith("/screenshots/"))
+            if (string.IsNullOrEmpty(url))
                 return;
 
-            // https://{host}/screenshots/c5cb241a-d470-4d5e-8ec9-14d47e23e0e8.png
+            // Extract filename from either absolute or relative URLs:
+            // - "/screenshots/abc.png"
+            // - "https://host/screenshots/abc.png"
+            string[] parts = url.Split("/screenshots/");
 
-            List<string> parts = [.. url.Split("/screenshots/")];
-
-            if (parts.Count < 2)
-            {
+            if (parts.Length < 2)
                 return;
-            }
 
-            string fileName = parts[1];
+            string fileName = parts[^1];
+
+            if (string.IsNullOrEmpty(fileName))
+                return;
 
             var filePath = Path.Combine(env.ContentRootPath, "wwwroot", "screenshots", fileName);
 
@@ -81,8 +83,8 @@ public class DeleteTrade
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradeHistory);
 
-            group.MapDelete("/{id}", async ([FromRoute] int id, ISender sender) => {
-                Result<int> result = await sender.Send(new Request { Id = id });
+            group.MapDelete("/{id}", async ([FromRoute] int id, ClaimsPrincipal user, ISender sender) => {
+                Result<int> result = await sender.Send(new Request { Id = id, UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) 
                     : Results.BadRequest(result);

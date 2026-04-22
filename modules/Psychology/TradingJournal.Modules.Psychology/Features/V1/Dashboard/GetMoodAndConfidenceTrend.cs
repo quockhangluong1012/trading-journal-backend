@@ -46,9 +46,9 @@ public sealed class GetMoodAndConfidenceTrend
         {
             RouteGroupBuilder group = app.MapGroup("api/v1/dashboard");
             
-            group.MapGet("mood-confidence-trend", async (IMediator mediator) =>
+            group.MapGet("mood-confidence-trend", async (ClaimsPrincipal user, ISender sender) =>
             {
-                var result = await mediator.Send(new Request());
+                var result = await sender.Send(new Request(user.GetCurrentUserId()));
                 return result;
             })
             .Produces<Result<List<MoodAndConfidenceTrendViewModel>>>(StatusCodes.Status200OK)

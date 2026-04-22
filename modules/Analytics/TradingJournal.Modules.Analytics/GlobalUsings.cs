@@ -12,3 +12,5 @@ global using TradingJournal.Shared.Dtos;
 global using TradingJournal.Modules.Analytics.Common.Constants;
 global using TradingJournal.Modules.Analytics.Common.Enum;
 global using TradingJournal.Modules.Analytics.Common.Helpers;
+global using System.Security.Claims;
+global using TradingJournal.Shared.Extensions;

@@ -33,9 +33,9 @@ public sealed class TradingReview : EntityBase<int>
 
     public bool AiSummaryGenerating { get; set; }
 
-    public double TotalPnl { get; set; }
+    public decimal TotalPnl { get; set; }
 
-    public double WinRate { get; set; }
+    public decimal WinRate { get; set; }
 
     public int TotalTrades { get; set; }
 

@@ -84,10 +84,10 @@ public sealed class UpdateOrder
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Orders);
 
-            group.MapPut("/{orderId:int}", async (int orderId, [FromBody] Request body, ISender sender) =>
+            group.MapPut("/{orderId:int}", async (int orderId, [FromBody] Request body, ClaimsPrincipal user, ISender sender) =>
             {
                 var request = body with { OrderId = orderId };
-                Result<OrderDto> result = await sender.Send(request);
+                Result<OrderDto> result = await sender.Send(request with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);
             })

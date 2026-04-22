@@ -44,9 +44,9 @@ public class DeleteTradeSession
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradingSessions);
 
-            group.MapDelete("/{id}", async (int id, ISender sender) =>
+            group.MapDelete("/{id}", async (int id, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<bool> result = await sender.Send(new Request(id));
+                Result<bool> result = await sender.Send(new Request(id) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result)
                     : Results.BadRequest(result.Errors);

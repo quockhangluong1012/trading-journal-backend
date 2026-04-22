@@ -7,10 +7,10 @@ public class TradeCacheDto
     public int Id { get; set; }
     public string Asset { get; set; } = string.Empty;
     public PositionType Position { get; set; }
-    public double EntryPrice { get; set; }
-    public double? ExitPrice { get; set; }
-    public double StopLoss { get; set; }
-    public double TargetTier1 { get; set; }
+    public decimal EntryPrice { get; set; }
+    public decimal? ExitPrice { get; set; }
+    public decimal StopLoss { get; set; }
+    public decimal TargetTier1 { get; set; }
     public TradeStatus Status { get; set; }
     public DateTime Date { get; set; }
     public decimal? Pnl { get; set; }

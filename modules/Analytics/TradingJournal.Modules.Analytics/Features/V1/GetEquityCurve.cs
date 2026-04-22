@@ -6,7 +6,7 @@ public sealed class GetEquityCurve
 {
     internal sealed record Request(AnalyticsFilter Filter, int UserId = 0) : IQuery<Result<IReadOnlyCollection<EquityPointViewModel>>>;
 
-    internal sealed record EquityPointViewModel(DateTime Date, double Profit);
+    internal sealed record EquityPointViewModel(DateTime Date, decimal Profit);
 
     internal sealed class Validator : AbstractValidator<Request>
     {
@@ -23,8 +23,7 @@ public sealed class GetEquityCurve
     {
         public async Task<Result<IReadOnlyCollection<EquityPointViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(cancellationToken);
-            List<TradeCacheDto> trades = [.. allTrades.Where(t => t.CreatedBy == request.UserId)];
+            List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
             DateTime fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
 
             List<TradeCacheDto> closed = [.. trades
@@ -32,11 +31,11 @@ public sealed class GetEquityCurve
                 .Where(t => fromDate == DateTime.MinValue || t.ClosedDate!.Value >= fromDate)
                 .OrderBy(t => t.ClosedDate!.Value)];
 
-            double cumulativeProfit = 0;
+            decimal cumulativeProfit = 0;
             List<EquityPointViewModel> result = [.. closed
                 .Select(t =>
                 {
-                    cumulativeProfit += (double)t.Pnl!.Value;
+                    cumulativeProfit += (decimal)t.Pnl!.Value;
                     return new EquityPointViewModel(t.ClosedDate!.Value, Math.Round(cumulativeProfit, 2));
                 })];
 
@@ -50,9 +49,9 @@ public sealed class GetEquityCurve
         {
             RouteGroupBuilder group = app.MapGroup("api/v1/analytics");
 
-            group.MapGet("/equity-curve", async (AnalyticsFilter filter, ISender sender) =>
+            group.MapGet("/equity-curve", async (AnalyticsFilter filter, ClaimsPrincipal user, ISender sender) =>
             {
-                var result = await sender.Send(new Request(filter));
+                var result = await sender.Send(new Request(filter) with { UserId = user.GetCurrentUserId() });
                 return result.IsSuccess ? Results.Ok(result) : Results.Problem(result.Errors[0].Description);
             })
             .Produces<Result<IReadOnlyCollection<EquityPointViewModel>>>(StatusCodes.Status200OK)

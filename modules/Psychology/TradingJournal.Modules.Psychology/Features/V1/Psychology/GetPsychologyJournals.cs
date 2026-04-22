@@ -1,4 +1,4 @@
-﻿using TradingJournal.Modules.Psychology.ViewModel;
+using TradingJournal.Modules.Psychology.ViewModel;
 using TradingJournal.Shared.Common;
 using TradingJournal.Shared.Extensions;
 
@@ -103,9 +103,9 @@ public sealed class GetPsychologyJournals
         {
             RouteGroupBuilder group = app.MapGroup("api/v1/psychology-journals");
 
-            group.MapPost("/search", async ([FromBody] Request request, IMediator mediator) =>
+            group.MapPost("/search", async ([FromBody] Request request, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<PaginationViewModel<PsychologyJournalViewModel>> result = await mediator.Send(request);
+                Result<PaginationViewModel<PsychologyJournalViewModel>> result = await sender.Send(request with { UserId = user.GetCurrentUserId() });
                 return result;
             })
             .Produces<Result<PaginationViewModel<PsychologyJournalViewModel>>>(StatusCodes.Status200OK)

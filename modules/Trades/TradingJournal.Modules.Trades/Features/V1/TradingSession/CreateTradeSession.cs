@@ -44,9 +44,9 @@ public sealed class CreateTradeSession
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradingSessions);
 
-            group.MapPost("/", async (Request request, ISender sender) =>
+            group.MapPost("/", async (Request request, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<int> result = await sender.Send(request);
+                Result<int> result = await sender.Send(request with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Created($"/{ApiGroup.V1.TradingSessions}/{result.Value}", result.Value)
                     : Results.BadRequest(result.Errors);

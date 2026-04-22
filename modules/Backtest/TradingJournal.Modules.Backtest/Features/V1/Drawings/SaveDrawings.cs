@@ -46,9 +46,9 @@ public sealed class SaveDrawings
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Drawings);
 
-            group.MapPut("/{sessionId:int}", async (int sessionId, [FromBody] SaveDrawingsRequest body, ISender sender) =>
+            group.MapPut("/{sessionId:int}", async (int sessionId, [FromBody] SaveDrawingsRequest body, ClaimsPrincipal user, ISender sender) =>
             {
-                Result result = await sender.Send(new Request(sessionId, body.DrawingsJson));
+                Result result = await sender.Send(new Request(sessionId, body.DrawingsJson) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);
             })

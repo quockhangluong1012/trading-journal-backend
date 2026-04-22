@@ -6,7 +6,7 @@ public sealed class GetDayOfWeekBreakdown
 {
     internal sealed record Request(AnalyticsFilter Filter, int UserId = 0) : IQuery<Result<IReadOnlyCollection<DayOfWeekViewModel>>>;
 
-    internal sealed record DayOfWeekViewModel(string Day, double Pnl, int Count, double WinRate);
+    internal sealed record DayOfWeekViewModel(string Day, decimal Pnl, int Count, decimal WinRate);
 
     internal sealed class Validator : AbstractValidator<Request>
     {
@@ -23,8 +23,7 @@ public sealed class GetDayOfWeekBreakdown
     {
         public async Task<Result<IReadOnlyCollection<DayOfWeekViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(cancellationToken);
-            List<TradeCacheDto> trades = [.. allTrades.Where(t => t.CreatedBy == request.UserId)];
+            List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
             DateTime fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
 
             List<TradeCacheDto> closed = [.. trades
@@ -47,9 +46,9 @@ public sealed class GetDayOfWeekBreakdown
 
                     return new DayOfWeekViewModel(
                         dayNames[(int)day],
-                        Math.Round(trades.Sum(t => (double)t.Pnl!.Value), 2),
+                        Math.Round(trades.Sum(t => (decimal)t.Pnl!.Value), 2),
                         trades.Count,
-                        Math.Round((double)trades.Count(t => t.Pnl > 0) / trades.Count * 100, 1));
+                        Math.Round((decimal)trades.Count(t => t.Pnl > 0) / trades.Count * 100, 1));
                 })];
 
             return Result<IReadOnlyCollection<DayOfWeekViewModel>>.Success(result);
@@ -62,9 +61,9 @@ public sealed class GetDayOfWeekBreakdown
         {
             RouteGroupBuilder group = app.MapGroup("api/v1/analytics");
 
-            group.MapGet("/day-of-week", async (AnalyticsFilter filter, ISender sender) =>
+            group.MapGet("/day-of-week", async (AnalyticsFilter filter, ClaimsPrincipal user, ISender sender) =>
             {
-                var result = await sender.Send(new Request(filter));
+                var result = await sender.Send(new Request(filter) with { UserId = user.GetCurrentUserId() });
                 return result.IsSuccess ? Results.Ok(result) : Results.Problem(result.Errors[0].Description);
             })
             .Produces<Result<IReadOnlyCollection<DayOfWeekViewModel>>>(StatusCodes.Status200OK)

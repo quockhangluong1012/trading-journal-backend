@@ -1,5 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Reflection;
 using TradingJournal.Modules.Psychology.Helpers;
 using TradingJournal.Shared.Behaviors;
@@ -40,15 +41,20 @@ public static class DependencyInjection
 
     public static async Task<IApplicationBuilder> MigratePsychologyDatabase(this IApplicationBuilder app)
     {
+        using IServiceScope scope = app.ApplicationServices.CreateScope();
+
         try
         {
-            using IServiceScope scope = app.ApplicationServices.CreateScope();
-
             PsychologyDbContext dbContext = scope.ServiceProvider.GetRequiredService<PsychologyDbContext>();
             await dbContext.Database.MigrateAsync();
-
         }
-        catch { }
+        catch (Exception ex)
+        {
+            var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("PsychologyMigration");
+            logger.LogError(ex, "Failed to migrate Psychology database.");
+        }
+
         return app;
     }
 }

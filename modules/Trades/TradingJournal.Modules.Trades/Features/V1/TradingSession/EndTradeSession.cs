@@ -68,9 +68,9 @@ public sealed class EndTradeSession
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradingSessions);
 
-            group.MapPost("/end", async ([FromBody] Request request, ISender sender) =>
+            group.MapPost("/end", async ([FromBody] Request request, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<bool> result = await sender.Send(request);
+                Result<bool> result = await sender.Send(request with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result)
                     : Results.BadRequest(result.Errors);

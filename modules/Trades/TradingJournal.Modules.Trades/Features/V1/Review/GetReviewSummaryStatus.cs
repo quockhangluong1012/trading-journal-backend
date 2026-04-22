@@ -59,9 +59,9 @@ public sealed class GetReviewSummaryStatus
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Reviews);
 
-            group.MapGet("/summary-status", async (ReviewPeriodType periodType, DateTime periodStart, ISender sender) =>
+            group.MapGet("/summary-status", async (ReviewPeriodType periodType, DateTime periodStart, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<ReviewSummaryStatusViewModel> result = await sender.Send(new Request(periodType, periodStart));
+                Result<ReviewSummaryStatusViewModel> result = await sender.Send(new Request(periodType, periodStart) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) : Results.Problem(result.Errors[0].Description);
             })

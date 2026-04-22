@@ -1,4 +1,4 @@
-﻿using TradingJournal.Shared.Dtos;
+using TradingJournal.Shared.Dtos;
 
 namespace TradingJournal.Modules.Psychology.Features.V1.Emotion;
 
@@ -26,9 +26,9 @@ public sealed class GetEmotions
         {
             RouteGroupBuilder group = app.MapGroup("api/v1/emotions");
 
-            group.MapGet("/", async (IMediator mediator) =>
+            group.MapGet("/", async (ISender sender) =>
             {
-                Result<List<EmotionTagCacheDto>> result = await mediator.Send(new Request());
+                Result<List<EmotionTagCacheDto>> result = await sender.Send(new Request());
                 return result;
             })
             .Produces<Result<List<EmotionTagCacheDto>>>(StatusCodes.Status200OK)

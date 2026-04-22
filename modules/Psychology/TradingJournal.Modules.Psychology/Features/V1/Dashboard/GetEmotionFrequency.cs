@@ -12,8 +12,7 @@ public sealed class GetEmotionFrequency
     {
         public async Task<Result<List<EmotionFrequencyViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(cancellationToken);
-            List<TradeCacheDto> trades = [.. allTrades.Where(t => t.CreatedBy == request.UserId)];
+            List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
             List<EmotionTagCacheDto> tags = await emotionTagProvider.GetEmotionTagsAsync(cancellationToken);
 
             Dictionary<int, int> freq = [];
@@ -53,9 +52,9 @@ public sealed class GetEmotionFrequency
         {
             RouteGroupBuilder group = app.MapGroup("api/v1/dashboard");
             
-            group.MapGet("emotion-frequency", async (IMediator mediator) =>
+            group.MapGet("emotion-frequency", async (ClaimsPrincipal user, ISender sender) =>
             {
-                var result = await mediator.Send(new Request());
+                var result = await sender.Send(new Request(user.GetCurrentUserId()));
                 return result;
             })
             .Produces<Result<List<EmotionFrequencyViewModel>>>(StatusCodes.Status200OK)

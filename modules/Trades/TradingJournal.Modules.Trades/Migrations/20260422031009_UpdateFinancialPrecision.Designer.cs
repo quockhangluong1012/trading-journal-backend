@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TradingJournal.Modules.Trades.Infrastructure;
 
@@ -11,9 +12,11 @@ using TradingJournal.Modules.Trades.Infrastructure;
 namespace TradingJournal.Modules.Trades.Migrations
 {
     [DbContext(typeof(TradeDbContext))]
-    partial class TradeDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260422031009_UpdateFinancialPrecision")]
+    partial class UpdateFinancialPrecision
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

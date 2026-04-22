@@ -43,10 +43,10 @@ public class GetPerformanceSummaryHandlerTests
         var now = DateTime.UtcNow;
         var trades = new List<TradeCacheDto>
         {
-            new() { Id = 1, Asset = "EURUSD", Position = PositionType.Long, EntryPrice = 1.1, ExitPrice = 1.105, Pnl = 50, StopLoss = 1.098, TargetTier1 = 1.11, Status = TradeStatus.Closed, Date = now.AddDays(-2), ClosedDate = now.AddDays(-1), CreatedBy = UserId },
-            new() { Id = 2, Asset = "EURUSD", Position = PositionType.Long, EntryPrice = 1.1, ExitPrice = 1.096, Pnl = -40, StopLoss = 1.098, TargetTier1 = 1.11, Status = TradeStatus.Closed, Date = now.AddDays(-3), ClosedDate = now.AddDays(-2), CreatedBy = UserId },
+            new() { Id = 1, Asset = "EURUSD", Position = PositionType.Long, EntryPrice = 1.1m, ExitPrice = 1.105m, Pnl = 50m, StopLoss = 1.098m, TargetTier1 = 1.11m, Status = TradeStatus.Closed, Date = now.AddDays(-2), ClosedDate = now.AddDays(-1), CreatedBy = UserId },
+            new() { Id = 2, Asset = "EURUSD", Position = PositionType.Long, EntryPrice = 1.1m, ExitPrice = 1.096m, Pnl = -40m, StopLoss = 1.098m, TargetTier1 = 1.11m, Status = TradeStatus.Closed, Date = now.AddDays(-3), ClosedDate = now.AddDays(-2), CreatedBy = UserId },
         };
-        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(trades);
+        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((int userId, CancellationToken ct) => trades.Where(t => t.CreatedBy == userId).ToList());
 
         var request = new GetPerformanceSummary.Request(AnalyticsFilter.AllTime, UserId);
 
@@ -65,7 +65,7 @@ public class GetPerformanceSummaryHandlerTests
     public async Task Handle_Returns_Zero_Values_When_No_Closed_Trades()
     {
         // Arrange
-        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeCacheDto>());
+        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeCacheDto>());
 
         var request = new GetPerformanceSummary.Request(AnalyticsFilter.AllTime, UserId);
 
@@ -85,10 +85,10 @@ public class GetPerformanceSummaryHandlerTests
         var now = DateTime.UtcNow;
         var trades = new List<TradeCacheDto>
         {
-            new() { Id = 1, Asset = "EURUSD", Position = PositionType.Long, EntryPrice = 1.1, ExitPrice = 1.105, Pnl = 50, StopLoss = 1.098, TargetTier1 = 1.11, Status = TradeStatus.Closed, Date = now.AddDays(-1), ClosedDate = now, CreatedBy = UserId },
-            new() { Id = 2, Asset = "EURUSD", Position = PositionType.Long, EntryPrice = 1.1, ExitPrice = 1.105, Pnl = 999, StopLoss = 1.098, TargetTier1 = 1.11, Status = TradeStatus.Closed, Date = now.AddDays(-1), ClosedDate = now, CreatedBy = 999 },
+            new() { Id = 1, Asset = "EURUSD", Position = PositionType.Long, EntryPrice = 1.1m, ExitPrice = 1.105m, Pnl = 50m, StopLoss = 1.098m, TargetTier1 = 1.11m, Status = TradeStatus.Closed, Date = now.AddDays(-1), ClosedDate = now, CreatedBy = UserId },
+            new() { Id = 2, Asset = "EURUSD", Position = PositionType.Long, EntryPrice = 1.1m, ExitPrice = 1.105m, Pnl = 999m, StopLoss = 1.098m, TargetTier1 = 1.11m, Status = TradeStatus.Closed, Date = now.AddDays(-1), ClosedDate = now, CreatedBy = 999 },
         };
-        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(trades);
+        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((int userId, CancellationToken ct) => trades.Where(t => t.CreatedBy == userId).ToList());
 
         var request = new GetPerformanceSummary.Request(AnalyticsFilter.AllTime, UserId);
 
@@ -100,3 +100,6 @@ public class GetPerformanceSummaryHandlerTests
         Assert.Equal(50, result.Value.TotalPnl); // only user 1's trades
     }
 }
+
+
+

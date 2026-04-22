@@ -1,4 +1,4 @@
-﻿namespace TradingJournal.Modules.Psychology.Features.V1.Psychology;
+namespace TradingJournal.Modules.Psychology.Features.V1.Psychology;
 
 public sealed class DeletePsychologyJournal
 {
@@ -45,9 +45,9 @@ public sealed class DeletePsychologyJournal
         {
             RouteGroupBuilder group = app.MapGroup("api/v1/psychology-journals");
 
-            group.MapDelete("/{id}", async (int id, IMediator mediator) =>
+            group.MapDelete("/{id}", async (int id, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<bool> result = await mediator.Send(new Request { Id = id });
+                Result<bool> result = await sender.Send(new Request { Id = id, UserId = user.GetCurrentUserId() });
                 return result;
             })
             .Produces<Result<bool>>(StatusCodes.Status200OK)

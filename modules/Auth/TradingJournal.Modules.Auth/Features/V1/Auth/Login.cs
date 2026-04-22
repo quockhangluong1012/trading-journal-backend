@@ -9,7 +9,7 @@ public sealed class Login
 {
     internal sealed record Request(string Email, string Password, bool RememberMe = false) : IQuery<Result<AuthResponse>>;
 
-    internal sealed record AuthResponse(string Token, string Email, string FullName, DateTime Expiry);
+    internal sealed record AuthResponse(string Token, string RefreshToken, string Email, string FullName, DateTime Expiry);
 
     internal sealed class Validator : AbstractValidator<Request>
     {
@@ -45,10 +45,16 @@ public sealed class Login
             }
 
             string token = GenerateJwtToken(user, configuration, request.RememberMe);
+            string refreshToken = RefreshToken.Handler.GenerateRefreshToken();
             int expiryMinutes = request.RememberMe ? 30 * 24 * 60 : configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
             DateTime expiry = DateTime.UtcNow.AddMinutes(expiryMinutes);
 
-            return Result<AuthResponse>.Success(new AuthResponse(token, user.Email, user.FullName, expiry));
+            // Store refresh token on the user
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+            await context.SaveChangesAsync(cancellationToken);
+
+            return Result<AuthResponse>.Success(new AuthResponse(token, refreshToken, user.Email, user.FullName, expiry));
         }
 
         private static string GenerateJwtToken(User user, IConfiguration configuration, bool rememberMe)
@@ -97,9 +103,10 @@ public sealed class Login
             .Produces(StatusCodes.Status401Unauthorized)
             .RequireRateLimiting("auth")
             .WithSummary("Login and get JWT token.")
-            .WithDescription("Authenticates a user and returns a JWT token for subsequent API calls.")
+            .WithDescription("Authenticates a user and returns a JWT token and refresh token for subsequent API calls.")
             .WithTags(AuthConstants.Tags.Auth)
             .AllowAnonymous();
         }
     }
 }
+

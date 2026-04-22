@@ -50,9 +50,9 @@ public sealed class SetTimeframe
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Playback);
 
-            group.MapPut("/{sessionId:int}/timeframe", async (int sessionId, [FromBody] Body body, ISender sender) =>
+            group.MapPut("/{sessionId:int}/timeframe", async (int sessionId, [FromBody] Body body, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<string> result = await sender.Send(new Request(sessionId, body.Timeframe));
+                Result<string> result = await sender.Send(new Request(sessionId, body.Timeframe) with { UserId = user.GetCurrentUserId() });
 
                 if (result.IsSuccess)
                 {

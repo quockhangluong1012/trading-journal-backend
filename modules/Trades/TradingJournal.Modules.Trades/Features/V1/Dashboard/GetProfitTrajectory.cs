@@ -7,7 +7,7 @@ public sealed class GetProfitTrajectory
 {
     public sealed record Request(DashboardFilter Filter, int UserId = 0) : IQuery<Result<IReadOnlyCollection<ProfitTrajectoryViewModel>>>;
 
-    public sealed record ProfitTrajectoryViewModel(DateTime Date, double? PnL = 0);
+    public sealed record ProfitTrajectoryViewModel(DateTime Date, decimal? PnL = 0);
 
     public sealed class Validator : AbstractValidator<Request>
     {
@@ -61,9 +61,9 @@ public sealed class GetProfitTrajectory
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Dashboard);
 
-            group.MapGet("/profit-trajectory", async (DashboardFilter filter, IMediator sender) =>
+            group.MapGet("/profit-trajectory", async (DashboardFilter filter, ClaimsPrincipal user, IMediator sender) =>
             {
-                Result<IReadOnlyCollection<ProfitTrajectoryViewModel>> result = await sender.Send(new Request(filter));
+                Result<IReadOnlyCollection<ProfitTrajectoryViewModel>> result = await sender.Send(new Request(filter) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) : Results.Problem(result.Errors[0].Description);
             })

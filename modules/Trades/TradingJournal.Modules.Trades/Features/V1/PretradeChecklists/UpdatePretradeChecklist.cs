@@ -67,9 +67,9 @@ public sealed class UpdatePretradeChecklist
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.PretradeChecklists);
 
-            group.MapPut("/", async ([FromBody] Request request, ISender sender) => {
+            group.MapPut("/", async ([FromBody] Request request, ClaimsPrincipal user, ISender sender) => {
 
-                Result result = await sender.Send(request);
+                Result result = await sender.Send(request with { UserId = user.GetCurrentUserId() });
                 return result.IsSuccess ? Results.NoContent()
                     : Results.BadRequest(result);
             })

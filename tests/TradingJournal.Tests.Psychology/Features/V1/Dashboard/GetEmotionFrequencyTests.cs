@@ -18,9 +18,10 @@ public class GetEmotionFrequencyHandlerTests
     [Fact]
     public async Task Handle_Returns_Success()
     {
-        _contextMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new System.Collections.Generic.List<TradingJournal.Shared.Dtos.TradeCacheDto>());
+        _contextMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(new System.Collections.Generic.List<TradingJournal.Shared.Dtos.TradeCacheDto>());
         _cacheMock.Setup(x => x.GetEmotionTagsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new System.Collections.Generic.List<TradingJournal.Shared.Dtos.EmotionTagCacheDto>());
         var result = await _handler.Handle(new GetEmotionFrequency.Request(1), CancellationToken.None);
         Assert.True(result.IsSuccess);
     }
 }
+

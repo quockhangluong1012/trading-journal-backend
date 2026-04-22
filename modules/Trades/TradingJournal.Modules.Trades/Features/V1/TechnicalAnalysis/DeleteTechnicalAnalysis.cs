@@ -41,9 +41,9 @@ public sealed class DeleteTechnicalAnalysis
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TechnicalAnalysis);
 
-            group.MapDelete("/{id:int}", async (int id, ISender sender) =>
+            group.MapDelete("/{id:int}", async (int id, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<bool> result = await sender.Send(new Request(id));
+                Result<bool> result = await sender.Send(new Request(id) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result)
                     : Results.BadRequest(result);

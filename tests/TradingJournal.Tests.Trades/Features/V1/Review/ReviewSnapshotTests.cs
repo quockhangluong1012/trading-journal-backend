@@ -43,8 +43,8 @@ public sealed class ReviewSnapshotMetricsTests
                 Pnl: 320,
                 OpenDate: new DateTime(2026, 4, 14, 8, 0, 0),
                 ClosedDate: new DateTime(2026, 4, 14, 10, 30, 0),
-                EntryPrice: 1.1035,
-                ExitPrice: 1.1085,
+                EntryPrice: 1.1035m,
+                ExitPrice: 1.1085m,
                 IsRuleBroken: false,
                 RuleBreakReason: null,
                 TradingZone: "London",
@@ -60,8 +60,8 @@ public sealed class ReviewSnapshotMetricsTests
                 Pnl: -140,
                 OpenDate: new DateTime(2026, 4, 16, 13, 0, 0),
                 ClosedDate: new DateTime(2026, 4, 16, 15, 0, 0),
-                EntryPrice: 1.1090,
-                ExitPrice: 1.1110,
+                EntryPrice: 1.1090m,
+                ExitPrice: 1.1110m,
                 IsRuleBroken: true,
                 RuleBreakReason: "Chased after news impulse.",
                 TradingZone: "New York",
@@ -95,7 +95,7 @@ public sealed class ReviewSnapshotMetricsTests
         Assert.Equal(2, metrics.Wins);
         Assert.Equal(1, metrics.Losses);
         Assert.Equal(260, metrics.TotalPnl);
-        Assert.Equal(66.7, metrics.WinRate);
+        Assert.Equal(66.7m, metrics.WinRate);
         Assert.Equal(200, metrics.AverageWin);
         Assert.Equal(-140, metrics.AverageLoss);
         Assert.Equal(320, metrics.BestTradePnl);

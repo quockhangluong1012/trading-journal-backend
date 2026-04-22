@@ -1,4 +1,4 @@
-﻿using TradingJournal.Modules.Psychology.ViewModel;
+using TradingJournal.Modules.Psychology.ViewModel;
 using TradingJournal.Shared.Common.Enum;
 using TradingJournal.Shared.Extensions;
 
@@ -67,9 +67,9 @@ public sealed class GetPsychologyStatistic
         {
             RouteGroupBuilder group = app.MapGroup("api/v1/dashboard");
 
-            group.MapGet("/statistic", async (IMediator mediator) =>
+            group.MapGet("/statistic", async (ClaimsPrincipal user, ISender sender) =>
             {
-                Result<PsychologyStatisticViewModel> result = await mediator.Send(new Request());
+                Result<PsychologyStatisticViewModel> result = await sender.Send(new Request(user.GetCurrentUserId()));
                 return result;
             })
             .Produces<Result<PsychologyStatisticViewModel>>(StatusCodes.Status200OK)

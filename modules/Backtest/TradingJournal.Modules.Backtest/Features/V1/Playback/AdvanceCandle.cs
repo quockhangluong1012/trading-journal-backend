@@ -86,9 +86,9 @@ public sealed class AdvanceCandle
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Playback);
 
-            group.MapPost("/{sessionId:int}/advance", async (int sessionId, ISender sender) =>
+            group.MapPost("/{sessionId:int}/advance", async (int sessionId, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<AdvanceCandleResponseDto> result = await sender.Send(new Request(sessionId));
+                Result<AdvanceCandleResponseDto> result = await sender.Send(new Request(sessionId) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);
             })

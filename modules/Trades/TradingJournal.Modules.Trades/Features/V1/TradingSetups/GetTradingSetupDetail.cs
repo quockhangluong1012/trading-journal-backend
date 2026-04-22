@@ -62,9 +62,9 @@ public sealed class GetTradingSetupDetail
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradingSetups);
 
-            group.MapGet("/{id:int}", async (int id, ISender sender) =>
+            group.MapGet("/{id:int}", async (int id, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<TradingSetupDetailViewModel> result = await sender.Send(new Request(id));
+                Result<TradingSetupDetailViewModel> result = await sender.Send(new Request(id) with { UserId = user.GetCurrentUserId() });
                 return result.IsSuccess ? Results.Ok(result) : Results.NotFound(result);
             })
             .Produces<Result<TradingSetupDetailViewModel>>()

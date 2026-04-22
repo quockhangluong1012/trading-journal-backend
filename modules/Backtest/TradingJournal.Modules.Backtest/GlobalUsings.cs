@@ -14,3 +14,5 @@ global using TradingJournal.Modules.Backtest.Domain;
 global using TradingJournal.Modules.Backtest.Infrastructure;
 global using TradingJournal.Modules.Backtest.Services;
 global using Carter;
+global using System.Security.Claims;
+global using TradingJournal.Shared.Extensions;

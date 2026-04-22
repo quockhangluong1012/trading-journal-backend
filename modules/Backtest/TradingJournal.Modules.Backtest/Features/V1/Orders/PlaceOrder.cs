@@ -100,9 +100,9 @@ public sealed class PlaceOrder
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Orders);
 
-            group.MapPost("/", async ([FromBody] Request request, ISender sender) =>
+            group.MapPost("/", async ([FromBody] Request request, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<OrderDto> result = await sender.Send(request);
+                Result<OrderDto> result = await sender.Send(request with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess
                     ? Results.Created($"{ApiGroup.V1.Orders}/{result.Value.Id}", result)

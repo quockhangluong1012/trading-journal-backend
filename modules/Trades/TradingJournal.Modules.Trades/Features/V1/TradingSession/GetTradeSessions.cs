@@ -26,9 +26,9 @@ public sealed class GetTradeSessions
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradingSessions);
 
-            group.MapGet("/", async ([FromQuery] int pageNumber, [FromQuery] int pageSize, [FromQuery] string? search, ISender sender) =>
+            group.MapGet("/", async ([FromQuery] int pageNumber, [FromQuery] int pageSize, [FromQuery] string? search, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<List<Domain.TradingSession>> result = await sender.Send(new Request(pageNumber, pageSize, search));
+                Result<List<Domain.TradingSession>> result = await sender.Send(new Request(pageNumber, pageSize, search) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result)
                     : Results.BadRequest(result.Errors);

@@ -59,9 +59,9 @@ public sealed class AddCriteriaToModel
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.ChecklistModels);
 
-            group.MapPost("/{modelId:int}/criteria", async (int modelId, [FromBody] AddCriteriaRequest body, ISender sender) =>
+            group.MapPost("/{modelId:int}/criteria", async (int modelId, [FromBody] AddCriteriaRequest body, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<int> result = await sender.Send(new Request(modelId, body.Name, body.Type));
+                Result<int> result = await sender.Send(new Request(modelId, body.Name, body.Type) with { UserId = user.GetCurrentUserId() });
                 return result.IsSuccess ? Results.Created($"{ApiGroup.V1.ChecklistModels}/{modelId}/criteria/{result.Value}", result)
                     : Results.BadRequest(result);
             })

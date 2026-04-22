@@ -33,7 +33,7 @@ internal sealed class OpenRouterAiService(
 
         TradeHistory tradeHistory = await LoadTradeHistory(tradeHistoryId, cancellationToken);
 
-        (TradeSumamryDto tradeSummary, List<string> psychologyNotes) = await BuildTradeSummaryDto(tradeHistory, cancellationToken);
+        (TradeSummaryDto tradeSummary, List<string> psychologyNotes) = await BuildTradeSummaryDto(tradeHistory, cancellationToken);
 
         string finalPrompt = BuildPrompt(promptTemplate, tradeSummary, psychologyNotes);
 
@@ -61,7 +61,7 @@ internal sealed class OpenRouterAiService(
             ?? throw new InvalidOperationException("Trade history not found.");
     }
 
-    private async Task<(TradeSumamryDto Summary, List<string> PsychologyNotes)> BuildTradeSummaryDto(
+    private async Task<(TradeSummaryDto Summary, List<string> PsychologyNotes)> BuildTradeSummaryDto(
         TradeHistory tradeHistory, CancellationToken cancellationToken)
     {
         TradingZone tradingZone = await context.TradingZones
@@ -78,7 +78,7 @@ internal sealed class OpenRouterAiService(
 
         List<string> psychologyNotes = await psychologyProvider.GetPsychologyByDate(tradeHistory.Date, cancellationToken);
 
-        TradeSumamryDto summary = new(
+        TradeSummaryDto summary = new(
             Asset: tradeHistory.Asset,
             EntryPrice: tradeHistory.EntryPrice,
             Position: tradeHistory.Position.ToString(),
@@ -119,7 +119,7 @@ internal sealed class OpenRouterAiService(
             .ToListAsync(cancellationToken: cancellationToken);
     }
 
-    private static string BuildPrompt(string template, TradeSumamryDto summary, List<string> psychologyNotes)
+    private static string BuildPrompt(string template, TradeSummaryDto summary, List<string> psychologyNotes)
     {
         Dictionary<string, string> replacements = new()
         {
@@ -191,9 +191,7 @@ internal sealed class OpenRouterAiService(
             }
         };
 
-        httpClient.BaseAddress = new Uri(options.Value.BaseUrl);
-
-        using HttpRequestMessage request = new(HttpMethod.Post, $"api/v1/chat/completions");
+        using HttpRequestMessage request = new(HttpMethod.Post, "api/v1/chat/completions");
         
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", options.Value.ApiKey);
 
@@ -429,7 +427,7 @@ internal sealed class OpenRouterAiService(
         return value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
 
-    private static string FormatPromptNumber(double value, int decimals)
+    private static string FormatPromptNumber(decimal value, int decimals)
     {
         return value.ToString($"F{decimals}", CultureInfo.InvariantCulture);
     }

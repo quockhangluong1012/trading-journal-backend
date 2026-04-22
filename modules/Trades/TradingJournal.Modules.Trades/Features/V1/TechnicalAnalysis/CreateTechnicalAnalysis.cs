@@ -49,9 +49,9 @@ public sealed class CreateTechnicalAnalysis
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TechnicalAnalysis);
 
-            group.MapPost("/", async ([FromBody] Request request, ISender sender) =>
+            group.MapPost("/", async ([FromBody] Request request, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<int> result = await sender.Send(request);
+                Result<int> result = await sender.Send(request with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result)
                     : Results.BadRequest(result);

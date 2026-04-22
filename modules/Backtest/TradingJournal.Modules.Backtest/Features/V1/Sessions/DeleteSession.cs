@@ -32,9 +32,9 @@ public sealed class DeleteSession
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Sessions);
 
-            group.MapDelete("/{sessionId:int}", async (int sessionId, ISender sender) =>
+            group.MapDelete("/{sessionId:int}", async (int sessionId, ClaimsPrincipal user, ISender sender) =>
             {
-                Result result = await sender.Send(new Request(sessionId));
+                Result result = await sender.Send(new Request(sessionId) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.NoContent() : Results.NotFound(result);
             })

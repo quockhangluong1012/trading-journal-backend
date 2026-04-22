@@ -1,4 +1,4 @@
-﻿using TradingJournal.Modules.Trades.Dto;
+using TradingJournal.Modules.Trades.Dto;
 using TradingJournal.Modules.Trades.Services;
 
 namespace TradingJournal.Modules.Trades.Features.V1.Trade;
@@ -70,8 +70,8 @@ public sealed class SummerizeTradeHistory
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradeHistory);
 
-            group.MapPost("/summarize/{tradeId:int}", async (int tradeId, ISender sender) => {
-                Result<bool> result = await sender.Send(new SummerizeTradeHistory.Request(tradeId));
+            group.MapPost("/summarize/{tradeId:int}", async (int tradeId, ClaimsPrincipal user, ISender sender) => {
+                Result<bool> result = await sender.Send(new SummerizeTradeHistory.Request(tradeId) { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);
             })

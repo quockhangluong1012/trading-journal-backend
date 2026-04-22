@@ -43,9 +43,9 @@ public sealed class DeleteEmotion
         {
             RouteGroupBuilder group = app.MapGroup("api/v1/emotions");
 
-            group.MapDelete("{id}", async (int id, IMediator mediator) =>
+            group.MapDelete("{id}", async (int id, ISender sender) =>
             {
-                Result<bool> result = await mediator.Send(new Request(id));
+                Result<bool> result = await sender.Send(new Request(id));
                 return result;
             })
             .Produces<Result<bool>>(StatusCodes.Status200OK)

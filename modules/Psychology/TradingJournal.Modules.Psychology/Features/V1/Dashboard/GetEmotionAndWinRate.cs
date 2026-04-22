@@ -12,8 +12,7 @@ public sealed class GetEmotionAndWinRate
     {
         public async Task<Result<List<EmotionWinRateViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(cancellationToken);
-            List<TradeCacheDto> trades = [.. allTrades.Where(t => t.CreatedBy == request.UserId)];
+            List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
             List<EmotionTagCacheDto> tags = await emotionTagProvider.GetEmotionTagsAsync(cancellationToken);
 
             var closedTrades = trades.Where(t => t.ClosedDate.HasValue && t.Pnl.HasValue).ToList();
@@ -67,9 +66,9 @@ public sealed class GetEmotionAndWinRate
         {
             RouteGroupBuilder group = app.MapGroup("api/v1/dashboard"); 
 
-            group.MapGet("emotion-win-rate", async (IMediator mediator) =>
+            group.MapGet("emotion-win-rate", async (ClaimsPrincipal user, ISender sender) =>
             {
-                var result = await mediator.Send(new Request());
+                var result = await sender.Send(new Request(user.GetCurrentUserId()));
                 return result;
             })
             .Produces<Result<List<EmotionWinRateViewModel>>>(StatusCodes.Status200OK)

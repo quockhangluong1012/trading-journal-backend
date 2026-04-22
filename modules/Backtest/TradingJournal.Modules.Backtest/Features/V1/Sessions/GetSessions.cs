@@ -42,9 +42,9 @@ public sealed class GetSessions
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Sessions);
 
-            group.MapGet("/", async (ISender sender) =>
+            group.MapGet("/", async (ClaimsPrincipal user, ISender sender) =>
             {
-                Result<List<SessionListDto>> result = await sender.Send(new Request());
+                Result<List<SessionListDto>> result = await sender.Send(new Request() with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);
             })

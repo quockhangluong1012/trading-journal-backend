@@ -21,17 +21,17 @@ public sealed class GetReview
         string? AiCriticalMistakesPsychological,
         string? AiWhatToImprove,
         bool AiSummaryGenerating,
-        double TotalPnl,
-        double WinRate,
+        decimal TotalPnl,
+        decimal WinRate,
         int TotalTrades,
         int Wins,
         int Losses,
-        double AverageWin,
-        double AverageLoss,
-        double BestTradePnl,
-        double WorstTradePnl,
-        double BestDayPnl,
-        double WorstDayPnl,
+        decimal AverageWin,
+        decimal AverageLoss,
+        decimal BestTradePnl,
+        decimal WorstTradePnl,
+        decimal BestDayPnl,
+        decimal WorstDayPnl,
         int LongTrades,
         int ShortTrades,
         int RuleBreakTrades,
@@ -121,9 +121,9 @@ public sealed class GetReview
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Reviews);
 
-            group.MapGet("/", async (ReviewPeriodType periodType, DateTime periodStart, ISender sender) =>
+            group.MapGet("/", async (ReviewPeriodType periodType, DateTime periodStart, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<ReviewViewModel> result = await sender.Send(new Request(periodType, periodStart));
+                Result<ReviewViewModel> result = await sender.Send(new Request(periodType, periodStart) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) : Results.Problem(result.Errors[0].Description);
             })

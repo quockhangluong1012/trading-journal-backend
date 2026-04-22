@@ -48,8 +48,6 @@ public class GetTrades
     {
         public async Task<Result<PaginationViewModel<TradeHistoryViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            string queryHash = request.ToHashString();
-
             PaginationViewModel<TradeHistoryViewModel> result = await GetTradesFromDatabase(request, cancellationToken);
 
             return Result<PaginationViewModel<TradeHistoryViewModel>>.Success(result);
@@ -144,8 +142,9 @@ public class GetTrades
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradeHistory);
 
-            group.MapPost("/search", async (ISender sender, [FromBody] Request request) =>
+            group.MapPost("/search", async (ISender sender, [FromBody] Request request, ClaimsPrincipal user) =>
             {
+                request.UserId = user.GetCurrentUserId();
                 Result<PaginationViewModel<TradeHistoryViewModel>> result = await sender.Send(request);
 
                 return result.IsSuccess ? Results.Ok(result)

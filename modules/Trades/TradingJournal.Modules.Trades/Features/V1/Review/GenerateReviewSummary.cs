@@ -109,9 +109,9 @@ public sealed class GenerateReviewSummary
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Reviews);
 
-            group.MapPost("/generate-summary", async (ISender sender, [FromBody] Request request) =>
+            group.MapPost("/generate-summary", async (ISender sender, [FromBody] Request request, ClaimsPrincipal user) =>
             {
-                Result<bool> result = await sender.Send(request);
+                Result<bool> result = await sender.Send(request with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);
             })

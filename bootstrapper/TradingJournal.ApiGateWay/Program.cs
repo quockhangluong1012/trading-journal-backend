@@ -169,6 +169,7 @@ WebApplication app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     await app.MigrateTradingDatabase();
+    await app.MigratePsychologyDatabase();
     await app.MigrateBacktestDatabase();
 }
 

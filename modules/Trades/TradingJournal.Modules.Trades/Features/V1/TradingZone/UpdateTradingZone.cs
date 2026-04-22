@@ -70,9 +70,9 @@ public sealed class UpdateTradingZone
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradingZones);
 
-            group.MapPut("/", async ([FromBody] Request request, ISender sender) =>
+            group.MapPut("/", async ([FromBody] Request request, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<bool> result = await sender.Send(request);
+                Result<bool> result = await sender.Send(request with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result)
                     : Results.BadRequest(result);

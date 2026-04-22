@@ -29,7 +29,7 @@ public class GetEmotionDistributionHandlerTests
             new() { CreatedBy = 1, EmotionTags = new List<int> { 2 } },
             new() { CreatedBy = 1, EmotionTags = new List<int> { 3 } },
         };
-        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(trades);
+        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((int userId, CancellationToken ct) => trades.Where(t => t.CreatedBy == userId).ToList());
 
         var tags = new List<EmotionTagCacheDto>
         {
@@ -61,7 +61,7 @@ public class GetEmotionDistributionHandlerTests
     [Fact]
     public async Task Handle_Returns_Empty_List_When_No_Trades()
     {
-        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeCacheDto>());
+        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeCacheDto>());
         _emotionTagProviderMock.Setup(x => x.GetEmotionTagsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<EmotionTagCacheDto>());
 
         var request = new GetEmotionDistribution.Request(1);
@@ -78,7 +78,7 @@ public class GetEmotionDistributionHandlerTests
         {
             new() { CreatedBy = 1, EmotionTags = new List<int> { 1 } },
         };
-        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(trades);
+        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((int userId, CancellationToken ct) => trades.Where(t => t.CreatedBy == userId).ToList());
 
         var tags = new List<EmotionTagCacheDto>
         {
@@ -105,7 +105,7 @@ public class GetEmotionDistributionHandlerTests
             new() { CreatedBy = 1, EmotionTags = null },
             new() { CreatedBy = 1, EmotionTags = new List<int>() },
         };
-        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(trades);
+        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((int userId, CancellationToken ct) => trades.Where(t => t.CreatedBy == userId).ToList());
 
         var tags = new List<EmotionTagCacheDto>
         {
@@ -127,7 +127,7 @@ public class GetEmotionDistributionHandlerTests
         {
             new() { CreatedBy = 99, EmotionTags = new List<int> { 1 } },
         };
-        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(trades);
+        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((int userId, CancellationToken ct) => trades.Where(t => t.CreatedBy == userId).ToList());
 
         var tags = new List<EmotionTagCacheDto>
         {
@@ -142,4 +142,6 @@ public class GetEmotionDistributionHandlerTests
         Assert.Empty(result.Value);
     }
 }
+
+
 

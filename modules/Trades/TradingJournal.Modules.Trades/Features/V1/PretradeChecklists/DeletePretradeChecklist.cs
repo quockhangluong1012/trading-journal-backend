@@ -49,8 +49,8 @@ public sealed class DeletePretradeChecklist
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.PretradeChecklists);
 
-            group.MapDelete("/{id:int}", async (int id, ISender sender) => {
-                Result result = await sender.Send(new Request(id));
+            group.MapDelete("/{id:int}", async (int id, ClaimsPrincipal user, ISender sender) => {
+                Result result = await sender.Send(new Request(id) with { UserId = user.GetCurrentUserId() });
                 return result.IsSuccess ? Results.NoContent()
                     : Results.BadRequest(result);
             })

@@ -19,8 +19,4 @@ public static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddUserAwareBehavior(this IServiceCollection services)
-    {
-        return services;
-    }
 }

@@ -6,15 +6,15 @@ public sealed class TradeHistoryDetailViewModel
 
     public PositionType Position { get; set; }
 
-    public double EntryPrice { get; set; }
+    public decimal EntryPrice { get; set; }
 
     public DateTime Date { get; set; }
 
     public TradeStatus Status { get; set; }
 
-    public double? ExitPrice { get; set; }
+    public decimal? ExitPrice { get; set; }
 
-    public double? Pnl { get; set; }
+    public decimal? Pnl { get; set; }
 
     public DateTime? ClosedDate { get; set; }
 
@@ -29,13 +29,13 @@ public sealed class TradeHistoryDetailViewModel
     // London / NY / Sydney / Tokyo
     public int? TradingZoneId { get; set; }
 
-    public double TargetTier1 { get; set; }
+    public decimal TargetTier1 { get; set; }
 
-    public double? TargetTier2 { get; set; }
+    public decimal? TargetTier2 { get; set; }
 
-    public double? TargetTier3 { get; set; }
+    public decimal? TargetTier3 { get; set; }
 
-    public double StopLoss { get; set; }
+    public decimal StopLoss { get; set; }
 
     public ConfidenceLevel ConfidenceLevel { get; set; }
 
@@ -47,5 +47,5 @@ public sealed class TradeHistoryDetailViewModel
 
     public List<int> TechnicalAnalysisTags { get; set; } = [];
 
-    public TradeSumamryViewModel? TradeSumamry { get; set; } = new();
+    public TradeSummaryViewModel? TradeSummary { get; set; } = new();
 }

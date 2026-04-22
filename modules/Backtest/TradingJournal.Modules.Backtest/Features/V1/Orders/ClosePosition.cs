@@ -69,9 +69,9 @@ public sealed class ClosePosition
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Orders);
 
-            group.MapPost("/{orderId:int}/close", async (int orderId, decimal exitPrice, ISender sender) =>
+            group.MapPost("/{orderId:int}/close", async (int orderId, decimal exitPrice, ClaimsPrincipal user, ISender sender) =>
             {
-                Result result = await sender.Send(new Request(orderId, exitPrice));
+                Result result = await sender.Send(new Request(orderId, exitPrice) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.NoContent() : Results.BadRequest(result);
             })

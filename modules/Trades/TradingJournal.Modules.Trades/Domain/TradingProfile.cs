@@ -7,7 +7,7 @@ public sealed class TradingProfile : EntityBase<int>
 {
     public int? MaxTradesPerDay { get; set; }
 
-    public double? MaxDailyLossPercentage { get; set; }
+    public decimal? MaxDailyLossPercentage { get; set; }
 
     public int? MaxConsecutiveLosses { get; set; }
 

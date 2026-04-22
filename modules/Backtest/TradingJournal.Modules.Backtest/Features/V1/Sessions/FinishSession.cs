@@ -116,9 +116,9 @@ public sealed class FinishSession
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Sessions);
 
-            group.MapPost("/{sessionId:int}/finish", async (int sessionId, decimal? exitPrice, ISender sender) =>
+            group.MapPost("/{sessionId:int}/finish", async (int sessionId, decimal? exitPrice, ClaimsPrincipal user, ISender sender) =>
             {
-                Result result = await sender.Send(new Request(sessionId, exitPrice));
+                Result result = await sender.Send(new Request(sessionId, exitPrice) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.NoContent() : Results.BadRequest(result);
             })

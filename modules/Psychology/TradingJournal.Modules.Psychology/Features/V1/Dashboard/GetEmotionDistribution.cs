@@ -13,8 +13,7 @@ public sealed class GetEmotionDistribution
     {
         public async Task<Result<List<EmotionDistributionViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(cancellationToken);
-            List<TradeCacheDto> trades = [.. allTrades.Where(t => t.CreatedBy == request.UserId)];
+            List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
             List<EmotionTagCacheDto> tags = await emotionTagProvider.GetEmotionTagsAsync(cancellationToken);
 
             var tagDict = tags.ToDictionary(t => t.Id, t => t);
@@ -58,9 +57,9 @@ public sealed class GetEmotionDistribution
         {
             RouteGroupBuilder group = app.MapGroup("api/v1/dashboard");
             
-            group.MapGet("emotion-distribution", async (IMediator mediator) =>
+            group.MapGet("emotion-distribution", async (ClaimsPrincipal user, ISender sender) =>
             {
-                var result = await mediator.Send(new Request());
+                var result = await sender.Send(new Request(user.GetCurrentUserId()));
                 return result;
             })
             .Produces<Result<List<EmotionDistributionViewModel>>>(StatusCodes.Status200OK)

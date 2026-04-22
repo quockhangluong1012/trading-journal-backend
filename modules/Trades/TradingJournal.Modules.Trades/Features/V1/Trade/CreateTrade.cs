@@ -1,5 +1,6 @@
 using Mapster;
 using Microsoft.AspNetCore.Hosting;
+using TradingJournal.Shared.CQRS;
 using TradingJournal.Shared.Extensions;
 
 namespace TradingJournal.Modules.Trades.Features.V1.Trade;
@@ -8,16 +9,16 @@ public sealed class CreateTrade
 {
     public record Request(string Asset,
         PositionType Position,
-        double EntryPrice,
-        double TargetTier1,
-        double? TargetTier2,
-        double? TargetTier3,
-        double StopLoss,
+        decimal EntryPrice,
+        decimal TargetTier1,
+        decimal? TargetTier2,
+        decimal? TargetTier3,
+        decimal StopLoss,
         string Notes,
         DateTime Date,
         TradeStatus Status,
-        double? ExitPrice,
-        double? Pnl,
+        decimal? ExitPrice,
+        decimal? Pnl,
         DateTime? ClosedDate,
         List<string>? Screenshots,
         List<int>? TradeTechnicalAnalysisTags,
@@ -181,6 +182,8 @@ public sealed class CreateTrade
             }
         }
 
+        private const int MaxImageSizeBytes = 10 * 1024 * 1024; // 10 MB
+
         private string SaveBase64ToFile(string base64String)
         {
             // Strip the data URI prefix if present (e.g., "data:image/png;base64,")
@@ -190,6 +193,11 @@ public sealed class CreateTrade
             }
 
             byte[] imageBytes = Convert.FromBase64String(base64String);
+
+            if (imageBytes.Length > MaxImageSizeBytes)
+            {
+                throw new InvalidOperationException($"Screenshot exceeds maximum allowed size of {MaxImageSizeBytes / (1024 * 1024)} MB.");
+            }
 
             var screenshotDir = Path.Combine(env.ContentRootPath, "wwwroot", "screenshots");
             if (!Directory.Exists(screenshotDir))
@@ -201,13 +209,6 @@ public sealed class CreateTrade
             var filePath = Path.Combine(screenshotDir, fileName);
 
             File.WriteAllBytes(filePath, imageBytes);
-
-            HttpContext? httpContext = httpContextAccessor.HttpContext;
-
-            if (httpContext != null)
-            {
-                return $"{httpContext.Request.Scheme}://{httpContext.Request.Host}/screenshots/{fileName}";
-            }
 
             return $"/screenshots/{fileName}";
         }
@@ -277,7 +278,7 @@ public sealed class CreateTrade
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradeHistory);
 
-            group.MapPost("/", async ([FromBody] Request request, ISender sender) => {
+            group.MapPost("/", async ([FromBody] Request request, ClaimsPrincipal user, ISender sender) => {
                 Result<int> result = await sender.Send(request);
 
                 return result.IsSuccess ? Results.Created($"{ApiGroup.V1.TradeHistory}/{result.Value}", result) 

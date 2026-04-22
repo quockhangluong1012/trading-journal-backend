@@ -31,9 +31,9 @@ public sealed class GetDrawings
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Drawings);
 
-            group.MapGet("/{sessionId:int}", async (int sessionId, ISender sender) =>
+            group.MapGet("/{sessionId:int}", async (int sessionId, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<string> result = await sender.Send(new Request(sessionId));
+                Result<string> result = await sender.Send(new Request(sessionId) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) : Results.NotFound(result);
             })

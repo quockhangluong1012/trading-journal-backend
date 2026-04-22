@@ -69,7 +69,11 @@ public static class DependencyInjection
 
     private static IServiceCollection AddOpenRouterAI(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddHttpClient<IOpenRouterAIService, OpenRouterAiService>();
+        services.AddHttpClient<IOpenRouterAIService, OpenRouterAiService>(client =>
+        {
+            string baseUrl = configuration["OpenRouterAI:BaseUrl"] ?? "https://openrouter.ai";
+            client.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
+        });
         services.AddTransient<IPromptService, PromptService>();
         services.AddScoped<IReviewSnapshotBuilder, ReviewSnapshotBuilder>();
 

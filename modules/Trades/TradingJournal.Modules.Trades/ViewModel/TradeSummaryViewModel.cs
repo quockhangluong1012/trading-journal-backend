@@ -1,6 +1,6 @@
 namespace TradingJournal.Modules.Trades.ViewModel;
 
-public sealed class TradeSumamryViewModel
+public sealed class TradeSummaryViewModel
 {
     public int TradeId { get; set; }
 

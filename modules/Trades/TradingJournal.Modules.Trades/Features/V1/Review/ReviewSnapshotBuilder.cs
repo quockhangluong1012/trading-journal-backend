@@ -109,11 +109,11 @@ public sealed record ReviewTradeInsight(
     int TradeId,
     string Asset,
     PositionType Position,
-    double Pnl,
+    decimal Pnl,
     DateTime OpenDate,
     DateTime ClosedDate,
-    double EntryPrice,
-    double? ExitPrice,
+    decimal EntryPrice,
+    decimal? ExitPrice,
     bool IsRuleBroken,
     string? RuleBreakReason,
     string? TradingZone,
@@ -127,14 +127,14 @@ public sealed record ReviewSnapshotMetrics(
     int TotalTrades,
     int Wins,
     int Losses,
-    double TotalPnl,
-    double WinRate,
-    double AverageWin,
-    double AverageLoss,
-    double BestTradePnl,
-    double WorstTradePnl,
-    double BestDayPnl,
-    double WorstDayPnl,
+    decimal TotalPnl,
+    decimal WinRate,
+    decimal AverageWin,
+    decimal AverageLoss,
+    decimal BestTradePnl,
+    decimal WorstTradePnl,
+    decimal BestDayPnl,
+    decimal WorstDayPnl,
     int LongTrades,
     int ShortTrades,
     int RuleBreakTrades,
@@ -157,8 +157,8 @@ public sealed record ReviewSnapshotMetrics(
 
         int wins = winningTrades.Count;
         int losses = losingTrades.Count;
-        double totalPnl = Math.Round(trades.Sum(trade => trade.Pnl), 2);
-        double winRate = Math.Round((double)wins / trades.Count * 100, 1);
+        decimal totalPnl = Math.Round(trades.Sum(trade => trade.Pnl), 2);
+        decimal winRate = Math.Round((decimal)wins / trades.Count * 100, 1);
 
         return new ReviewSnapshotMetrics(
             TotalTrades: trades.Count,

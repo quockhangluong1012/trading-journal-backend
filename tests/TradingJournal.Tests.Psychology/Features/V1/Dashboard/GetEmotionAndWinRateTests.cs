@@ -28,7 +28,7 @@ public class GetEmotionAndWinRateHandlerTests
             new() { CreatedBy = 1, ClosedDate = DateTime.UtcNow, Pnl = -50m, EmotionTags = new List<int> { 1 } },
             new() { CreatedBy = 2, ClosedDate = DateTime.UtcNow, Pnl = 200m, EmotionTags = new List<int> { 1 } },
         };
-        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(trades);
+        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((int userId, CancellationToken ct) => trades.Where(t => t.CreatedBy == userId).ToList());
 
         var tags = new List<EmotionTagCacheDto>
         {
@@ -60,7 +60,7 @@ public class GetEmotionAndWinRateHandlerTests
         {
             new() { CreatedBy = 1, ClosedDate = null, Pnl = null, EmotionTags = new List<int> { 1 } },
         };
-        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(trades);
+        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((int userId, CancellationToken ct) => trades.Where(t => t.CreatedBy == userId).ToList());
 
         var tags = new List<EmotionTagCacheDto>
         {
@@ -78,7 +78,7 @@ public class GetEmotionAndWinRateHandlerTests
     [Fact]
     public async Task Handle_Returns_Empty_List_When_No_Trades()
     {
-        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeCacheDto>());
+        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeCacheDto>());
         _emotionTagProviderMock.Setup(x => x.GetEmotionTagsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<EmotionTagCacheDto>());
 
         var request = new GetEmotionAndWinRate.Request(1);
@@ -96,7 +96,7 @@ public class GetEmotionAndWinRateHandlerTests
             new() { CreatedBy = 99, ClosedDate = DateTime.UtcNow, Pnl = 100m, EmotionTags = new List<int> { 1 } },
             new() { CreatedBy = 1, ClosedDate = DateTime.UtcNow, Pnl = 50m, EmotionTags = new List<int> { 1 } },
         };
-        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(trades);
+        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((int userId, CancellationToken ct) => trades.Where(t => t.CreatedBy == userId).ToList());
 
         var tags = new List<EmotionTagCacheDto>
         {
@@ -121,7 +121,7 @@ public class GetEmotionAndWinRateHandlerTests
             new() { CreatedBy = 1, ClosedDate = DateTime.UtcNow, Pnl = 0m, EmotionTags = new List<int> { 1 } },
             new() { CreatedBy = 1, ClosedDate = DateTime.UtcNow, Pnl = 50m, EmotionTags = new List<int> { 1 } },
         };
-        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(trades);
+        _tradeProviderMock.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((int userId, CancellationToken ct) => trades.Where(t => t.CreatedBy == userId).ToList());
 
         var tags = new List<EmotionTagCacheDto>
         {
@@ -137,4 +137,6 @@ public class GetEmotionAndWinRateHandlerTests
         Assert.Equal(50, result.Value[0].WinRate);
     }
 }
+
+
 

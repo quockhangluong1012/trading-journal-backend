@@ -51,9 +51,9 @@ public sealed class GetSessionDetail
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Sessions);
 
-            group.MapGet("/{sessionId:int}", async (int sessionId, ISender sender) =>
+            group.MapGet("/{sessionId:int}", async (int sessionId, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<SessionDetailDto> result = await sender.Send(new Request(sessionId));
+                Result<SessionDetailDto> result = await sender.Send(new Request(sessionId) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) : Results.NotFound(result);
             })

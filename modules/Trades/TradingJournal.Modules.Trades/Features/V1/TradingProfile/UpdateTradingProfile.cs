@@ -5,7 +5,7 @@ namespace TradingJournal.Modules.Trades.Features.V1.TradingProfile;
 
 public sealed class UpdateTradingProfile
 {
-    public record Request(int? MaxTradesPerDay, double? MaxDailyLossPercentage, int? MaxConsecutiveLosses, bool IsDisciplineEnabled) : ICommand<Result<int>>;
+    public record Request(int? MaxTradesPerDay, decimal? MaxDailyLossPercentage, int? MaxConsecutiveLosses, bool IsDisciplineEnabled) : ICommand<Result<int>>;
 
     public sealed class Validator : AbstractValidator<Request>
     {
@@ -82,7 +82,7 @@ public sealed class UpdateTradingProfile
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradingProfiles);
 
-            group.MapPost("/", async ([FromBody] Request request, ISender sender) =>
+            group.MapPost("/", async ([FromBody] Request request, ClaimsPrincipal user, ISender sender) =>
             {
                 Result<int> result = await sender.Send(request);
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);

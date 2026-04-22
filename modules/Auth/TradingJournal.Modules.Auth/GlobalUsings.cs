@@ -11,3 +11,5 @@ global using TradingJournal.Modules.Auth.Infrastructure;
 global using TradingJournal.Shared.CQRS;
 global using TradingJournal.Shared.Abstractions;
 global using System.Security.Claims;
+global using System.Security.Claims;
+global using TradingJournal.Shared.Extensions;

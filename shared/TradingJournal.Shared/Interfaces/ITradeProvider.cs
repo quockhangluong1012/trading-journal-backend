@@ -4,5 +4,5 @@ namespace TradingJournal.Shared.Interfaces;
 
 public interface ITradeProvider
 {
-    Task<List<TradeCacheDto>> GetTradesAsync(CancellationToken cancellationToken = default);
+    Task<List<TradeCacheDto>> GetTradesAsync(int userId, CancellationToken cancellationToken = default);
 }

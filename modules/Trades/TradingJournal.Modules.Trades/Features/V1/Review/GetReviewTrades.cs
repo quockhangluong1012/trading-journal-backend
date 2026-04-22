@@ -15,11 +15,11 @@ public sealed class GetReviewTrades
         int Id,
         string Asset,
         string Position,
-        double? Pnl,
+        decimal? Pnl,
         DateTime Date,
         DateTime? ClosedDate,
-        double EntryPrice,
-        double? ExitPrice,
+        decimal EntryPrice,
+        decimal? ExitPrice,
         int ConfidenceLevel,
         string? TradingZone,
         bool IsRuleBroken,
@@ -92,9 +92,9 @@ public sealed class GetReviewTrades
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Reviews);
 
-            group.MapPost("/trades", async (ISender sender, [FromBody] Request request) =>
+            group.MapPost("/trades", async (ISender sender, [FromBody] Request request, ClaimsPrincipal user) =>
             {
-                Result<PaginationViewModel<ReviewTradeViewModel>> result = await sender.Send(request);
+                Result<PaginationViewModel<ReviewTradeViewModel>> result = await sender.Send(request with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);
             })

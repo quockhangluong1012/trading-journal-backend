@@ -66,8 +66,8 @@ public sealed class CreatePretradeChecklist
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.PretradeChecklists);
 
-            group.MapPost("/", async ([FromBody] Request request, ISender sender) => {
-                Result<int> result = await sender.Send(request);
+            group.MapPost("/", async ([FromBody] Request request, ClaimsPrincipal user, ISender sender) => {
+                Result<int> result = await sender.Send(request with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Created($"/api/v1/pretrade-checklists/{result.Value}", result)
                     : Results.BadRequest(result);

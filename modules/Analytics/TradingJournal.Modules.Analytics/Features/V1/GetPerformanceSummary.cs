@@ -7,26 +7,26 @@ public sealed class GetPerformanceSummary
     internal sealed record Request(AnalyticsFilter Filter, int UserId = 0) : IQuery<Result<PerformanceSummaryViewModel>>;
 
     internal sealed record PerformanceSummaryViewModel(
-        double TotalPnl,
-        double WinRate,
+        decimal TotalPnl,
+        decimal WinRate,
         int Wins,
         int Losses,
         int TotalClosed,
-        double AvgWin,
-        double AvgLoss,
-        double LargestWin,
-        double LargestLoss,
-        double ProfitFactor,
-        double Expectancy,
-        double MaxDrawdown,
-        double MaxDrawdownPct,
-        double SharpeRatio,
-        double AvgHoldingDays,
-        double LongsWinRate,
-        double ShortsWinRate,
+        decimal avgWin,
+        decimal avgLoss,
+        decimal largestWin,
+        decimal largestLoss,
+        decimal ProfitFactor,
+        decimal Expectancy,
+        decimal MaxDrawdown,
+        decimal MaxDrawdownPct,
+        decimal SharpeRatio,
+        decimal AvgHoldingDays,
+        decimal LongsWinRate,
+        decimal ShortsWinRate,
         int ConsecutiveWins,
         int ConsecutiveLosses,
-        double AvgRiskReward);
+        decimal AvgRiskReward);
 
     internal sealed class Validator : AbstractValidator<Request>
     {
@@ -43,8 +43,7 @@ public sealed class GetPerformanceSummary
     {
         public async Task<Result<PerformanceSummaryViewModel>> Handle(Request request, CancellationToken cancellationToken)
         {
-            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(cancellationToken);
-            List<TradeCacheDto> trades = [.. allTrades.Where(t => t.CreatedBy == request.UserId)];
+            List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
             DateTime fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
 
             List<TradeCacheDto> closed = [.. trades
@@ -60,20 +59,20 @@ public sealed class GetPerformanceSummary
             List<TradeCacheDto> wins = closed.Where(t => t.Pnl > 0).ToList();
             List<TradeCacheDto> losses = closed.Where(t => t.Pnl <= 0).ToList();
 
-            double totalPnl = closed.Sum(t => (double)t.Pnl!.Value);
-            double winRate = (double)wins.Count / closed.Count * 100;
-            double avgWin = wins.Count > 0 ? wins.Average(t => (double)t.Pnl!.Value) : 0;
-            double avgLoss = losses.Count > 0 ? Math.Abs(losses.Average(t => (double)t.Pnl!.Value)) : 0;
-            double largestWin = wins.Count > 0 ? (double)wins.Max(t => t.Pnl!.Value) : 0;
-            double largestLoss = losses.Count > 0 ? (double)losses.Min(t => t.Pnl!.Value) : 0;
+            decimal totalPnl = closed.Sum(t => (decimal)t.Pnl!.Value);
+            decimal winRate = (decimal)wins.Count / closed.Count * 100;
+            decimal avgWin = wins.Count > 0 ? wins.Average(t => (decimal)t.Pnl!.Value) : 0;
+            decimal avgLoss = losses.Count > 0 ? Math.Abs(losses.Average(t => (decimal)t.Pnl!.Value)) : 0;
+            decimal largestWin = wins.Count > 0 ? (decimal)wins.Max(t => t.Pnl!.Value) : 0;
+            decimal largestLoss = losses.Count > 0 ? (decimal)losses.Min(t => t.Pnl!.Value) : 0;
 
             // Profit factor
-            double grossProfit = wins.Sum(t => (double)t.Pnl!.Value);
-            double grossLoss = Math.Abs(losses.Sum(t => (double)t.Pnl!.Value));
-            double profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (grossProfit > 0 ? double.MaxValue : 0);
+            decimal grossProfit = wins.Sum(t => (decimal)t.Pnl!.Value);
+            decimal grossLoss = Math.Abs(losses.Sum(t => (decimal)t.Pnl!.Value));
+            decimal profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (grossProfit > 0 ? decimal.MaxValue : 0);
 
             // Expectancy
-            double expectancy = (winRate / 100 * avgWin) - ((1 - winRate / 100) * avgLoss);
+            decimal expectancy = (winRate / 100 * avgWin) - ((1 - winRate / 100) * avgLoss);
 
             // Max drawdown
             List<TradeCacheDto> sorted = closed
@@ -81,12 +80,12 @@ public sealed class GetPerformanceSummary
                 .OrderBy(t => t.ClosedDate!.Value)
                 .ToList();
 
-            double peak = 0, equity = 0, maxDD = 0, maxDDPct = 0;
+            decimal peak = 0, equity = 0, maxDD = 0, maxDDPct = 0;
             foreach (TradeCacheDto t in sorted)
             {
-                equity += (double)t.Pnl!.Value;
+                equity += (decimal)t.Pnl!.Value;
                 if (equity > peak) peak = equity;
-                double dd = peak - equity;
+                decimal dd = peak - equity;
                 if (dd > maxDD)
                 {
                     maxDD = dd;
@@ -96,24 +95,24 @@ public sealed class GetPerformanceSummary
 
             // Sharpe ratio (simplified)
             double[] returns = sorted.Select(t => (double)t.Pnl!.Value).ToArray();
-            double meanReturn = returns.Length > 0 ? returns.Average() : 0;
-            double stdDev = returns.Length > 1
-                ? Math.Sqrt(returns.Sum(r => Math.Pow(r - meanReturn, 2)) / (returns.Length - 1))
+            decimal meanReturn = returns.Length > 0 ? (decimal)returns.Average() : 0;
+            decimal stdDev = returns.Length > 1
+                ? (decimal)Math.Sqrt(returns.Sum(r => Math.Pow(r - (double)meanReturn, 2)) / (returns.Length - 1))
                 : 0;
-            double sharpeRatio = stdDev > 0 ? meanReturn / stdDev * Math.Sqrt(252) : 0;
+            decimal sharpeRatio = stdDev > 0 ? meanReturn / stdDev * (decimal)Math.Sqrt(252) : 0;
 
             // Avg holding days
             double[] holdingDays = closed
                 .Where(t => t.ClosedDate.HasValue)
                 .Select(t => (t.ClosedDate!.Value - t.Date).TotalDays)
                 .ToArray();
-            double avgHoldingDays = holdingDays.Length > 0 ? holdingDays.Average() : 0;
+            decimal avgHoldingDays = holdingDays.Length > 0 ? (decimal)holdingDays.Average() : 0;
 
             // Long vs Short win rates (Position: 0 = Long, 1 = Short)
             List<TradeCacheDto> longs = [.. closed.Where(t => t.Position == PositionType.Long)];
             List<TradeCacheDto> shorts = [.. closed.Where(t => t.Position == PositionType.Short)];
-            double longsWinRate = longs.Count > 0 ? (double)longs.Count(t => t.Pnl > 0) / longs.Count * 100 : 0;
-            double shortsWinRate = shorts.Count > 0 ? (double)shorts.Count(t => t.Pnl > 0) / shorts.Count * 100 : 0;
+            decimal longsWinRate = longs.Count > 0 ? (decimal)longs.Count(t => t.Pnl > 0) / longs.Count * 100 : 0;
+            decimal shortsWinRate = shorts.Count > 0 ? (decimal)shorts.Count(t => t.Pnl > 0) / shorts.Count * 100 : 0;
 
             // Consecutive wins/losses
             int maxConsecWins = 0, maxConsecLosses = 0, curWins = 0, curLosses = 0;
@@ -130,13 +129,13 @@ public sealed class GetPerformanceSummary
             double[] rrValues = rrTrades
                 .Select(t =>
                 {
-                    double risk = Math.Abs(t.EntryPrice - t.StopLoss);
-                    double reward = Math.Abs(t.TargetTier1 - t.EntryPrice);
-                    return risk > 0 ? reward / risk : 0;
+                    decimal risk = Math.Abs(t.EntryPrice - t.StopLoss);
+                    decimal reward = Math.Abs(t.TargetTier1 - t.EntryPrice);
+                    return risk > 0 ? (double)(reward / risk) : 0;
                 })
                 .Where(r => r > 0)
                 .ToArray();
-            double avgRiskReward = rrValues.Length > 0 ? rrValues.Average() : 0;
+            decimal avgRiskReward = rrValues.Length > 0 ? (decimal)rrValues.Average() : 0;
 
             return Result<PerformanceSummaryViewModel>.Success(new PerformanceSummaryViewModel(
                 Math.Round(totalPnl, 2),
@@ -168,9 +167,9 @@ public sealed class GetPerformanceSummary
         {
             RouteGroupBuilder group = app.MapGroup("api/v1/analytics");
 
-            group.MapGet("/performance-summary", async (AnalyticsFilter filter, ISender sender) =>
+            group.MapGet("/performance-summary", async (AnalyticsFilter filter, ClaimsPrincipal user, ISender sender) =>
             {
-                Result<PerformanceSummaryViewModel> result = await sender.Send(new Request(filter));
+                Result<PerformanceSummaryViewModel> result = await sender.Send(new Request(filter) with { UserId = user.GetCurrentUserId() });
 
                 return result.IsSuccess ? Results.Ok(result) : Results.Problem(result.Errors[0].Description);
             })

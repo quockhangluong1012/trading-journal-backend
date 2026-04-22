@@ -9,17 +9,27 @@ public class LoggingBehavior<TRequest, TResponse>(ILogger<LoggingBehavior<TReque
     where TRequest : notnull, IRequest<TResponse>
     where TResponse : notnull
 {
+    private const int SlowRequestThresholdMs = 500;
+
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        Stopwatch timer = new();
-        timer.Start();
+        Stopwatch timer = Stopwatch.StartNew();
 
         TResponse response = await next(cancellationToken);
 
         timer.Stop();
-        
-        logger.LogWarning("[PERFORMANCE] The request {Request} took {TimeTaken} milliseconds.",
-            typeof(TRequest).Name, timer.ElapsedMilliseconds);
+
+        long elapsed = timer.ElapsedMilliseconds;
+        string requestName = typeof(TRequest).Name;
+
+        if (elapsed > SlowRequestThresholdMs)
+        {
+            logger.LogWarning("[PERFORMANCE] Slow request {Request} took {TimeTaken}ms.", requestName, elapsed);
+        }
+        else
+        {
+            logger.LogDebug("[PERFORMANCE] {Request} completed in {TimeTaken}ms.", requestName, elapsed);
+        }
 
         return response;
     }

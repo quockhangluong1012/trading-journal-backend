@@ -57,7 +57,7 @@ public sealed class GetTradesHandlerTests
     [Fact]
     public async Task Handle_HasResults_ReturnsPaginatedData()
     {
-        var trades = new List<TradeHistory> { new() { Id = 1, Asset = "EURUSD", Position = SharedEnums.PositionType.Long, EntryPrice = 1.08, Date = DateTime.UtcNow, Status = SharedEnums.TradeStatus.Open, TargetTier1 = 1.09, StopLoss = 1.07, CreatedBy = 1 } };
+        var trades = new List<TradeHistory> { new() { Id = 1, Asset = "EURUSD", Position = SharedEnums.PositionType.Long, EntryPrice = 1.08m, Date = DateTime.UtcNow, Status = SharedEnums.TradeStatus.Open, TargetTier1 = 1.09m, StopLoss = 1.07m, CreatedBy = 1 } };
         _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(trades.AsQueryable()).Object);
         _ctx.Setup(x => x.TradeEmotionTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeEmotionTag>().AsQueryable()).Object);
         _emoProvider.Setup(x => x.GetEmotionTagsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<EmotionTagCacheDto>());

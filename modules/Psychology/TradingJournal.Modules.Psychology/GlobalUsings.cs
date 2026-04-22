@@ -14,4 +14,5 @@ global using TradingJournal.Modules.Psychology.Constants;
 global using TradingJournal.Modules.Psychology.Domain;
 global using TradingJournal.Modules.Psychology.Infrastructure.Persistance;
 global using TradingJournal.Shared.Contracts;
-global using TradingJournal.Shared.Interfaces;
+global using TradingJournal.Shared.Interfaces;global using System.Security.Claims;
+global using TradingJournal.Shared.Extensions;

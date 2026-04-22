@@ -23,11 +23,11 @@ public sealed class CreateTradeValidatorTests
         new(
             Asset: "EURUSD",
             Position: SharedEnums.PositionType.Long,
-            EntryPrice: 1.0850,
-            TargetTier1: 1.0900,
+            EntryPrice: 1.0850m,
+            TargetTier1: 1.0900m,
             TargetTier2: null,
             TargetTier3: null,
-            StopLoss: 1.0800,
+            StopLoss: 1.0800m,
             Notes: "Good setup",
             Date: DateTime.UtcNow,
             Status: SharedEnums.TradeStatus.Open,
@@ -193,8 +193,8 @@ public sealed class CreateTradeHandlerTests
     {
         SetCurrentUser(42);
         var request = new CreateTrade.Request(
-            Asset: "EURUSD", Position: SharedEnums.PositionType.Long, EntryPrice: 1.0850,
-            TargetTier1: 1.0900, TargetTier2: null, TargetTier3: null, StopLoss: 1.0800,
+            Asset: "EURUSD", Position: SharedEnums.PositionType.Long, EntryPrice: 1.0850m,
+            TargetTier1: 1.0900m, TargetTier2: null, TargetTier3: null, StopLoss: 1.0800m,
             Notes: "Good setup", Date: DateTime.UtcNow, Status: SharedEnums.TradeStatus.Open,
             ExitPrice: null, Pnl: null, ClosedDate: null, Screenshots: [],
             TradeTechnicalAnalysisTags: [], EmotionTags: null,
@@ -226,8 +226,8 @@ public sealed class CreateTradeHandlerTests
     {
         SetCurrentUser(42);
         var request = new CreateTrade.Request(
-            Asset: "EURUSD", Position: SharedEnums.PositionType.Long, EntryPrice: 1.0850,
-            TargetTier1: 1.0900, TargetTier2: null, TargetTier3: null, StopLoss: 1.0800,
+            Asset: "EURUSD", Position: SharedEnums.PositionType.Long, EntryPrice: 1.0850m,
+            TargetTier1: 1.0900m, TargetTier2: null, TargetTier3: null, StopLoss: 1.0800m,
             Notes: "Test", Date: DateTime.UtcNow, Status: SharedEnums.TradeStatus.Open,
             ExitPrice: null, Pnl: null, ClosedDate: null, Screenshots: [],
             TradeTechnicalAnalysisTags: [], EmotionTags: null,
@@ -255,8 +255,8 @@ public sealed class CreateTradeHandlerTests
     {
         SetCurrentUser(42);
         var request = new CreateTrade.Request(
-            Asset: "EURUSD", Position: SharedEnums.PositionType.Long, EntryPrice: 1.0850,
-            TargetTier1: 1.0900, TargetTier2: null, TargetTier3: null, StopLoss: 1.0800,
+            Asset: "EURUSD", Position: SharedEnums.PositionType.Long, EntryPrice: 1.0850m,
+            TargetTier1: 1.0900m, TargetTier2: null, TargetTier3: null, StopLoss: 1.0800m,
             Notes: "Test", Date: DateTime.UtcNow, Status: SharedEnums.TradeStatus.Open,
             ExitPrice: null, Pnl: null, ClosedDate: null, Screenshots: [],
             TradeTechnicalAnalysisTags: [], EmotionTags: null,
@@ -287,8 +287,8 @@ public sealed class CreateTradeHandlerTests
     {
         SetCurrentUser(42);
         var request = new CreateTrade.Request(
-            Asset: "EURUSD", Position: SharedEnums.PositionType.Long, EntryPrice: 1.0850,
-            TargetTier1: 1.0900, TargetTier2: null, TargetTier3: null, StopLoss: 1.0800,
+            Asset: "EURUSD", Position: SharedEnums.PositionType.Long, EntryPrice: 1.0850m,
+            TargetTier1: 1.0900m, TargetTier2: null, TargetTier3: null, StopLoss: 1.0800m,
             Notes: "Test", Date: DateTime.UtcNow, Status: SharedEnums.TradeStatus.Open,
             ExitPrice: null, Pnl: null, ClosedDate: null, Screenshots: [],
             TradeTechnicalAnalysisTags: [], EmotionTags: null,
@@ -307,3 +307,4 @@ public sealed class CreateTradeHandlerTests
         _contextMock.Verify(c => c.RollbackTransaction(), Times.Once);
     }
 }
+
