@@ -27,29 +27,12 @@ public sealed class GetProfitTrajectory
         {
             DateTime fromDate = DashboardFilterHelper.GetFromDate(request.Filter);
 
-            List<TradeHistory>? trades = await context.TradeHistories
+            List<ProfitTrajectoryViewModel> trajectory = await context.TradeHistories
                 .AsNoTracking()
-                .Where(t => t.CreatedBy == request.UserId && t.Status == TradeStatus.Closed && t.ClosedDate != null && t.ClosedDate.Value >= fromDate)
+                .Where(t => t.CreatedBy == request.UserId && t.Status == TradeStatus.Closed && t.ClosedDate != null && t.ClosedDate >= fromDate && t.Pnl.HasValue)
+                .OrderBy(t => t.ClosedDate)
+                .Select(t => new ProfitTrajectoryViewModel(t.ClosedDate!.Value, t.Pnl!.Value))
                 .ToListAsync(cancellationToken);
-
-            if (trades is null || trades.Count == 0)
-            {
-                return Result<IReadOnlyCollection<ProfitTrajectoryViewModel>>.Success([]);
-            }
-
-            DateTime currentDate = new DateTimeProvider().Now;
-
-            List<ProfitTrajectoryViewModel> trajectory = [];
-
-            for (DateTime date = fromDate.Date; date <= currentDate.Date; date = date.AddDays(1))
-            {
-                trades.Where(x => x.ClosedDate != null && x.ClosedDate.Value.Date == date.Date && x.Pnl.HasValue)
-                .ToList()
-                .ForEach(t =>
-                {
-                    trajectory.Add(new ProfitTrajectoryViewModel(date, t.Pnl.Value));
-                });
-            }
 
             return Result<IReadOnlyCollection<ProfitTrajectoryViewModel>>.Success(trajectory);
         }
