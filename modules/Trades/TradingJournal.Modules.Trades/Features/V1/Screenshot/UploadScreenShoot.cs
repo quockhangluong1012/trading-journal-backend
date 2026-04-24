@@ -34,9 +34,9 @@ public sealed class UploadScreenShoot
             
             var filePath = Path.Combine(path, fileName);
 
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            await using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                await request.File.CopyToAsync(stream);
+                await request.File.CopyToAsync(stream, cancellationToken);
             }
 
             HttpContext? httpContext = httpContextAccessor.HttpContext;

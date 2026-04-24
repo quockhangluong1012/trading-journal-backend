@@ -90,7 +90,8 @@ public sealed class CreateTrade
         }
     }
 
-    public sealed class Handler(ITradeDbContext context, IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor) : ICommandHandler<Request, Result<int>>
+    public sealed class Handler(ITradeDbContext context, IWebHostEnvironment env, 
+        IHttpContextAccessor httpContextAccessor) : ICommandHandler<Request, Result<int>>
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -210,6 +211,13 @@ public sealed class CreateTrade
 
             File.WriteAllBytes(filePath, imageBytes);
 
+            HttpContext? httpContext = httpContextAccessor.HttpContext;
+            
+            if (httpContext != null)
+            {
+                return $"{httpContext.Request.Scheme}://{httpContext.Request.Host}/screenshots/{fileName}";
+            }
+        
             return $"/screenshots/{fileName}";
         }
 
