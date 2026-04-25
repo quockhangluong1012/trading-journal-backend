@@ -94,7 +94,8 @@ Dựa trên dữ liệu giao dịch và tâm lý trong kỳ, hãy phân tích th
 - Ví dụ: "Ghi chú tâm lý trước MỖI lệnh và review lại sau khi đóng lệnh"
 
 ### YÊU CẦU ĐỊNH DẠNG ĐẦU RA (QUAN TRỌNG)
-Bạn BẮT BUỘC phải trả về kết quả dưới định dạng JSON thuần túy (không sử dụng markdown block code như ```json). Cấu trúc JSON phải chính xác như sau:
+Bạn BẮT BUỘC phải trả về kết quả dưới định dạng JSON thuần túy (không sử dụng markdown block code như ```json). Nội dung bằng tiếng Việt (Vietnamese)
+Cấu trúc JSON phải chính xác như sau:
 {
   ""summary"": ""Tóm tắt tổng quan hiệu suất giao dịch trong kỳ..."",
   ""strengthsAnalysis"": ""Phân tích điểm mạnh chi tiết..."",

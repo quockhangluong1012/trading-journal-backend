@@ -1,16 +1,21 @@
-﻿using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace TradingJournal.Shared.Extensions;
 
 public static class ObjectExtensions
 {
+    private static readonly JsonSerializerOptions CloneOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
+
     public static T DeepCopy<T>(this T obj)
         where T : class
     {
-        string json = JsonConvert.SerializeObject(obj);
-        T clone = JsonConvert.DeserializeObject<T>(json)!;
+        string json = JsonSerializer.Serialize(obj, CloneOptions);
+        T clone = JsonSerializer.Deserialize<T>(json, CloneOptions)!;
         return clone;
     }
 
@@ -41,6 +46,6 @@ public static class ObjectExtensions
 
     private static string SerializeObject(object obj)
     {
-        return JsonConvert.SerializeObject(obj);
+        return JsonSerializer.Serialize(obj);
     }
 }

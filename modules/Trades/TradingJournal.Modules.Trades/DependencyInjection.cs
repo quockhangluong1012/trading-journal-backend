@@ -1,6 +1,7 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Reflection;
 using TradingJournal.Modules.Trades.EventHandlers;
 using TradingJournal.Modules.Trades.Events;
@@ -59,9 +60,11 @@ public static class DependencyInjection
             TradeDbContext dbContext = scope.ServiceProvider.GetRequiredService<TradeDbContext>();
             await dbContext.Database.MigrateAsync();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Log exception if needed
+            var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("TradesMigration");
+            logger.LogError(ex, "Failed to migrate Trades database.");
         }
 
         return app;

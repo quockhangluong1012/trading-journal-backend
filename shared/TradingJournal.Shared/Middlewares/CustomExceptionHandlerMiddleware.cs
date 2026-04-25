@@ -2,9 +2,9 @@ using FluentValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using System.Net;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using TradingJournal.Shared.Abstractions;
 using TradingJournal.Shared.Exceptions;
 
@@ -20,13 +20,11 @@ public static class CustomExceptionHandlerMiddlewareExtensions
 
 public class CustomExceptionHandlerMiddleware
 {
-    private static readonly JsonSerializerSettings JsonSerializerSettings = new()
+    private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        ContractResolver = new DefaultContractResolver
-        {
-            NamingStrategy = new CamelCaseNamingStrategy()
-        },
-        Formatting = Formatting.Indented
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
     private readonly RequestDelegate _next;
@@ -58,7 +56,7 @@ public class CustomExceptionHandlerMiddleware
             
             Result<IEnumerable<Error>> errorResult = Result<IEnumerable<Error>>.Failure(errors);
             
-            await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(errorResult, JsonSerializerSettings));
+            await httpContext.Response.WriteAsync(JsonSerializer.Serialize(errorResult, JsonOptions));
         }
         catch (BusinessRuleException ex)
         {
@@ -67,7 +65,7 @@ public class CustomExceptionHandlerMiddleware
             httpContext.Response.StatusCode = (int)HttpStatusCode.UnprocessableEntity;
             Error error = new(ex.ErrorCode, ex.Message);
             
-            await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(error, JsonSerializerSettings));
+            await httpContext.Response.WriteAsync(JsonSerializer.Serialize(error, JsonOptions));
         }
         catch (NotFoundException ex)
         {
@@ -100,6 +98,6 @@ public class CustomExceptionHandlerMiddleware
         
         Error error = new(errorCode, message);
         
-        await context.Response.WriteAsync(JsonConvert.SerializeObject(error, JsonSerializerSettings));
+        await context.Response.WriteAsync(JsonSerializer.Serialize(error, JsonOptions));
     }
 }

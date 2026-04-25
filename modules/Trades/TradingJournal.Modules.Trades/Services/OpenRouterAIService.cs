@@ -303,10 +303,10 @@ internal sealed class OpenRouterAiService(
             { "{{ShortTrades}}", metrics.ShortTrades.ToString() },
             { "{{RuleBreakTrades}}", metrics.RuleBreakTrades.ToString() },
             { "{{HighConfidenceTrades}}", metrics.HighConfidenceTrades.ToString() },
-            { "{{TopAsset}}", metrics.TopAsset ?? "Không có dữ liệu" },
-            { "{{PrimaryTradingZone}}", metrics.PrimaryTradingZone ?? "Không có dữ liệu" },
-            { "{{DominantEmotion}}", metrics.DominantEmotion ?? "Không có dữ liệu" },
-            { "{{TopTechnicalTheme}}", metrics.TopTechnicalTheme ?? "Không có dữ liệu" },
+            { "{{TopAsset}}", metrics.TopAsset ?? "No data available" },
+            { "{{PrimaryTradingZone}}", metrics.PrimaryTradingZone ?? "No data available" },
+            { "{{DominantEmotion}}", metrics.DominantEmotion ?? "No data available" },
+            { "{{TopTechnicalTheme}}", metrics.TopTechnicalTheme ?? "No data available" },
             { "{{TradeCaseStudies}}", BuildReviewTradeCaseStudies(snapshot.Trades) },
             { "{{TradesList}}", BuildReviewTradeList(snapshot.Trades) },
             { "{{PsychologyNotes}}", BuildPsychologyDigest(snapshot.PsychologyNotes) }
@@ -323,14 +323,14 @@ internal sealed class OpenRouterAiService(
     {
         if (trades.Count == 0)
         {
-            return "Không có lệnh nào được đóng trong kỳ này.";
+            return "No closed trades in this review period.";
         }
 
         List<string> lines = [];
 
         if (trades.Count > 12)
         {
-            lines.Add($"- Đang hiển thị 12 lệnh gần nhất trên tổng {trades.Count} lệnh đã đóng. Các chỉ số hiệu suất phía trên vẫn phản ánh toàn bộ kỳ review.");
+            lines.Add($"- Showing the 12 most recent trades out of {trades.Count} total closed trades. Performance metrics above reflect the entire review period.");
         }
 
         lines.AddRange(trades
@@ -345,7 +345,7 @@ internal sealed class OpenRouterAiService(
     {
         if (trades.Count == 0)
         {
-            return "Không có trade case nào để phân tích trong kỳ này.";
+            return "No trade cases to analyze in this review period.";
         }
 
         List<string> sections = [];
@@ -373,7 +373,7 @@ internal sealed class OpenRouterAiService(
 
         return sections.Count > 0
             ? string.Join("\n", sections)
-            : "Không có trade case nào để phân tích trong kỳ này.";
+            : "No trade cases to analyze in this review period.";
     }
 
     private static void AppendTradeSection(
@@ -414,7 +414,7 @@ internal sealed class OpenRouterAiService(
     {
         return psychologyNotes.Count > 0
             ? string.Join("\n", psychologyNotes)
-            : "Không có nhật ký tâm lý nào trong kỳ này.";
+            : "No psychology journal entries in this review period.";
     }
 
     private static string JoinOrFallback(IReadOnlyList<string> values)
@@ -462,6 +462,138 @@ internal sealed class OpenRouterAiService(
             throw new InvalidOperationException(
                 $"Failed to parse AI review response. Raw response: {responseText}", ex);
         }
+    }
+    public async Task<AiCoachResponseDto> ChatWithCoachAsync(AiCoachRequestDto request, CancellationToken cancellationToken)
+    {
+        string promptTemplate = await promptService.GetAiCoach();
+
+        if (string.IsNullOrEmpty(promptTemplate))
+        {
+            throw new InvalidOperationException("AI Coach prompt template not found.");
+        }
+
+        // Build trader context from real data
+        ReviewSnapshot snapshot = await reviewSnapshotBuilder.BuildAsync(
+            ReviewPeriodType.Monthly,
+            DateTime.UtcNow.AddDays(-30),
+            request.UserId,
+            cancellationToken);
+        ReviewSnapshotMetrics metrics = snapshot.Metrics;
+
+        // Build recent trades summary
+        string recentTrades = snapshot.Trades.Count > 0
+            ? string.Join("\n", snapshot.Trades
+                .OrderByDescending(t => t.ClosedDate)
+                .Take(10)
+                .Select(BuildTradeLine))
+            : "No closed trades in the last 30 days.";
+
+        // Build psychology notes
+        string recentPsychNotes = snapshot.PsychologyNotes.Count > 0
+            ? string.Join("\n", snapshot.PsychologyNotes.Take(5))
+            : "No psychology notes in the last 30 days.";
+
+        // Fill the system prompt with real data
+        Dictionary<string, string> replacements = new()
+        {
+            { "{{TotalPnl}}", FormatPromptNumber(metrics.TotalPnl, 2) },
+            { "{{WinRate}}", FormatPromptNumber(metrics.WinRate, 1) },
+            { "{{TotalTrades}}", metrics.TotalTrades.ToString() },
+            { "{{Wins}}", metrics.Wins.ToString() },
+            { "{{Losses}}", metrics.Losses.ToString() },
+            { "{{AverageWin}}", FormatPromptNumber(metrics.AverageWin, 2) },
+            { "{{AverageLoss}}", FormatPromptNumber(metrics.AverageLoss, 2) },
+            { "{{BestTradePnl}}", FormatPromptNumber(metrics.BestTradePnl, 2) },
+            { "{{WorstTradePnl}}", FormatPromptNumber(metrics.WorstTradePnl, 2) },
+            { "{{ProfitFactor}}", metrics.AverageLoss != 0
+                ? FormatPromptNumber(Math.Abs(metrics.AverageWin * metrics.Wins / (metrics.AverageLoss * metrics.Losses)), 2)
+                : "N/A" },
+            { "{{MaxDrawdown}}", FormatPromptNumber(metrics.WorstDayPnl, 2) },
+            { "{{MaxDrawdownPct}}", "N/A" },
+            { "{{SharpeRatio}}", "N/A" },
+            { "{{AvgRiskReward}}", "N/A" },
+            { "{{ConsecutiveWins}}", metrics.HighConfidenceTrades.ToString() },
+            { "{{ConsecutiveLosses}}", metrics.RuleBreakTrades.ToString() },
+            { "{{DominantEmotion}}", metrics.DominantEmotion ?? "Unknown" },
+            { "{{AvgConfidence}}", "N/A" },
+            { "{{PsychologyScore}}", "N/A" },
+            { "{{JournalEntryCount}}", snapshot.PsychologyNotes.Count.ToString() },
+            { "{{RecentPsychologyNotes}}", recentPsychNotes },
+            { "{{RecentTrades}}", recentTrades },
+        };
+
+        string systemPrompt = ReplacePlaceholders(promptTemplate, replacements);
+
+        string reply = await SendCoachRequest(systemPrompt, request.Messages, cancellationToken);
+
+        return new AiCoachResponseDto(reply);
+    }
+
+    private async Task<string> SendCoachRequest(
+        string systemPrompt,
+        List<AiCoachMessageDto> conversationHistory,
+        CancellationToken cancellationToken)
+    {
+        List<object> messages =
+        [
+            new { role = "system", content = systemPrompt }
+        ];
+
+        foreach (AiCoachMessageDto message in conversationHistory)
+        {
+            messages.Add(new { role = message.Role, content = message.Content });
+        }
+
+        var requestBody = new
+        {
+            model = options.Value.Model,
+            messages,
+            max_tokens = 1024,
+            temperature = 0.7
+        };
+
+        using HttpRequestMessage request = new(HttpMethod.Post, "api/v1/chat/completions");
+
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", options.Value.ApiKey);
+
+        HttpContext? httpContext = httpContextAccessor.HttpContext;
+
+        if (httpContext != null)
+        {
+            request.Headers.Add("HTTP-Referer", $"{httpContext.Request.Scheme}://{httpContext.Request.Host}");
+        }
+        else
+        {
+            request.Headers.Add("HTTP-Referer", "http://localhost:3000");
+        }
+        request.Headers.Add("X-Title", "TradingJournal");
+
+        string jsonBody = JsonSerializer.Serialize(requestBody);
+        request.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+
+        using HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            string errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new InvalidOperationException($"OpenRouter AI Coach failed with status {response.StatusCode}: {errorContent}");
+        }
+
+        string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        using JsonDocument doc = JsonDocument.Parse(responseContent);
+        JsonElement root = doc.RootElement;
+
+        if (root.TryGetProperty("choices", out JsonElement choices) && choices.GetArrayLength() > 0)
+        {
+            JsonElement message = choices[0].GetProperty("message");
+            if (message.TryGetProperty("content", out JsonElement textContent))
+            {
+                return textContent.GetString() ?? string.Empty;
+            }
+        }
+
+        throw new InvalidOperationException("OpenRouter returned an empty or invalid response for AI Coach.");
     }
 }
 

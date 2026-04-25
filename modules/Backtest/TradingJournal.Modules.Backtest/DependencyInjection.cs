@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using TradingJournal.Modules.Backtest.EventHandlers;
 using TradingJournal.Modules.Backtest.Events;
 using TradingJournal.Shared.Behaviors;
@@ -67,9 +68,11 @@ public static class DependencyInjection
             BacktestDbContext dbContext = scope.ServiceProvider.GetRequiredService<BacktestDbContext>();
             await dbContext.Database.MigrateAsync();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Log exception if needed
+            var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("BacktestMigration");
+            logger.LogError(ex, "Failed to migrate Backtest database.");
         }
 
         return app;

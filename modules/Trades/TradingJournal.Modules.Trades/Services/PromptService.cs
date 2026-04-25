@@ -8,6 +8,8 @@ namespace TradingJournal.Modules.Trades.Services
 
         public Task<string> GetReviewSummary() => GetPrompt("ReviewSummary");
 
+        public Task<string> GetAiCoach() => GetPrompt("AiCoach");
+
         private async Task<string> GetPrompt(string promptName)
         {
             string prompt = await cacheRepository.GetOrCreateAsync<string>(

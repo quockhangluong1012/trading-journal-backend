@@ -6,6 +6,7 @@ using TradingJournal.Modules.Trades.Domain;
 using Microsoft.AspNetCore.Hosting;
 using SharedEnums = TradingJournal.Shared.Common.Enum;
 using TradingJournal.Modules.Trades.Common.Enum;
+using Microsoft.AspNetCore.Http;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Trade;
 
@@ -75,7 +76,7 @@ public sealed class UpdateTradeHandlerTests
     {
         _ctx = new Mock<ITradeDbContext>();
         _env = new Mock<IWebHostEnvironment>();
-        _handler = new UpdateTrade.Handler(_ctx.Object, _env.Object);
+        _handler = new UpdateTrade.Handler(_ctx.Object, _env.Object, new Mock<IHttpContextAccessor>().Object);
     }
 
     [Fact]

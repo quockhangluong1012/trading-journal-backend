@@ -29,6 +29,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Prompts\TradingOrderSummary.md" />
     <EmbeddedResource Include="Prompts\ReviewSummary.md" />
+    <EmbeddedResource Include="Prompts\AiCoach.md" />
   </ItemGroup>
 
   <ItemGroup>

@@ -14,3 +14,4 @@ global using TradingJournal.Modules.Analytics.Common.Enum;
 global using TradingJournal.Modules.Analytics.Common.Helpers;
 global using System.Security.Claims;
 global using TradingJournal.Shared.Extensions;
+global using TradingJournal.Modules.Analytics.Common.Services;

@@ -24,146 +24,66 @@ public sealed class GetInsights
         public async Task<Result<IReadOnlyCollection<InsightViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
             List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
-            DateTime fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
 
-            List<TradeCacheDto> closed = [.. trades
-                .Where(t => t.Status == TradeStatus.Closed && t.Pnl.HasValue)
-                .Where(t => fromDate == DateTime.MinValue || (t.ClosedDate.HasValue && t.ClosedDate.Value >= fromDate))];
+            AnalyticsMetricsCalculator.AnalyticsMetrics? metrics = AnalyticsMetricsCalculator.Calculate(trades, request.Filter);
 
-            if (closed.Count == 0)
+            if (metrics is null)
             {
                 return Result<IReadOnlyCollection<InsightViewModel>>.Success(
                     [new InsightViewModel("info", "Keep trading", "More data will unlock deeper insights. Continue logging trades with complete data for better analysis.")]);
             }
 
-            // Compute metrics inline for insight generation
-            List<TradeCacheDto> wins = [.. closed.Where(t => t.Pnl > 0)];
-            List<TradeCacheDto> losses = [.. closed.Where(t => t.Pnl <= 0)];
-
-            decimal winRate = (decimal)wins.Count / closed.Count * 100;
-            decimal avgWin = wins.Count > 0 ? wins.Average(t => (decimal)t.Pnl!.Value) : 0;
-            decimal avgLoss = losses.Count > 0 ? Math.Abs(losses.Average(t => (decimal)t.Pnl!.Value)) : 0;
-
-            decimal grossProfit = wins.Sum(t => (decimal)t.Pnl!.Value);
-            decimal grossLoss = Math.Abs(losses.Sum(t => (decimal)t.Pnl!.Value));
-            decimal profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (grossProfit > 0 ? decimal.MaxValue : 0);
-
-            // Max drawdown
-            List<TradeCacheDto> sorted = [.. closed
-                .Where(t => t.ClosedDate.HasValue)
-                .OrderBy(t => t.ClosedDate!.Value)];
-
-            decimal peak = 0, equity = 0, maxDDPct = 0;
-            foreach (TradeCacheDto t in sorted)
-            {
-                equity += (decimal)t.Pnl!.Value;
-                if (equity > peak) peak = equity;
-                decimal dd = peak - equity;
-                if (dd > 0 && peak > 0)
-                {
-                    decimal ddPct = dd / peak * 100;
-                    if (ddPct > maxDDPct) maxDDPct = ddPct;
-                }
-            }
-
-            // Consecutive
-            int maxConsecWins = 0, maxConsecLosses = 0, curWins = 0, curLosses = 0;
-            foreach (TradeCacheDto t in sorted)
-            {
-                if (t.Pnl > 0) { curWins++; curLosses = 0; maxConsecWins = Math.Max(maxConsecWins, curWins); }
-                else { curLosses++; curWins = 0; maxConsecLosses = Math.Max(maxConsecLosses, curLosses); }
-            }
-
-            // Long vs Short
-            List<TradeCacheDto> longs = [.. closed.Where(t => t.Position == PositionType.Long)];
-            List<TradeCacheDto> shorts = [.. closed.Where(t => t.Position == PositionType.Short)];
-            decimal longsWinRate = longs.Count > 0 ? (decimal)longs.Count(t => t.Pnl > 0) / longs.Count * 100 : 0;
-            decimal shortsWinRate = shorts.Count > 0 ? (decimal)shorts.Count(t => t.Pnl > 0) / shorts.Count * 100 : 0;
-
-            // Avg holding days
-            double[] holdingDays = [.. closed
-                .Where(t => t.ClosedDate.HasValue)
-                .Select(t => (t.ClosedDate!.Value - t.Date).TotalDays)];
-            decimal avgHoldingDays = holdingDays.Length > 0 ? (decimal)holdingDays.Average() : 0;
-
-            // Avg risk-reward
-            double[] rrValues = [.. closed
-                .Where(t => t.StopLoss > 0 && t.TargetTier1 > 0 && t.EntryPrice > 0)
-                .Select(t =>
-                {
-                    decimal risk = Math.Abs(t.EntryPrice - t.StopLoss);
-                    decimal reward = Math.Abs(t.TargetTier1 - t.EntryPrice);
-                    return risk > 0 ? (double)(reward / risk) : 0;
-                })
-                .Where(r => r > 0)];
-            decimal avgRiskReward = rrValues.Length > 0 ? (decimal)rrValues.Average() : 0;
-
-            // Sharpe
-            double[] returns = [.. sorted.Select(t => (double)t.Pnl!.Value)];
-            decimal meanReturn = returns.Length > 0 ? (decimal)returns.Average() : 0;
-            decimal stdDev = returns.Length > 1
-                ? (decimal)Math.Sqrt(returns.Sum(r => Math.Pow(r - (double)meanReturn, 2)) / (returns.Length - 1))
-                : 0;
-            decimal sharpeRatio = stdDev > 0 ? meanReturn / stdDev * (decimal)Math.Sqrt(252) : 0;
-
-            // Best/worst asset
-            var assetPnl = closed.GroupBy(t => t.Asset)
-                .Select(g => new { Asset = g.Key, Pnl = g.Sum(t => (decimal)t.Pnl!.Value) })
-                .ToList();
-            var bestAsset = assetPnl.OrderByDescending(a => a.Pnl).FirstOrDefault();
-            var worstAsset = assetPnl.OrderBy(a => a.Pnl).FirstOrDefault();
-
-            // Generate insights
+            // Generate insights from pre-computed metrics
             List<InsightViewModel> insights = [];
 
             // Profitability
-            if (profitFactor >= 2)
-                insights.Add(new("success", "Strong profit factor", $"Your profit factor of {profitFactor:F2} indicates strong edge. Gross profits significantly outweigh gross losses."));
-            else if (profitFactor < 1)
-                insights.Add(new("warning", "Profit factor below breakeven", $"A profit factor of {profitFactor:F2} means losses outpace profits. Review your exit strategy and trade selection."));
+            if (metrics.ProfitFactor >= 2)
+                insights.Add(new("success", "Strong profit factor", $"Your profit factor of {metrics.ProfitFactor:F2} indicates strong edge. Gross profits significantly outweigh gross losses."));
+            else if (metrics.ProfitFactor < 1)
+                insights.Add(new("warning", "Profit factor below breakeven", $"A profit factor of {metrics.ProfitFactor:F2} means losses outpace profits. Review your exit strategy and trade selection."));
 
             // Win rate
-            if (winRate >= 60)
-                insights.Add(new("success", "High win rate", $"{winRate:F1}% win rate is excellent. Maintain your selection criteria and discipline."));
-            else if (winRate < 40)
-                insights.Add(new("warning", "Low win rate", $"{winRate:F1}% win rate suggests reviewing entry confluences. Consider adding more confirmation filters."));
+            if (metrics.WinRate >= 60)
+                insights.Add(new("success", "High win rate", $"{metrics.WinRate:F1}% win rate is excellent. Maintain your selection criteria and discipline."));
+            else if (metrics.WinRate < 40)
+                insights.Add(new("warning", "Low win rate", $"{metrics.WinRate:F1}% win rate suggests reviewing entry confluences. Consider adding more confirmation filters."));
 
             // Risk reward
-            if (avgRiskReward >= 2.5m)
-                insights.Add(new("success", "Great risk-to-reward", $"Average R:R of {avgRiskReward:F1}:1 means you capture large moves relative to risk."));
-            else if (avgRiskReward > 0 && avgRiskReward < 1.5m)
-                insights.Add(new("warning", "Low risk-to-reward", $"Average R:R of {avgRiskReward:F1}:1 requires a very high win rate to stay profitable. Aim for 2:1 or better."));
+            if (metrics.AvgRiskReward >= 2.5m)
+                insights.Add(new("success", "Great risk-to-reward", $"Average R:R of {metrics.AvgRiskReward:F1}:1 means you capture large moves relative to risk."));
+            else if (metrics.AvgRiskReward > 0 && metrics.AvgRiskReward < 1.5m)
+                insights.Add(new("warning", "Low risk-to-reward", $"Average R:R of {metrics.AvgRiskReward:F1}:1 requires a very high win rate to stay profitable. Aim for 2:1 or better."));
 
             // Drawdown
-            if (maxDDPct > 20)
-                insights.Add(new("warning", "High drawdown", $"Max drawdown of {maxDDPct:F1}% is steep. Consider reducing position sizes or tightening stops."));
+            if (metrics.MaxDrawdownPct > 20)
+                insights.Add(new("warning", "High drawdown", $"Max drawdown of {metrics.MaxDrawdownPct:F1}% is steep. Consider reducing position sizes or tightening stops."));
 
             // Consecutive losses
-            if (maxConsecLosses >= 3)
-                insights.Add(new("warning", "Losing streaks detected", $"You had {maxConsecLosses} consecutive losses. Consider reducing size after 2 consecutive losses."));
+            if (metrics.ConsecutiveLosses >= 3)
+                insights.Add(new("warning", "Losing streaks detected", $"You had {metrics.ConsecutiveLosses} consecutive losses. Consider reducing size after 2 consecutive losses."));
 
             // Position bias
-            if (longsWinRate > 0 && shortsWinRate > 0 && Math.Abs(longsWinRate - shortsWinRate) > 25)
+            if (metrics.LongsWinRate > 0 && metrics.ShortsWinRate > 0 && Math.Abs(metrics.LongsWinRate - metrics.ShortsWinRate) > 25)
             {
-                string better = longsWinRate > shortsWinRate ? "Long" : "Short";
+                string better = metrics.LongsWinRate > metrics.ShortsWinRate ? "Long" : "Short";
                 string worse = better == "Long" ? "Short" : "Long";
                 insights.Add(new("info", $"Stronger on {better} trades", $"Your {better} win rate is significantly higher. Consider focusing more on {better} setups or reviewing your {worse} strategy."));
             }
 
             // Holding time
-            if (avgHoldingDays > 15)
-                insights.Add(new("info", "Long holding periods", $"Average {avgHoldingDays:F0} days per trade. If you're a day/swing trader, exits may need tightening."));
+            if (metrics.AvgHoldingDays > 15)
+                insights.Add(new("info", "Long holding periods", $"Average {metrics.AvgHoldingDays:F0} days per trade. If you're a day/swing trader, exits may need tightening."));
 
             // Best asset
-            if (bestAsset is not null && bestAsset.Pnl > 0)
-                insights.Add(new("success", $"Top performer: {bestAsset.Asset}", $"{bestAsset.Asset} generated ${bestAsset.Pnl:N0} in profits. Consider increasing allocation."));
+            if (metrics.BestAsset is not null && metrics.BestAsset.Pnl > 0)
+                insights.Add(new("success", $"Top performer: {metrics.BestAsset.Asset}", $"{metrics.BestAsset.Asset} generated ${metrics.BestAsset.Pnl:N0} in profits. Consider increasing allocation."));
 
-            if (worstAsset is not null && worstAsset.Pnl < 0)
-                insights.Add(new("warning", $"Underperformer: {worstAsset.Asset}", $"{worstAsset.Asset} lost ${Math.Abs(worstAsset.Pnl):N0}. Evaluate if this market suits your strategy."));
+            if (metrics.WorstAsset is not null && metrics.WorstAsset.Pnl < 0)
+                insights.Add(new("warning", $"Underperformer: {metrics.WorstAsset.Asset}", $"{metrics.WorstAsset.Asset} lost ${Math.Abs(metrics.WorstAsset.Pnl):N0}. Evaluate if this market suits your strategy."));
 
             // Sharpe
-            if (sharpeRatio > 1.5m)
-                insights.Add(new("success", "Strong risk-adjusted returns", $"Sharpe ratio of {sharpeRatio:F2} indicates good returns relative to volatility."));
+            if (metrics.SharpeRatio > 1.5m)
+                insights.Add(new("success", "Strong risk-adjusted returns", $"Sharpe ratio of {metrics.SharpeRatio:F2} indicates good returns relative to volatility."));
 
             if (insights.Count == 0)
                 insights.Add(new("info", "Keep trading", "More data will unlock deeper insights. Continue logging trades with complete data for better analysis."));
