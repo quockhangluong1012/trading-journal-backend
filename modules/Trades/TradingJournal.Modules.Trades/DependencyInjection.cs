@@ -1,13 +1,8 @@
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
-using TradingJournal.Modules.Trades.EventHandlers;
-using TradingJournal.Modules.Trades.Events;
-using TradingJournal.Modules.Trades.Extensions;
 using TradingJournal.Modules.Trades.Features.V1.Review;
-using TradingJournal.Modules.Trades.Options;
 using TradingJournal.Modules.Trades.Services;
 using TradingJournal.Shared.Behaviors;
 using TradingJournal.Shared.MediatR;
@@ -42,11 +37,11 @@ public static class DependencyInjection
 
         services.AddScoped<ITradeProvider, TradeProvider>();
 
-        services.AddOpenRouterAI(configuration);
+        // ReviewSnapshotBuilder stays in Trades (it needs ITradeDbContext)
+        services.AddScoped<IReviewSnapshotBuilder, ReviewSnapshotBuilder>();
 
-        services.AddEventHandlers();
-
-        services.AddHelpers();
+        // Cross-module data provider for AiInsights module
+        services.AddScoped<IAiTradeDataProvider, AiTradeDataProvider>();
 
         return services;
     }
@@ -68,37 +63,5 @@ public static class DependencyInjection
         }
 
         return app;
-    }
-
-    private static IServiceCollection AddOpenRouterAI(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddHttpClient<IOpenRouterAIService, OpenRouterAiService>(client =>
-        {
-            string baseUrl = configuration["OpenRouterAI:BaseUrl"] ?? "https://openrouter.ai";
-            client.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
-        });
-        services.AddTransient<IPromptService, PromptService>();
-        services.AddScoped<IReviewSnapshotBuilder, ReviewSnapshotBuilder>();
-
-        services.Configure<OpenRouterOptions>(configuration.GetSection(OpenRouterOptions.BindLocator));
-
-        return services;
-    }
-
-    private static IServiceCollection AddEventHandlers(this IServiceCollection services)
-    {
-        services.AddTransient<INotificationHandler<SummarizeTradingOrderEvent>,
-            SummarizeTradingOrderEventHandler>();
-
-        services.AddTransient<INotificationHandler<GenerateReviewSummaryEvent>,
-            GenerateReviewSummaryEventHandler>();
-
-        return services;
-    }
-
-    private static IServiceCollection AddHelpers(this IServiceCollection services)
-    {
-        services.AddHttpClient<IImageHelper, ImageHelper>();
-        return services;
     }
 }

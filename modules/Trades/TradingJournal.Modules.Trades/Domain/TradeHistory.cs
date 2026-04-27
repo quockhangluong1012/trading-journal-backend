@@ -71,9 +71,6 @@ public sealed class TradeHistory : EntityBase<int>
     [ForeignKey(nameof(TradingSessionId))]
     public TradingSession? TradingSession { get; set; }
 
-    [ForeignKey(nameof(TradingSummaryId))]
-    public TradingSummary? TradingSummary { get; set; }
-
     [ForeignKey(nameof(TradingZoneId))]
     public TradingZone TradingZone { get; set; }
 }

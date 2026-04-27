@@ -30,6 +30,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\modules\Trades\TradingJournal.Modules.Trades\TradingJournal.Modules.Trades.csproj" />
+    <ProjectReference Include="..\..\modules\TradingSetup\TradingJournal.Modules.TradingSetup\TradingJournal.Modules.TradingSetup.csproj" />
   </ItemGroup>
 
 </Project>

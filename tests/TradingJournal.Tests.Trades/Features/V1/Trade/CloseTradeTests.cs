@@ -4,7 +4,7 @@ using TradingJournal.Messaging.Shared.Abstractions;
 using TradingJournal.Modules.Trades.Features.V1.Trade;
 using TradingJournal.Modules.Trades.Infrastructure;
 using TradingJournal.Modules.Trades.Domain;
-using TradingJournal.Modules.Trades.Events;
+using TradingJournal.Messaging.Shared.Events;
 using SharedEnums = TradingJournal.Shared.Common.Enum;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Trade;

@@ -1,6 +1,6 @@
-using TradingJournal.Modules.Trades.Common.Enum;
-using TradingJournal.Modules.Trades.Features.V1.Review;
+using TradingJournal.Shared.Common;
 using TradingJournal.Shared.Common.Enum;
+using TradingJournal.Shared.Dtos;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Review;
 
@@ -26,6 +26,51 @@ public sealed class ReviewPeriodCalculatorTests
 
         Assert.Equal(new DateTime(2026, 4, 1), bounds.Start);
         Assert.Equal(new DateTime(2026, 7, 1).AddTicks(-1), bounds.End);
+    }
+
+    [Fact]
+    public void GetBounds_Daily_ReturnsFullDay()
+    {
+        ReviewPeriodBounds bounds = ReviewPeriodCalculator.GetBounds(
+            ReviewPeriodType.Daily,
+            new DateTime(2026, 4, 15, 14, 30, 0));
+
+        Assert.Equal(new DateTime(2026, 4, 15), bounds.Start);
+        Assert.Equal(new DateTime(2026, 4, 16).AddTicks(-1), bounds.End);
+    }
+
+    [Fact]
+    public void GetBounds_Monthly_ReturnsFullMonth()
+    {
+        ReviewPeriodBounds bounds = ReviewPeriodCalculator.GetBounds(
+            ReviewPeriodType.Monthly,
+            new DateTime(2026, 3, 15));
+
+        Assert.Equal(new DateTime(2026, 3, 1), bounds.Start);
+        Assert.Equal(new DateTime(2026, 4, 1).AddTicks(-1), bounds.End);
+    }
+
+    [Fact]
+    public void GetBounds_Weekly_Monday_ReturnsCorrectBounds()
+    {
+        // Monday should start on that same Monday
+        ReviewPeriodBounds bounds = ReviewPeriodCalculator.GetBounds(
+            ReviewPeriodType.Weekly,
+            new DateTime(2026, 4, 13)); // Monday
+
+        Assert.Equal(new DateTime(2026, 4, 13), bounds.Start);
+        Assert.Equal(DayOfWeek.Monday, bounds.Start.DayOfWeek);
+    }
+
+    [Fact]
+    public void GetBounds_Quarterly_Q1_ReturnsJanToMar()
+    {
+        ReviewPeriodBounds bounds = ReviewPeriodCalculator.GetBounds(
+            ReviewPeriodType.Quarterly,
+            new DateTime(2026, 2, 15));
+
+        Assert.Equal(new DateTime(2026, 1, 1), bounds.Start);
+        Assert.Equal(new DateTime(2026, 4, 1).AddTicks(-1), bounds.End);
     }
 }
 

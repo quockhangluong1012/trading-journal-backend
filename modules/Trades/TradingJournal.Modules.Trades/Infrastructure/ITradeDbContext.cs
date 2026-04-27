@@ -6,12 +6,6 @@ public interface ITradeDbContext
 
     DbSet<ChecklistModel> ChecklistModels { get; set; }
 
-    DbSet<TradingSetup> TradingSetups { get; set; }
-
-    DbSet<SetupStep> SetupSteps { get; set; }
-
-    DbSet<SetupConnection> SetupConnections { get; set; }
-    
     DbSet<PretradeChecklist> PretradeChecklists { get; set; }
 
     DbSet<TradeScreenShot> TradeScreenShots { get; set; }
@@ -29,9 +23,7 @@ public interface ITradeDbContext
 
     DbSet<TradingSession> TradingSessions { get; set; }
 
-    DbSet<TradingSummary> TradingSummaries { get; set; }
 
-    DbSet<TradingReview> TradingReviews { get; set; }
 
     DbSet<TradingProfile> TradingProfiles { get; set; }
 

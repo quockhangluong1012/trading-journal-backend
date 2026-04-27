@@ -2,10 +2,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using FluentValidation.TestHelper;
 using Moq;
-using TradingJournal.Modules.Trades.Common.Enum;
-using TradingJournal.Modules.Trades.Domain;
-using TradingJournal.Modules.Trades.Features.V1.TradingSetups;
-using TradingJournal.Modules.Trades.Infrastructure;
+using TradingJournal.Modules.Setups.Common.Enum;
+using TradingJournal.Modules.Setups.Domain;
+using TradingJournal.Modules.Setups.Features.V1.TradingSetups;
+using TradingJournal.Modules.Setups.Infrastructure;
 using TradingJournal.Tests.Trades.Helpers;
 
 namespace TradingJournal.Tests.Trades.Features.V1.TradingSetups;
@@ -51,12 +51,12 @@ public class CreateTradingSetupValidatorTests
 
 public class CreateTradingSetupHandlerTests
 {
-    private readonly Mock<ITradeDbContext> _dbMock;
+    private readonly Mock<ISetupDbContext> _dbMock;
     private readonly CreateTradingSetup.Handler _handler;
 
     public CreateTradingSetupHandlerTests()
     {
-        _dbMock = new Mock<ITradeDbContext>();
+        _dbMock = new Mock<ISetupDbContext>();
         _handler = new CreateTradingSetup.Handler(_dbMock.Object);
     }
 
@@ -98,12 +98,12 @@ public class CreateTradingSetupHandlerTests
 
 public class GetTradingSetupsHandlerTests
 {
-    private readonly Mock<ITradeDbContext> _dbMock;
+    private readonly Mock<ISetupDbContext> _dbMock;
     private readonly GetTradingSetups.Handler _handler;
 
     public GetTradingSetupsHandlerTests()
     {
-        _dbMock = new Mock<ITradeDbContext>();
+        _dbMock = new Mock<ISetupDbContext>();
         _handler = new GetTradingSetups.Handler(_dbMock.Object);
     }
 
@@ -158,11 +158,11 @@ public class GetTradingSetupsSqlTranslationTests
     [Fact]
     public void BuildQuery_Translates_With_SqlServer_Provider()
     {
-        var options = new DbContextOptionsBuilder<TradeDbContext>()
+        var options = new DbContextOptionsBuilder<SetupDbContext>()
             .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=TradingJournalTests;Trusted_Connection=True;TrustServerCertificate=True")
             .Options;
 
-        using var context = new TradeDbContext(options, new HttpContextAccessor());
+        using var context = new SetupDbContext(options, new HttpContextAccessor());
 
         string sql = GetTradingSetups.BuildQuery(context.TradingSetups.AsNoTracking(), 7).ToQueryString();
 
@@ -186,12 +186,12 @@ public class GetTradingSetupDetailValidatorTests
 
 public class GetTradingSetupDetailHandlerTests
 {
-    private readonly Mock<ITradeDbContext> _dbMock;
+    private readonly Mock<ISetupDbContext> _dbMock;
     private readonly GetTradingSetupDetail.Handler _handler;
 
     public GetTradingSetupDetailHandlerTests()
     {
-        _dbMock = new Mock<ITradeDbContext>();
+        _dbMock = new Mock<ISetupDbContext>();
         _handler = new GetTradingSetupDetail.Handler(_dbMock.Object);
     }
 
@@ -263,12 +263,12 @@ public class UpdateTradingSetupValidatorTests
 
 public class UpdateTradingSetupHandlerTests
 {
-    private readonly Mock<ITradeDbContext> _dbMock;
+    private readonly Mock<ISetupDbContext> _dbMock;
     private readonly UpdateTradingSetup.Handler _handler;
 
     public UpdateTradingSetupHandlerTests()
     {
-        _dbMock = new Mock<ITradeDbContext>();
+        _dbMock = new Mock<ISetupDbContext>();
         _handler = new UpdateTradingSetup.Handler(_dbMock.Object);
     }
 
@@ -330,12 +330,12 @@ public class DeleteTradingSetupValidatorTests
 
 public class DeleteTradingSetupHandlerTests
 {
-    private readonly Mock<ITradeDbContext> _dbMock;
+    private readonly Mock<ISetupDbContext> _dbMock;
     private readonly DeleteTradingSetup.Handler _handler;
 
     public DeleteTradingSetupHandlerTests()
     {
-        _dbMock = new Mock<ITradeDbContext>();
+        _dbMock = new Mock<ISetupDbContext>();
         _handler = new DeleteTradingSetup.Handler(_dbMock.Object);
     }
 

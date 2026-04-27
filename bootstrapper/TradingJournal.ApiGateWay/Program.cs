@@ -7,12 +7,19 @@ using TradingJournal.ApiGateWay.Extensions;
 using TradingJournal.Shared;
 using TradingJournal.Modules.Analytics;
 using TradingJournal.Modules.Trades;
+using TradingJournal.Modules.AiInsights;
 using Scalar.AspNetCore;
 using TradingJournal.Shared.Middlewares;
 using TradingJournal.Modules.Psychology;
 using TradingJournal.Modules.Auth;
 using TradingJournal.Modules.Backtest;
+
+using TradingJournal.Modules.Setups;
 using TradingJournal.Modules.Backtest.Hubs;
+using TradingJournal.Modules.Notifications;
+using TradingJournal.Modules.Notifications.Hubs;
+using TradingJournal.Modules.Scanner;
+using TradingJournal.Modules.Scanner.Hubs;
 using TradingJournal.Messaging.Shared;
 using System.Security.Claims;
 using System.Net;
@@ -155,6 +162,11 @@ builder.Services
     .AddPsychologyModule(configuration, isDevelopment)
     .AddAnalyticsModule(isDevelopment)
     .AddBacktestModule(configuration, isDevelopment)
+
+    .AddTradingSetupModule(configuration, isDevelopment)
+    .AddAiInsightsModule(configuration, isDevelopment)
+    .AddNotificationModule(configuration, isDevelopment)
+    .AddScannerModule(configuration, isDevelopment)
     .AddInMemoryMessageQueue();
 
 builder.Services.AddOpenApi(options =>
@@ -171,6 +183,11 @@ if (app.Environment.IsDevelopment())
     await app.MigrateTradingDatabase();
     await app.MigratePsychologyDatabase();
     await app.MigrateBacktestDatabase();
+
+    await app.MigrateSetupDatabase();
+    await app.MigrateAiInsightsDatabase();
+    await app.MigrateNotificationDatabase();
+    await app.MigrateScannerDatabase();
 }
 
 if (!app.Environment.IsDevelopment())
@@ -207,6 +224,12 @@ app.MapScalarApiReference(_ =>
 
 // SignalR hub for backtest real-time communication
 app.MapHub<BacktestHub>("/hubs/backtest");
+
+// SignalR hub for real-time notification delivery
+app.MapHub<NotificationHub>("/hubs/notifications");
+
+// SignalR hub for real-time scanner alerts and status
+app.MapHub<ScannerHub>("/hubs/scanner");
 
 await app.RunAsync();
 

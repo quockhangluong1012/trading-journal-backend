@@ -2,7 +2,7 @@ namespace TradingJournal.Modules.Trades.Features.V1.TradingSession;
 
 public sealed class GetTradeSessions
 {
-    public sealed record Request(int PageNumber, int PageSize, string? Search, int UserId = 0) : IQuery<Result<List<Domain.TradingSession>>>;
+    public sealed record Request(int PageNumber = 1, int PageSize = 10, string? Search = null, int UserId = 0) : IQuery<Result<List<Domain.TradingSession>>>;
 
     public sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<List<Domain.TradingSession>>>
     {
@@ -26,7 +26,7 @@ public sealed class GetTradeSessions
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradingSessions);
 
-            group.MapGet("/", async ([FromQuery] int pageNumber, [FromQuery] int pageSize, [FromQuery] string? search, ClaimsPrincipal user, ISender sender) =>
+            group.MapGet("/", async (ClaimsPrincipal user, ISender sender, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null) =>
             {
                 Result<List<Domain.TradingSession>> result = await sender.Send(new Request(pageNumber, pageSize, search) with { UserId = user.GetCurrentUserId() });
 

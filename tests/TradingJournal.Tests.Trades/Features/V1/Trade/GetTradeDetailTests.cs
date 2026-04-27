@@ -52,15 +52,6 @@ public sealed class GetTradeDetailHandlerTests
                 TradeEmotionTags = [],
                 TradeChecklists = [],
                 TradeTechnicalAnalysisTags = [],
-                TradingSummary = new TradingSummary
-                {
-                    Id = 1,
-                    TradeId = 1,
-                    ExecutiveSummary = "Summary",
-                    TechnicalInsights = "Insights",
-                    PsychologyAnalysis = "Psych",
-                    CriticalMistakes = new CriticalMistakes()
-                }
             }
         }.AsQueryable()).Object);
 
@@ -84,15 +75,6 @@ public sealed class GetTradeDetailHandlerTests
                 TradeEmotionTags = [],
                 TradeChecklists = [],
                 TradeTechnicalAnalysisTags = [],
-                TradingSummary = new TradingSummary
-                {
-                    Id = 1,
-                    TradeId = 1,
-                    ExecutiveSummary = "Summary",
-                    TechnicalInsights = "Insights",
-                    PsychologyAnalysis = "Psych",
-                    CriticalMistakes = new CriticalMistakes()
-                }
             }
         }.AsQueryable()).Object);
 

@@ -1,5 +1,5 @@
 using TradingJournal.Messaging.Shared.Abstractions;
-using TradingJournal.Modules.Trades.Events;
+using TradingJournal.Messaging.Shared.Events;
 
 namespace TradingJournal.Modules.Trades.Features.V1.Trade;
 

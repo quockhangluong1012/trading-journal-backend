@@ -18,8 +18,6 @@ public static class Tags
 
     public const string Dashboard = "Dashboard";
 
-    public const string TradingSetups = "Trading Setups";
-
     public const string ChecklistModels = "Checklist Models";
 
     public const string Reviews = "Reviews";
@@ -36,8 +34,6 @@ public static class ApiGroup
         internal const string TradeHistory = "api/v1/trade-histories";
 
         internal const string ChecklistModels = "api/v1/checklist-models";
-
-        internal const string TradingSetups = "api/v1/trading-setups";
 
         internal const string Dashboard = "api/v1/dashboard";
 

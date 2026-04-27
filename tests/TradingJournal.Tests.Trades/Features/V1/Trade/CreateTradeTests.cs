@@ -37,7 +37,7 @@ public sealed class CreateTradeValidatorTests
             Screenshots: [],
             TradeTechnicalAnalysisTags: [],
             EmotionTags: [],
-            ConfidenceLevel: TradingJournal.Modules.Trades.Common.Enum.ConfidenceLevel.Neutral,
+            ConfidenceLevel: TradingJournal.Shared.Common.Enum.ConfidenceLevel.Neutral,
             PsychologyNotes: null,
             TradeHistoryChecklists: [1],
             TradingZoneId: 1,
@@ -198,7 +198,7 @@ public sealed class CreateTradeHandlerTests
             Notes: "Good setup", Date: DateTime.UtcNow, Status: SharedEnums.TradeStatus.Open,
             ExitPrice: null, Pnl: null, ClosedDate: null, Screenshots: [],
             TradeTechnicalAnalysisTags: [], EmotionTags: null,
-            ConfidenceLevel: TradingJournal.Modules.Trades.Common.Enum.ConfidenceLevel.Neutral, PsychologyNotes: null,
+            ConfidenceLevel: TradingJournal.Shared.Common.Enum.ConfidenceLevel.Neutral, PsychologyNotes: null,
             TradeHistoryChecklists: [1], TradingZoneId: 1, TradingSessionId: null);
 
         _contextMock.Setup(c => c.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
@@ -231,7 +231,7 @@ public sealed class CreateTradeHandlerTests
             Notes: "Test", Date: DateTime.UtcNow, Status: SharedEnums.TradeStatus.Open,
             ExitPrice: null, Pnl: null, ClosedDate: null, Screenshots: [],
             TradeTechnicalAnalysisTags: [], EmotionTags: null,
-            ConfidenceLevel: TradingJournal.Modules.Trades.Common.Enum.ConfidenceLevel.Neutral, PsychologyNotes: null,
+            ConfidenceLevel: TradingJournal.Shared.Common.Enum.ConfidenceLevel.Neutral, PsychologyNotes: null,
             TradeHistoryChecklists: [1], TradingZoneId: 1, TradingSessionId: null);
 
         _contextMock.Setup(c => c.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
@@ -260,7 +260,7 @@ public sealed class CreateTradeHandlerTests
             Notes: "Test", Date: DateTime.UtcNow, Status: SharedEnums.TradeStatus.Open,
             ExitPrice: null, Pnl: null, ClosedDate: null, Screenshots: [],
             TradeTechnicalAnalysisTags: [], EmotionTags: null,
-            ConfidenceLevel: TradingJournal.Modules.Trades.Common.Enum.ConfidenceLevel.Neutral, PsychologyNotes: null,
+            ConfidenceLevel: TradingJournal.Shared.Common.Enum.ConfidenceLevel.Neutral, PsychologyNotes: null,
             TradeHistoryChecklists: [1], TradingZoneId: 1, TradingSessionId: null);
 
         _contextMock.Setup(c => c.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
@@ -292,7 +292,7 @@ public sealed class CreateTradeHandlerTests
             Notes: "Test", Date: DateTime.UtcNow, Status: SharedEnums.TradeStatus.Open,
             ExitPrice: null, Pnl: null, ClosedDate: null, Screenshots: [],
             TradeTechnicalAnalysisTags: [], EmotionTags: null,
-            ConfidenceLevel: TradingJournal.Modules.Trades.Common.Enum.ConfidenceLevel.Neutral, PsychologyNotes: null,
+            ConfidenceLevel: TradingJournal.Shared.Common.Enum.ConfidenceLevel.Neutral, PsychologyNotes: null,
             TradeHistoryChecklists: [1], TradingZoneId: 1, TradingSessionId: null);
 
         _contextMock.Setup(c => c.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);

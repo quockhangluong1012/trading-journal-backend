@@ -1,0 +1,17 @@
+global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.AspNetCore.Routing;
+global using Microsoft.AspNetCore.Http;
+global using FluentValidation;
+global using Microsoft.AspNetCore.Builder;
+global using TradingJournal.Shared.Abstractions;
+global using TradingJournal.Shared.CQRS;
+global using System.Net;
+global using MediatR;
+global using Microsoft.EntityFrameworkCore;
+global using TradingJournal.Modules.Scanner.Common.Constants;
+global using TradingJournal.Modules.Scanner.Common.Enums;
+global using TradingJournal.Modules.Scanner.Domain;
+global using TradingJournal.Modules.Scanner.Infrastructure;
+global using Carter;
+global using System.Security.Claims;
+global using TradingJournal.Shared.Extensions;
