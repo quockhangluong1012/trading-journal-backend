@@ -41,13 +41,12 @@ public static class DependencyInjection
         services.AddScoped<IPlaybackEngine, PlaybackEngine>();
         services.AddScoped<ICandleAggregationService, CandleAggregationService>();
 
-        // Market data provider (Twelve Data — supports Forex, Metals, Futures)
-        services.Configure<TwelveDataOptions>(configuration.GetSection(TwelveDataOptions.SectionName));
-        services.AddHttpClient<IMarketDataProvider, TwelveDataMarketDataProvider>();
+        // Market data provider (Yahoo Finance — free, supports all symbols including NASDAQ indices)
+        services.AddHttpClient<IMarketDataProvider, YahooFinanceMarketDataProvider>();
 
         // Background services for data sync
-        services.AddHostedService<DataSyncBackgroundService>();
-        services.AddHostedService<CsvImportBackgroundService>();
+        // services.AddHostedService<DataSyncBackgroundService>();
+        // services.AddHostedService<CsvImportBackgroundService>();
 
         // Event handlers
         services.AddTransient<INotificationHandler<FetchHistoricalDataEvent>,

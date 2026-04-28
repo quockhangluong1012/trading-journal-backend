@@ -1,14 +1,14 @@
 using Microsoft.Extensions.Logging;
 using TradingJournal.Messaging.Shared.Abstractions;
-using TradingJournal.Modules.Backtest.Infrastructure;
 using TradingJournal.Modules.Scanner.Events;
 using TradingJournal.Modules.Scanner.Services.ICTAnalysis;
+using TradingJournal.Modules.Scanner.Services.LiveData;
 
 namespace TradingJournal.Modules.Scanner.Services;
 
 internal sealed class ScannerEngine(
     IScannerDbContext scannerDb,
-    IBacktestDbContext backtestDb,
+    ILiveMarketDataProvider liveDataProvider,
     MultiTimeframeAnalyzer analyzer,
     IEnumerable<IMultiAssetDetector> multiAssetDetectors,
     IEventBus eventBus,
@@ -24,7 +24,7 @@ internal sealed class ScannerEngine(
     /// </summary>
     private const int CandlesPerTimeframe = 100;
 
-    public async Task<int> ScanForUserAsync(int userId, CancellationToken ct = default)
+    public async Task<int> ScanForWatchlistAsync(int watchlistId, int userId, CancellationToken ct = default)
     {
         // 1. Load user config with navigation properties
         ScannerConfig? config = await scannerDb.ScannerConfigs
@@ -32,7 +32,7 @@ internal sealed class ScannerEngine(
             .Include(c => c.EnabledTimeframes)
             .FirstOrDefaultAsync(c => c.UserId == userId, ct);
 
-        if (config is null || !config.IsRunning) return 0;
+        if (config is null) return 0;
 
         List<IctPatternType> globalEnabledPatterns = config.EnabledPatterns
             .Select(p => p.PatternType)
@@ -44,11 +44,9 @@ internal sealed class ScannerEngine(
 
         if (globalEnabledPatterns.Count == 0 || enabledTimeframes.Count == 0) return 0;
 
-        // 2. Load active watchlist assets with per-asset detector overrides
-        var assets = await scannerDb.Watchlists
-            .Where(w => w.UserId == userId && w.IsActive && !w.IsDisabled)
-            .SelectMany(w => w.Assets)
-            .Where(a => !a.IsDisabled)
+        // 2. Load assets for this specific watchlist (with per-asset detector overrides)
+        var assets = await scannerDb.WatchlistAssets
+            .Where(a => a.WatchlistId == watchlistId && !a.IsDisabled)
             .Include(a => a.EnabledDetectors)
             .ToListAsync(ct);
 
@@ -73,25 +71,20 @@ internal sealed class ScannerEngine(
                 : globalEnabledPatterns;
         }
 
-        // 4. Prefetch candle data for all symbols+timeframes (for SMT Divergence reuse)
+        // 4. Prefetch LIVE candle data for all symbols+timeframes
         var allCandleData = new Dictionary<(string Symbol, ScannerTimeframe Tf), List<CandleData>>();
 
         foreach (string symbol in symbols)
         {
             foreach (ScannerTimeframe tf in enabledTimeframes)
             {
-                var backtestTimeframe = MapToBacktestTimeframe(tf);
-                if (backtestTimeframe is null) continue;
+                List<CandleData> candles = await liveDataProvider.GetRecentCandlesAsync(
+                    symbol, tf, CandlesPerTimeframe, ct);
 
-                List<CandleData> candles = await backtestDb.OhlcvCandles
-                    .Where(c => c.Asset == symbol && c.Timeframe == backtestTimeframe.Value)
-                    .OrderByDescending(c => c.Timestamp)
-                    .Take(CandlesPerTimeframe)
-                    .Select(c => new CandleData(c.Timestamp, c.Open, c.High, c.Low, c.Close, c.Volume))
-                    .ToListAsync(ct);
-
-                candles.Reverse();
-                allCandleData[(symbol, tf)] = candles;
+                if (candles.Count > 0)
+                {
+                    allCandleData[(symbol, tf)] = candles;
+                }
             }
         }
 
@@ -109,14 +102,16 @@ internal sealed class ScannerEngine(
                 var effectivePatterns = perAssetPatterns[symbol];
 
                 int alertsForSymbol = await ProcessDetectionsAsync(
-                    userId, symbol, analyzer.Analyze(symbol, candlesByTimeframe, effectivePatterns),
+                    userId, symbol, watchlistId,
+                    analyzer.Analyze(symbol, candlesByTimeframe, effectivePatterns),
                     config.MinConfluenceScore, ct);
 
                 totalAlerts += alertsForSymbol;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error scanning symbol {Symbol} for user {UserId}", symbol, userId);
+                logger.LogError(ex, "Error scanning symbol {Symbol} in watchlist {WatchlistId} for user {UserId}",
+                    symbol, watchlistId, userId);
             }
         }
 
@@ -138,17 +133,8 @@ internal sealed class ScannerEngine(
                     // Try to get correlated candles — may need to fetch if not in watchlist
                     if (!allCandleData.TryGetValue((correlatedSymbol, tf), out var correlatedCandles))
                     {
-                        var backtestTf = MapToBacktestTimeframe(tf);
-                        if (backtestTf is null) continue;
-
-                        correlatedCandles = await backtestDb.OhlcvCandles
-                            .Where(c => c.Asset == correlatedSymbol && c.Timeframe == backtestTf.Value)
-                            .OrderByDescending(c => c.Timestamp)
-                            .Take(CandlesPerTimeframe)
-                            .Select(c => new CandleData(c.Timestamp, c.Open, c.High, c.Low, c.Close, c.Volume))
-                            .ToListAsync(ct);
-
-                        correlatedCandles.Reverse();
+                        correlatedCandles = await liveDataProvider.GetRecentCandlesAsync(
+                            correlatedSymbol, tf, CandlesPerTimeframe, ct);
                     }
 
                     if (correlatedCandles.Count == 0) continue;
@@ -161,7 +147,8 @@ internal sealed class ScannerEngine(
                         var smtResults = smtPatterns.Select(p => (p, ConfluenceScore: 1)).ToList();
 
                         int smtAlerts = await ProcessDetectionsAsync(
-                            userId, symbol, smtResults, config.MinConfluenceScore, ct);
+                            userId, symbol, watchlistId, smtResults,
+                            config.MinConfluenceScore, ct);
 
                         totalAlerts += smtAlerts;
                     }
@@ -169,8 +156,8 @@ internal sealed class ScannerEngine(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error running SMT Divergence for {Symbol} vs {Correlated} for user {UserId}",
-                    symbol, correlatedSymbol, userId);
+                logger.LogError(ex, "Error running SMT Divergence for {Symbol} vs {Correlated} in watchlist {WatchlistId}",
+                    symbol, correlatedSymbol, watchlistId);
             }
         }
 
@@ -183,6 +170,7 @@ internal sealed class ScannerEngine(
     private async Task<int> ProcessDetectionsAsync(
         int userId,
         string symbol,
+        int watchlistId,
         List<(DetectedPattern Pattern, int ConfluenceScore)> detections,
         int minConfluenceScore,
         CancellationToken ct)
@@ -242,19 +230,10 @@ internal sealed class ScannerEngine(
             newAlerts++;
 
             logger.LogInformation(
-                "Scanner alert: {Pattern} on {Symbol} ({Timeframe}) for user {UserId}, confluence={Score}",
-                pattern.Type, symbol, pattern.Timeframe, userId, confluenceScore);
+                "Scanner alert: {Pattern} on {Symbol} ({Timeframe}) in watchlist {WatchlistId}, confluence={Score}",
+                pattern.Type, symbol, pattern.Timeframe, watchlistId, confluenceScore);
         }
 
         return newAlerts;
     }
-
-    private static Backtest.Common.Enums.Timeframe? MapToBacktestTimeframe(ScannerTimeframe tf) => tf switch
-    {
-        ScannerTimeframe.M5 => Backtest.Common.Enums.Timeframe.M5,
-        ScannerTimeframe.M15 => Backtest.Common.Enums.Timeframe.M15,
-        ScannerTimeframe.H1 => Backtest.Common.Enums.Timeframe.H1,
-        ScannerTimeframe.D1 => Backtest.Common.Enums.Timeframe.D1,
-        _ => null
-    };
 }

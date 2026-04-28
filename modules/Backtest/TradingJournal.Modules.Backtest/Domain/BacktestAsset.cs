@@ -37,10 +37,10 @@ public sealed class BacktestAsset : EntityBase<int>
     public AssetSyncStatus SyncStatus { get; set; } = AssetSyncStatus.Pending;
 
     /// <summary>
-    /// Data provider used for syncing: "TwelveData", "AlphaVantage", "CSV".
+    /// Data provider used for syncing: "YahooFinance", "TwelveData", "AlphaVantage", "CSV".
     /// </summary>
     [MaxLength(30)]
-    public string DataProvider { get; set; } = "TwelveData";
+    public string DataProvider { get; set; } = "YahooFinance";
 
     /// <summary>
     /// Start date of the desired data range (inclusive).

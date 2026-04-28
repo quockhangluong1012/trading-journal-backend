@@ -27,8 +27,8 @@ public static class CreateAsset
                 c is "Forex" or "Metals" or "Futures" or "Crypto" or "Indices")
                 .WithMessage("Category must be one of: Forex, Metals, Futures, Crypto, Indices");
             RuleFor(x => x.DataProvider).NotEmpty().Must(p =>
-                p is "TwelveData" or "AlphaVantage" or "CSV")
-                .WithMessage("DataProvider must be one of: TwelveData, AlphaVantage, CSV");
+                p is "YahooFinance" or "TwelveData" or "AlphaVantage" or "CSV")
+                .WithMessage("DataProvider must be one of: YahooFinance, TwelveData, AlphaVantage, CSV");
             RuleFor(x => x.DataStartDate).LessThan(x => x.DataEndDate ?? DateTime.UtcNow);
             RuleFor(x => x.PipType)
                 .Must(Enum.IsDefined).WithMessage("Invalid pip type. Valid values: Standard, JpyPair, Metal, Crypto, Index, WholePip");

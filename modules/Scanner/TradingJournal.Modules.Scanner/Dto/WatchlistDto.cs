@@ -4,6 +4,7 @@ public record WatchlistDto(
     int Id,
     string Name,
     bool IsActive,
+    bool IsScannerRunning,
     DateTime CreatedDate,
     List<WatchlistAssetDto> Assets);
 

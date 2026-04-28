@@ -16,7 +16,6 @@ public sealed class CreateWatchlist
         public Validator()
         {
             RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
-            RuleFor(x => x.Assets).NotEmpty().WithMessage("At least one asset is required.");
             RuleForEach(x => x.Assets).ChildRules(a =>
             {
                 a.RuleFor(x => x.Symbol).NotEmpty().MaximumLength(30);
@@ -51,6 +50,7 @@ public sealed class CreateWatchlist
                 watchlist.Id,
                 watchlist.Name,
                 watchlist.IsActive,
+                watchlist.IsScannerRunning,
                 watchlist.CreatedDate,
                 watchlist.Assets.Select(a => new WatchlistAssetDto(a.Id, a.Symbol, a.DisplayName, new List<string>())).ToList());
 
@@ -70,7 +70,7 @@ public sealed class CreateWatchlist
                 {
                     UserId = user.GetCurrentUserId(),
                     Name = body.Name,
-                    Assets = body.Assets
+                    Assets = body.Assets ?? []
                 };
 
                 Result<WatchlistDto> result = await sender.Send(command);

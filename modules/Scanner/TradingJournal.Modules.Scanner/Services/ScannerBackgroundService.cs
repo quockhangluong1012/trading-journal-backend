@@ -7,8 +7,9 @@ using TradingJournal.Modules.Scanner.Hubs;
 namespace TradingJournal.Modules.Scanner.Services;
 
 /// <summary>
-/// Background service that continuously scans all active users' watchlists
-/// for ICT patterns. Each user's scan runs at their configured interval.
+/// Background service that continuously scans watchlists with their scanner enabled.
+/// Each watchlist is scanned independently — users can turn on/off scanning per watchlist.
+/// The service runs on the server and is NOT affected by client page refreshes.
 /// </summary>
 internal sealed class ScannerBackgroundService(
     IServiceScopeFactory scopeFactory,
@@ -55,16 +56,17 @@ internal sealed class ScannerBackgroundService(
         IScannerEngine engine = scope.ServiceProvider.GetRequiredService<IScannerEngine>();
         IHubContext<ScannerHub> hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<ScannerHub>>();
 
-        // Get all users with active scanner configs
-        List<ScannerConfig> activeConfigs = await db.ScannerConfigs
-            .Where(c => c.IsRunning && !c.IsDisabled)
+        // Get all watchlists with scanner running (per-watchlist control)
+        var activeWatchlists = await db.Watchlists
+            .Where(w => w.IsScannerRunning && w.IsActive && !w.IsDisabled)
+            .Select(w => new { w.Id, w.UserId, w.Name })
             .ToListAsync(ct);
 
-        if (activeConfigs.Count == 0) return;
+        if (activeWatchlists.Count == 0) return;
 
-        logger.LogDebug("Scanner cycle: {UserCount} active users to scan.", activeConfigs.Count);
+        logger.LogDebug("Scanner cycle: {WatchlistCount} active watchlists to scan.", activeWatchlists.Count);
 
-        foreach (ScannerConfig config in activeConfigs)
+        foreach (var watchlist in activeWatchlists)
         {
             if (ct.IsCancellationRequested) break;
 
@@ -72,31 +74,35 @@ internal sealed class ScannerBackgroundService(
             {
                 DateTime cycleStart = DateTime.UtcNow;
 
-                int alertsFound = await engine.ScanForUserAsync(config.UserId, ct);
+                int alertsFound = await engine.ScanForWatchlistAsync(watchlist.Id, watchlist.UserId, ct);
 
                 TimeSpan duration = DateTime.UtcNow - cycleStart;
 
-                // Notify the user via SignalR that a scan cycle completed
-                await hubContext.Clients.Group($"user-{config.UserId}")
-                    .SendAsync("ScanCycleCompleted", new
+                // Notify the user via SignalR that a watchlist scan cycle completed
+                await hubContext.Clients.Group($"user-{watchlist.UserId}")
+                    .SendAsync("WatchlistScanCompleted", new
                     {
+                        WatchlistId = watchlist.Id,
+                        WatchlistName = watchlist.Name,
                         AlertsFound = alertsFound,
                         Duration = duration.TotalMilliseconds,
                         Timestamp = DateTime.UtcNow
                     }, ct);
 
                 logger.LogDebug(
-                    "Scanner cycle for user {UserId}: {AlertsFound} alerts in {Duration}ms",
-                    config.UserId, alertsFound, duration.TotalMilliseconds);
+                    "Scanner cycle for watchlist {WatchlistId} ({WatchlistName}), user {UserId}: {AlertsFound} alerts in {Duration}ms",
+                    watchlist.Id, watchlist.Name, watchlist.UserId, alertsFound, duration.TotalMilliseconds);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error scanning for user {UserId}", config.UserId);
+                logger.LogError(ex, "Error scanning watchlist {WatchlistId} for user {UserId}",
+                    watchlist.Id, watchlist.UserId);
 
-                await hubContext.Clients.Group($"user-{config.UserId}")
-                    .SendAsync("ScannerStatusChanged", new
+                await hubContext.Clients.Group($"user-{watchlist.UserId}")
+                    .SendAsync("WatchlistScannerError", new
                     {
-                        Status = ScannerStatus.Error.ToString(),
+                        WatchlistId = watchlist.Id,
+                        WatchlistName = watchlist.Name,
                         Error = ex.Message
                     }, ct);
             }

@@ -23,6 +23,7 @@ public sealed class GetWatchlists
                     w.Id,
                     w.Name,
                     w.IsActive,
+                    w.IsScannerRunning,
                     w.CreatedDate,
                     w.Assets.Select(a => new WatchlistAssetDto(
                         a.Id, a.Symbol, a.DisplayName,

@@ -25,5 +25,6 @@
     <Project Path="tests/TradingJournal.Tests.Trades/TradingJournal.Tests.Trades.csproj" />
     <Project Path="tests/TradingJournal.Tests.Auth/TradingJournal.Tests.Auth.csproj" />
     <Project Path="tests/TradingJournal.Tests.Backtest/TradingJournal.Tests.Backtest.csproj" />
+    <Project Path="tests/TradingJournal.Tests.Scanner/TradingJournal.Tests.Scanner.csproj" />
   </Folder>
 </Solution>

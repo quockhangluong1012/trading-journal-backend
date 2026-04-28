@@ -32,18 +32,20 @@ public sealed class GetScannerStatus
                     0));
             }
 
-            int watchlistCount = await context.Watchlists
-                .CountAsync(w => w.UserId == request.UserId && w.IsActive && !w.IsDisabled, cancellationToken);
+            // Count watchlists with scanner running (per-watchlist control)
+            int runningWatchlistCount = await context.Watchlists
+                .CountAsync(w => w.UserId == request.UserId && w.IsScannerRunning && w.IsActive && !w.IsDisabled, cancellationToken);
 
             int assetCount = await context.Watchlists
-                .Where(w => w.UserId == request.UserId && w.IsActive && !w.IsDisabled)
+                .Where(w => w.UserId == request.UserId && w.IsScannerRunning && w.IsActive && !w.IsDisabled)
                 .SelectMany(w => w.Assets)
                 .Where(a => !a.IsDisabled)
                 .Select(a => a.Symbol)
                 .Distinct()
                 .CountAsync(cancellationToken);
 
-            string status = config.IsRunning
+            // Status is Running if at least one watchlist scanner is running
+            string status = runningWatchlistCount > 0
                 ? ScannerStatus.Running.ToString()
                 : ScannerStatus.Stopped.ToString();
 
@@ -54,7 +56,7 @@ public sealed class GetScannerStatus
                 config.EnabledTimeframes.Select(t => t.Timeframe.ToString()).ToList(),
                 config.MinConfluenceScore,
                 null,
-                watchlistCount,
+                runningWatchlistCount,
                 assetCount);
 
             return Result<ScannerStatusDto>.Success(dto);

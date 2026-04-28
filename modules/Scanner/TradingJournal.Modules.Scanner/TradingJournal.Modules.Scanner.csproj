@@ -18,7 +18,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\shared\TradingJournal.Messaging.Shared\TradingJournal.Messaging.Shared.csproj" />
     <ProjectReference Include="..\..\..\shared\TradingJournal.Shared\TradingJournal.Shared.csproj" />
-    <ProjectReference Include="..\..\Backtest\TradingJournal.Modules.Backtest\TradingJournal.Modules.Backtest.csproj" />
   </ItemGroup>
 
   <ItemGroup>

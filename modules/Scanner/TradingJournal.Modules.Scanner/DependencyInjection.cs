@@ -3,7 +3,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TradingJournal.Modules.Scanner.Services;
+using TradingJournal.Modules.Scanner.Services.EconomicCalendar;
 using TradingJournal.Modules.Scanner.Services.ICTAnalysis;
+using TradingJournal.Modules.Scanner.Services.LiveData;
 using TradingJournal.Shared.Behaviors;
 using TradingJournal.Shared.MediatR;
 
@@ -57,12 +59,19 @@ public static class DependencyInjection
         // Multi-asset detector (SMT Divergence)
         services.AddSingleton<IMultiAssetDetector, SmtDivergenceDetector>();
 
+        // Live market data provider (Yahoo Finance — free, supports all symbols including NASDAQ indices)
+        services.AddHttpClient<ILiveMarketDataProvider, YahooFinanceLiveProvider>();
+
         // Core services
         services.AddSingleton<MultiTimeframeAnalyzer>();
         services.AddScoped<IScannerEngine, ScannerEngine>();
 
         // Background scanner service
         services.AddHostedService<ScannerBackgroundService>();
+
+        // Economic Calendar (Forex Factory feed — free, no API key needed)
+        services.AddHttpClient<IEconomicCalendarProvider, EconomicCalendarProvider>();
+        services.AddHostedService<EconomicCalendarBackgroundService>();
 
         // SignalR (idempotent)
         services.AddSignalR();

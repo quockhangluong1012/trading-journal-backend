@@ -23,6 +23,17 @@ public sealed class StopScanner
                 return Result<ScannerStatusDto>.Failure(new Error("ConfigNotFound", "Scanner config not found. Start the scanner first."));
 
             config.IsRunning = false;
+
+            // Stop scanner for ALL watchlists
+            var watchlists = await context.Watchlists
+                .Where(w => w.UserId == request.UserId && !w.IsDisabled)
+                .ToListAsync(cancellationToken);
+
+            foreach (var w in watchlists)
+            {
+                w.IsScannerRunning = false;
+            }
+
             await context.SaveChangesAsync(cancellationToken);
 
             var dto = new ScannerStatusDto(
@@ -53,7 +64,7 @@ public sealed class StopScanner
                 return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result);
             })
             .Produces<Result<ScannerStatusDto>>(StatusCodes.Status200OK)
-            .WithSummary("Stop the scanner for the current user.")
+            .WithSummary("Stop scanners for ALL watchlists (batch operation).")
             .WithTags(Tags.Scanner)
             .RequireAuthorization();
         }
