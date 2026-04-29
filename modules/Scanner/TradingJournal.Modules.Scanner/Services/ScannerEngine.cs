@@ -183,13 +183,14 @@ internal sealed class ScannerEngine(
 
         foreach (var (pattern, confluenceScore) in qualifiedDetections)
         {
-            // Deduplication check
+            // Deduplication check — pre-compute cutoff so EF Core can translate it
+            var dedupCutoff = DateTime.UtcNow - DedupWindow;
             bool isDuplicate = await scannerDb.ScannerAlerts.AnyAsync(a =>
                 a.UserId == userId &&
                 a.Symbol == symbol &&
                 a.PatternType == pattern.Type &&
                 a.DetectionTimeframe == pattern.Timeframe &&
-                a.DetectedAt > DateTime.UtcNow - DedupWindow &&
+                a.DetectedAt > dedupCutoff &&
                 !a.IsDisabled, ct);
 
             if (isDuplicate) continue;

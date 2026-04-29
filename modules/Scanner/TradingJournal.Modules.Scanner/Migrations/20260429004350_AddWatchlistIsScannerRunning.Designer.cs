@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TradingJournal.Modules.Scanner.Infrastructure;
 
@@ -11,9 +12,11 @@ using TradingJournal.Modules.Scanner.Infrastructure;
 namespace TradingJournal.Modules.Scanner.Migrations
 {
     [DbContext(typeof(ScannerDbContext))]
-    partial class ScannerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260429004350_AddWatchlistIsScannerRunning")]
+    partial class AddWatchlistIsScannerRunning
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -25,6 +25,10 @@ public static class Tags
     public const string TradingProfiles = "Trading Profiles";
 
     public const string AiCoach = "AI Coach";
+
+    public const string Lessons = "Lessons Learned";
+
+    public const string Discipline = "Discipline";
 }
 
 public static class ApiGroup
@@ -52,5 +56,9 @@ public static class ApiGroup
         internal const string TradingProfiles = "api/v1/trading-profiles";
 
         internal const string AiCoach = "api/v1/ai-coach";
+
+        internal const string Lessons = "api/v1/lessons";
+
+        internal const string Discipline = "api/v1/discipline";
     }
 }

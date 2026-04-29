@@ -27,6 +27,14 @@ public interface ITradeDbContext
 
     DbSet<TradingProfile> TradingProfiles { get; set; }
 
+    DbSet<LessonLearned> LessonsLearned { get; set; }
+
+    DbSet<LessonTradeLink> LessonTradeLinks { get; set; }
+
+    DbSet<DisciplineRule> DisciplineRules { get; set; }
+
+    DbSet<DisciplineLog> DisciplineLogs { get; set; }
+
     Task BeginTransaction();
 
     Task CommitTransaction();
