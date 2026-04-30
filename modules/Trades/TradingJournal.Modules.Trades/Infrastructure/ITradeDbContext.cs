@@ -35,6 +35,12 @@ public interface ITradeDbContext
 
     DbSet<DisciplineLog> DisciplineLogs { get; set; }
 
+    DbSet<TradingReview> TradingReviews { get; set; }
+
+    DbSet<ReviewActionItem> ReviewActionItems { get; set; }
+
+    DbSet<TradeTemplate> TradeTemplates { get; set; }
+
     Task BeginTransaction();
 
     Task CommitTransaction();

@@ -48,6 +48,7 @@
     <ProjectReference Include="..\..\modules\TradingSetup\TradingJournal.Modules.TradingSetup\TradingJournal.Modules.TradingSetup.csproj" />
     <ProjectReference Include="..\..\modules\Notifications\TradingJournal.Modules.Notifications\TradingJournal.Modules.Notifications.csproj" />
     <ProjectReference Include="..\..\modules\Scanner\TradingJournal.Modules.Scanner\TradingJournal.Modules.Scanner.csproj" />
+    <ProjectReference Include="..\..\modules\RiskManagement\TradingJournal.Modules.RiskManagement\TradingJournal.Modules.RiskManagement.csproj" />
     <ProjectReference Include="..\..\shared\TradingJournal.Shared\TradingJournal.Shared.csproj" />
     <ProjectReference Include="..\..\shared\TradingJournal.Messaging.Shared\TradingJournal.Messaging.Shared.csproj" />
   </ItemGroup>

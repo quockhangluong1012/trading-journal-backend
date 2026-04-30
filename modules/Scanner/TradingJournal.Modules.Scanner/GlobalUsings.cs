@@ -15,3 +15,5 @@ global using TradingJournal.Modules.Scanner.Infrastructure;
 global using Carter;
 global using System.Security.Claims;
 global using TradingJournal.Shared.Extensions;
+global using TradingJournal.Shared.Interfaces;
+global using TradingJournal.Shared.Dtos;

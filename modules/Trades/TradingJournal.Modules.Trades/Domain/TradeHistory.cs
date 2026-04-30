@@ -36,6 +36,12 @@ public sealed class TradeHistory : EntityBase<int>
     // London / NY / Sydney / Tokyo
     public int? TradingZoneId { get; set; }
 
+    /// <summary>
+    /// FK to the TradingSetup used for this trade (cross-module, Setups schema).
+    /// Nullable because older trades may not have a setup assigned.
+    /// </summary>
+    public int? TradingSetupId { get; set; }
+
     #endregion
 
     #region Risk Management & Guardrails
@@ -55,10 +61,11 @@ public sealed class TradeHistory : EntityBase<int>
     #endregion
 
     #region Psychology & Emotions
-
     public ConfidenceLevel ConfidenceLevel { get; set; }
 
     #endregion
+
+    public string? AiSummary { get; set; }
 
     public ICollection<TradeScreenShot> TradeScreenShots { get; set; } = [];
 

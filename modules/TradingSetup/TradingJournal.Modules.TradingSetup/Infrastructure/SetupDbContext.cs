@@ -19,6 +19,9 @@ internal sealed class SetupDbContext(DbContextOptions<SetupDbContext> options, I
         {
             builder.ToTable("TradingSetups", "Setups");
 
+            builder.Property(s => s.RiskPerTrade).HasColumnType("decimal(5, 2)");
+            builder.Property(s => s.TargetRiskReward).HasColumnType("decimal(5, 2)");
+
             builder.HasMany(setup => setup.Steps)
                 .WithOne(step => step.TradingSetup)
                 .HasForeignKey(step => step.TradingSetupId)

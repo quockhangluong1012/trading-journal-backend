@@ -28,6 +28,7 @@ public sealed class UpdateTrade
         List<int> TradeHistoryChecklists,
         int TradingZoneId,
         int? TradingSessionId,
+        string? AiSummary,
         int UserId = 0) : ICommand<Result<bool>>;
 
     public sealed class Validator : AbstractValidator<Request>
@@ -135,6 +136,7 @@ public sealed class UpdateTrade
                 tradeHistory.ConfidenceLevel = request.ConfidenceLevel;
                 tradeHistory.TradingZoneId = request.TradingZoneId;
                 tradeHistory.TradingSessionId = request.TradingSessionId;
+                tradeHistory.AiSummary = request.AiSummary;
 
                 #region remove all existing emotion tags, pretrade checklists, and technical analysis tags
                 context.TradeEmotionTags.RemoveRange(tradeHistory.TradeEmotionTags ?? []);

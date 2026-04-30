@@ -29,6 +29,12 @@ public static class Tags
     public const string Lessons = "Lessons Learned";
 
     public const string Discipline = "Discipline";
+
+    public const string ReviewWizard = "Review Wizard";
+
+    public const string ActionItems = "Action Items";
+
+    public const string TradeTemplates = "Trade Templates";
 }
 
 public static class ApiGroup
@@ -60,5 +66,11 @@ public static class ApiGroup
         internal const string Lessons = "api/v1/lessons";
 
         internal const string Discipline = "api/v1/discipline";
+
+        internal const string ReviewWizard = "api/v1/review-wizard";
+
+        internal const string ActionItems = "api/v1/action-items";
+
+        internal const string TradeTemplates = "api/v1/trade-templates";
     }
 }

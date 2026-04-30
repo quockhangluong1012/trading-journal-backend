@@ -14,6 +14,7 @@
     <Project Path="modules/AiInsights/TradingJournal.Modules.AiInsights/TradingJournal.Modules.AiInsights.csproj" />
     <Project Path="modules/Notifications/TradingJournal.Modules.Notifications/TradingJournal.Modules.Notifications.csproj" />
     <Project Path="modules/Scanner/TradingJournal.Modules.Scanner/TradingJournal.Modules.Scanner.csproj" />
+    <Project Path="modules/RiskManagement/TradingJournal.Modules.RiskManagement/TradingJournal.Modules.RiskManagement.csproj" />
   </Folder>
   <Folder Name="/shared/">
     <Project Path="shared/TradingJournal.Messaging.Shared/TradingJournal.Messaging.Shared.csproj" Id="96e200b6-2bea-42bb-8320-806a6773ac3c" />

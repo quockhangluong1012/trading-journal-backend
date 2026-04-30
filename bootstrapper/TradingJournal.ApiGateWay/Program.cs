@@ -20,6 +20,7 @@ using TradingJournal.Modules.Notifications;
 using TradingJournal.Modules.Notifications.Hubs;
 using TradingJournal.Modules.Scanner;
 using TradingJournal.Modules.Scanner.Hubs;
+using TradingJournal.Modules.RiskManagement;
 using TradingJournal.Messaging.Shared;
 using System.Security.Claims;
 using System.Net;
@@ -167,6 +168,7 @@ builder.Services
     .AddAiInsightsModule(configuration, isDevelopment)
     .AddNotificationModule(configuration, isDevelopment)
     .AddScannerModule(configuration, isDevelopment)
+    .AddRiskManagementModule(configuration, isDevelopment)
     .AddInMemoryMessageQueue();
 
 builder.Services.AddOpenApi(options =>
@@ -188,6 +190,7 @@ if (app.Environment.IsDevelopment())
     await app.MigrateAiInsightsDatabase();
     await app.MigrateNotificationDatabase();
     await app.MigrateScannerDatabase();
+    await app.MigrateRiskManagementDatabase();
 }
 
 if (!app.Environment.IsDevelopment())

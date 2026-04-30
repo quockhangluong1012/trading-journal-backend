@@ -286,6 +286,67 @@ namespace TradingJournal.Modules.Trades.Migrations
                     b.ToTable("PretradeChecklists", "Trades");
                 });
 
+            modelBuilder.Entity("TradingJournal.Modules.Trades.Domain.ReviewActionItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CompletionNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDisabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("TradingReviewId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TradingReviewId");
+
+                    b.ToTable("ReviewActionItems", "Trades");
+                });
+
             modelBuilder.Entity("TradingJournal.Modules.Trades.Domain.TechnicalAnalysis", b =>
                 {
                     b.Property<int>("Id")
@@ -369,6 +430,9 @@ namespace TradingJournal.Modules.Trades.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AiSummary")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Asset")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -434,6 +498,9 @@ namespace TradingJournal.Modules.Trades.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("TradingSessionId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TradingSetupId")
                         .HasColumnType("int");
 
                     b.Property<int?>("TradingSummaryId")
@@ -570,6 +637,96 @@ namespace TradingJournal.Modules.Trades.Migrations
                     b.ToTable("TradeTechnicalAnalysisTags", "Trades");
                 });
 
+            modelBuilder.Entity("TradingJournal.Modules.Trades.Domain.TradeTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Asset")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DefaultChecklistIds")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DefaultConfidenceLevel")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DefaultEmotionTagIds")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DefaultNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("DefaultStopLoss")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("DefaultTargetTier1")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("DefaultTargetTier2")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("DefaultTargetTier3")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("DefaultTechnicalAnalysisTagIds")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDisabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("Position")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TradingSessionId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TradingSetupId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TradingZoneId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UsageCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TradingSessionId");
+
+                    b.HasIndex("TradingZoneId");
+
+                    b.ToTable("TradeTemplates", "Trades");
+                });
+
             modelBuilder.Entity("TradingJournal.Modules.Trades.Domain.TradingProfile", b =>
                 {
                     b.Property<int>("Id")
@@ -608,6 +765,110 @@ namespace TradingJournal.Modules.Trades.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("TradingProfiles", "Trades");
+                });
+
+            modelBuilder.Entity("TradingJournal.Modules.Trades.Domain.TradingReview", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BestTradeReflection")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DisciplineNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("DisciplineRating")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ExecutionRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("GoalsForNextPeriod")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool>("IsDisabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("KeyTakeaways")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("Losses")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("OverallRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PerformanceNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("PeriodEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("PeriodStart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PeriodType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PsychologyNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("PsychologyRating")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RiskManagementRating")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RuleBreaks")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalPnl")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TotalTrades")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("WinRate")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Wins")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WorstTradeReflection")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TradingReviews", "Trades");
                 });
 
             modelBuilder.Entity("TradingJournal.Modules.Trades.Domain.TradingSession", b =>
@@ -749,6 +1010,17 @@ namespace TradingJournal.Modules.Trades.Migrations
                     b.Navigation("ChecklistModel");
                 });
 
+            modelBuilder.Entity("TradingJournal.Modules.Trades.Domain.ReviewActionItem", b =>
+                {
+                    b.HasOne("TradingJournal.Modules.Trades.Domain.TradingReview", "TradingReview")
+                        .WithMany("ActionItems")
+                        .HasForeignKey("TradingReviewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TradingReview");
+                });
+
             modelBuilder.Entity("TradingJournal.Modules.Trades.Domain.TradeEmotionTag", b =>
                 {
                     b.HasOne("TradingJournal.Modules.Trades.Domain.TradeHistory", "TradeHistory")
@@ -824,6 +1096,21 @@ namespace TradingJournal.Modules.Trades.Migrations
                     b.Navigation("TradeHistory");
                 });
 
+            modelBuilder.Entity("TradingJournal.Modules.Trades.Domain.TradeTemplate", b =>
+                {
+                    b.HasOne("TradingJournal.Modules.Trades.Domain.TradingSession", "TradingSession")
+                        .WithMany()
+                        .HasForeignKey("TradingSessionId");
+
+                    b.HasOne("TradingJournal.Modules.Trades.Domain.TradingZone", "TradingZone")
+                        .WithMany()
+                        .HasForeignKey("TradingZoneId");
+
+                    b.Navigation("TradingSession");
+
+                    b.Navigation("TradingZone");
+                });
+
             modelBuilder.Entity("TradingJournal.Modules.Trades.Domain.ChecklistModel", b =>
                 {
                     b.Navigation("Criteria");
@@ -848,6 +1135,11 @@ namespace TradingJournal.Modules.Trades.Migrations
                     b.Navigation("TradeScreenShots");
 
                     b.Navigation("TradeTechnicalAnalysisTags");
+                });
+
+            modelBuilder.Entity("TradingJournal.Modules.Trades.Domain.TradingReview", b =>
+                {
+                    b.Navigation("ActionItems");
                 });
 #pragma warning restore 612, 618
         }

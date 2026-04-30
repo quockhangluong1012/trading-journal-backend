@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 using TradingJournal.Shared.Behaviors;
+using TradingJournal.Shared.Interfaces;
 using TradingJournal.Shared.MediatR;
 
 namespace TradingJournal.Modules.Setups;
@@ -27,6 +28,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<ISetupDbContext, SetupDbContext>();
+        services.AddScoped<ISetupProvider, SetupProvider>();
 
         services.AddDbContext<SetupDbContext>(options =>
         {

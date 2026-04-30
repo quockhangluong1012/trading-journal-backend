@@ -33,6 +33,7 @@ internal sealed class TradeProvider(ITradeDbContext context, ICacheRepository ca
                     TradingSessionId = t.TradingSessionId,
                     TradingZoneId = t.TradingZoneId,
                     EmotionTags = t.TradeEmotionTags?.Select(e => e.EmotionTagId).ToList() ?? [],
+                    TradingSetupId = t.TradingSetupId,
                     CreatedBy = t.CreatedBy
                 })];
             },

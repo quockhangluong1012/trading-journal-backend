@@ -36,4 +36,10 @@ internal sealed class TradeDbContext(DbContextOptions<TradeDbContext> options, I
     public DbSet<DisciplineRule> DisciplineRules { get; set; } = null!;
 
     public DbSet<DisciplineLog> DisciplineLogs { get; set; } = null!;
+
+    public DbSet<TradingReview> TradingReviews { get; set; } = null!;
+
+    public DbSet<ReviewActionItem> ReviewActionItems { get; set; } = null!;
+
+    public DbSet<TradeTemplate> TradeTemplates { get; set; } = null!;
 }

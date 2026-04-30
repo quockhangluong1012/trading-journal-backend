@@ -59,6 +59,7 @@ public class GetTradeDetail
                 ScreenShots = [.. trade.TradeScreenShots.Select(x => x.Url)],
                 SelectedChecklists = [.. trade.TradeChecklists.Select(x => x.PretradeChecklistId)],
                 TechnicalAnalysisTags = [.. trade.TradeTechnicalAnalysisTags.Select(x => x.TechnicalAnalysisId)],
+                AiSummary = trade.AiSummary,
             };
 
             return Result<TradeHistoryDetailViewModel>.Success(tradeHistoryDetailViewModel);
