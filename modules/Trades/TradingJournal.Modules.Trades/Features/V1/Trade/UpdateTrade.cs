@@ -29,6 +29,10 @@ public sealed class UpdateTrade
         int TradingZoneId,
         int? TradingSessionId,
         string? AiSummary,
+        PowerOf3Phase? PowerOf3Phase = null,
+        DailyBias? DailyBias = null,
+        MarketStructure? MarketStructure = null,
+        PremiumDiscount? PremiumDiscount = null,
         int UserId = 0) : ICommand<Result<bool>>;
 
     public sealed class Validator : AbstractValidator<Request>
@@ -137,6 +141,10 @@ public sealed class UpdateTrade
                 tradeHistory.TradingZoneId = request.TradingZoneId;
                 tradeHistory.TradingSessionId = request.TradingSessionId;
                 tradeHistory.AiSummary = request.AiSummary;
+                tradeHistory.PowerOf3Phase = request.PowerOf3Phase;
+                tradeHistory.DailyBias = request.DailyBias;
+                tradeHistory.MarketStructure = request.MarketStructure;
+                tradeHistory.PremiumDiscount = request.PremiumDiscount;
 
                 #region remove all existing emotion tags, pretrade checklists, and technical analysis tags
                 context.TradeEmotionTags.RemoveRange(tradeHistory.TradeEmotionTags ?? []);

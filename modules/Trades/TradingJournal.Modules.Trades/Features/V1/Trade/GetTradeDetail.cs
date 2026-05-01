@@ -60,6 +60,10 @@ public class GetTradeDetail
                 SelectedChecklists = [.. trade.TradeChecklists.Select(x => x.PretradeChecklistId)],
                 TechnicalAnalysisTags = [.. trade.TradeTechnicalAnalysisTags.Select(x => x.TechnicalAnalysisId)],
                 AiSummary = trade.AiSummary,
+                PowerOf3Phase = trade.PowerOf3Phase,
+                DailyBias = trade.DailyBias,
+                MarketStructure = trade.MarketStructure,
+                PremiumDiscount = trade.PremiumDiscount,
             };
 
             return Result<TradeHistoryDetailViewModel>.Success(tradeHistoryDetailViewModel);

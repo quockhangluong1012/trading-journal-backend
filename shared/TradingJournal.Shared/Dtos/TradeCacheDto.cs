@@ -19,5 +19,6 @@ public class TradeCacheDto
     public int? TradingZoneId { get; set; }
     public List<int>? EmotionTags { get; set; }
     public int? TradingSetupId { get; set; }
+    public List<int>? TechnicalAnalysisTagIds { get; set; }
     public int CreatedBy { get; set; }
 }

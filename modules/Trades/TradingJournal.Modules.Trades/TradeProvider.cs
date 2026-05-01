@@ -15,6 +15,7 @@ internal sealed class TradeProvider(ITradeDbContext context, ICacheRepository ca
                     .AsNoTracking()
                     .Where(x => x.CreatedBy == userId)
                     .Include(x => x.TradeEmotionTags)
+                    .Include(x => x.TradeTechnicalAnalysisTags)
                     .ToListAsync(ct);
 
                 return [.. trades.Select(t => new TradeCacheDto
@@ -34,6 +35,7 @@ internal sealed class TradeProvider(ITradeDbContext context, ICacheRepository ca
                     TradingZoneId = t.TradingZoneId,
                     EmotionTags = t.TradeEmotionTags?.Select(e => e.EmotionTagId).ToList() ?? [],
                     TradingSetupId = t.TradingSetupId,
+                    TechnicalAnalysisTagIds = t.TradeTechnicalAnalysisTags?.Select(ta => ta.TechnicalAnalysisId).ToList() ?? [],
                     CreatedBy = t.CreatedBy
                 })];
             },

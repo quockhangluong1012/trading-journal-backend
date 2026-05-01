@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text.Json;
@@ -29,11 +30,13 @@ public class CustomExceptionHandlerMiddleware
 
     private readonly RequestDelegate _next;
     private readonly ILogger<CustomExceptionHandlerMiddleware> _logger;
+    private readonly IHostEnvironment _environment;
 
-    public CustomExceptionHandlerMiddleware(RequestDelegate next, ILogger<CustomExceptionHandlerMiddleware> logger)
+    public CustomExceptionHandlerMiddleware(RequestDelegate next, ILogger<CustomExceptionHandlerMiddleware> logger, IHostEnvironment environment)
     {
         _next = next;
         _logger = logger;
+        _environment = environment;
     }
 
     public async Task InvokeAsync(HttpContext httpContext)
@@ -92,11 +95,16 @@ public class CustomExceptionHandlerMiddleware
         context.Response.StatusCode = statusCode;
 
         string errorCode = Enum.GetName(typeof(HttpStatusCode), statusCode) ?? nameof(HttpStatusCode.InternalServerError);
-        string message = statusCode >= (int)HttpStatusCode.InternalServerError
+
+        bool isDevelopment = _environment.IsDevelopment();
+
+        string message = statusCode >= (int)HttpStatusCode.InternalServerError && !isDevelopment
             ? "An unexpected error occurred while processing your request."
             : exception.Message;
+
+        string? stackTrace = isDevelopment ? exception.StackTrace : null;
         
-        Error error = new(errorCode, message);
+        Error error = new(errorCode, message, stackTrace);
         
         await context.Response.WriteAsync(JsonSerializer.Serialize(error, JsonOptions));
     }

@@ -27,7 +27,11 @@ public sealed class CreateTrade
         string? PsychologyNotes,
         List<int> TradeHistoryChecklists,
         int TradingZoneId,
-        int? TradingSessionId) : ICommand<Result<int>>;
+        int? TradingSessionId,
+        PowerOf3Phase? PowerOf3Phase = null,
+        DailyBias? DailyBias = null,
+        MarketStructure? MarketStructure = null,
+        PremiumDiscount? PremiumDiscount = null) : ICommand<Result<int>>;
 
     public sealed class Validator : AbstractValidator<Request>
     {

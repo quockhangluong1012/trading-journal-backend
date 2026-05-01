@@ -67,6 +67,30 @@ public sealed class TradeHistory : EntityBase<int>
 
     public string? AiSummary { get; set; }
 
+    #region ICT Methodology Fields
+
+    /// <summary>
+    /// Power of 3 (AMD) phase at time of entry.
+    /// </summary>
+    public PowerOf3Phase? PowerOf3Phase { get; set; }
+
+    /// <summary>
+    /// Daily bias direction based on higher-timeframe ICT analysis.
+    /// </summary>
+    public DailyBias? DailyBias { get; set; }
+
+    /// <summary>
+    /// Market structure condition at entry (BOS, CHoCH, HH, HL, LH, LL).
+    /// </summary>
+    public MarketStructure? MarketStructure { get; set; }
+
+    /// <summary>
+    /// Whether the entry was in Premium, Discount, or Equilibrium zone.
+    /// </summary>
+    public PremiumDiscount? PremiumDiscount { get; set; }
+
+    #endregion
+
     public ICollection<TradeScreenShot> TradeScreenShots { get; set; } = [];
 
     public ICollection<TradeEmotionTag>? TradeEmotionTags { get; set; } = [];

@@ -36,6 +36,8 @@ public static class DependencyInjection
         });
 
         services.AddScoped<ITradeProvider, TradeProvider>();
+        services.AddScoped<IZoneProvider, ZoneProvider>();
+        services.AddScoped<ITechnicalAnalysisTagProvider, TechnicalAnalysisTagProvider>();
 
         // ReviewSnapshotBuilder stays in Trades (it needs ITradeDbContext)
         services.AddScoped<IReviewSnapshotBuilder, ReviewSnapshotBuilder>();

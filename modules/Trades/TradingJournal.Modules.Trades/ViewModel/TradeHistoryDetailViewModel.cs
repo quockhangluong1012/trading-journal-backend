@@ -50,4 +50,10 @@ public sealed class TradeHistoryDetailViewModel
     public TradeSummaryViewModel? TradeSummary { get; set; } = new();
 
     public string? AiSummary { get; set; }
+
+    // ICT Methodology Fields
+    public PowerOf3Phase? PowerOf3Phase { get; set; }
+    public DailyBias? DailyBias { get; set; }
+    public MarketStructure? MarketStructure { get; set; }
+    public PremiumDiscount? PremiumDiscount { get; set; }
 }
