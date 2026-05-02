@@ -7,7 +7,7 @@
 
 ## 1. System Overview
 
-**Trading Journal** is a modular monolith backend built on **.NET 10** using **Vertical Slice Architecture** with **CQRS** (MediatR), **Carter** for minimal API routing, **Entity Framework Core 10** for data access, and **SignalR** for real-time communication. The system serves as a comprehensive trading journal platform with integrated algorithmic market scanning, backtesting, AI-powered insights, and trader psychology tracking.
+**Trading Journal** is a modular monolith backend built on **.NET 10** using **Vertical Slice Architecture** with **CQRS** (MediatR), **Carter** for minimal API routing, **Entity Framework Core 10** for data access, and **SignalR** for real-time communication. The system serves as a comprehensive trading journal platform with integrated algorithmic market scanning, AI-powered insights, and trader psychology tracking.
 
 ### Technology Stack
 
@@ -50,15 +50,14 @@ graph TB
         TRADE["Trades Module"]
         PSYCH["Psychology Module"]
         ANALYTICS["Analytics Module"]
-        BACKTEST["Backtest Module"]
         SETUP["TradingSetup Module"]
         AI["AiInsights Module"]
         NOTIF["Notifications Module"]
         SCAN["Scanner Module"]
     end
 
-    GW --> AUTH & TRADE & PSYCH & ANALYTICS & BACKTEST & SETUP & AI & NOTIF & SCAN
-    AUTH & TRADE & PSYCH & ANALYTICS & BACKTEST & SETUP & AI & NOTIF & SCAN --> SH
+    GW --> AUTH & TRADE & PSYCH & ANALYTICS & SETUP & AI & NOTIF & SCAN
+    AUTH & TRADE & PSYCH & ANALYTICS & SETUP & AI & NOTIF & SCAN --> SH
     SCAN & AI --> MS
     MS --> NOTIF
 ```
@@ -67,7 +66,7 @@ graph TB
 
 | Pattern | Implementation |
 |---------|---------------|
-| **Modular Monolith** | 9 independent modules under `/modules/`, each with own DbContext and schema |
+| **Modular Monolith** | 8 independent modules under `/modules/`, each with own DbContext and schema |
 | **Vertical Slice** | Each feature is a single file containing Request, Validator, Handler, and Endpoint |
 | **CQRS** | Commands (`ICommand<T>`) and Queries (`IQuery<T>`) via MediatR |
 | **Result Pattern** | `Result<T>` / `Result` for error handling without exceptions |
@@ -86,12 +85,11 @@ trading-journal-backend/
 ├── shared/
 │   ├── TradingJournal.Shared/             # Core abstractions
 │   └── TradingJournal.Messaging.Shared/   # Event bus infrastructure
-├── modules/                               # 9 feature modules
+├── modules/                               # 8 feature modules
 │   ├── Auth/
 │   ├── Trades/
 │   ├── Psychology/
 │   ├── Analytics/
-│   ├── Backtest/
 │   ├── TradingSetup/
 │   ├── AiInsights/
 │   ├── Notifications/
@@ -179,14 +177,12 @@ Base class for all module DbContexts:
 | Database | Modules |
 |----------|---------|
 | `Trading_Journal` | Auth, Trades, Psychology, Analytics, TradingSetup, AiInsights, Notifications, Scanner |
-| `Trading_Journal_Backtest` | Backtest (separate DB — millions of M1 candles) |
 
 ### 4.2 Schema Isolation
 
 | Module | Schema |
 |--------|--------|
 | Trades | `Trades` |
-| Backtest | `Backtest` |
 | Notifications | `Notification` |
 | Scanner | `Scanner` |
 | Others | Default |
@@ -205,11 +201,10 @@ Base class for all module DbContexts:
 
 ## 6. API Gateway
 
-`Program.cs` registers all 9 modules, configures JWT + CORS + rate limiting, maps Carter endpoints and 3 SignalR hubs.
+`Program.cs` registers all 8 modules, configures JWT + CORS + rate limiting, maps Carter endpoints and 2 SignalR hubs.
 
 | Hub | Path | Purpose |
 |-----|------|---------|
-| `BacktestHub` | `/hubs/backtest` | Backtest session updates |
 | `NotificationHub` | `/hubs/notifications` | Push notifications |
 | `ScannerHub` | `/hubs/scanner` | Scanner alerts & status |
 
@@ -257,19 +252,9 @@ No own DB — computes analytics from trade data via shared interfaces.
 
 ---
 
-### 7.5 Backtest Module (`Backtest` schema, separate DB)
-
-Historical backtesting with M1 candle data, real-time playback, chart drawings.
-
-**Domain Entities:** `BacktestAsset` (sync tracking, Yahoo/TwelveData/CSV), `OhlcvCandle` (M1 stored, higher TFs aggregated), `BacktestSession`, `BacktestOrder`, `BacktestTradeResult`, `ChartDrawing`, `CsvImportJob`
-
-**Feature Groups (8):** Admin, Assets, Sessions, Orders, Playback, Drawings, MarketData, Analytics
-
-**Services:** `YahooFinanceMarketDataProvider`, `CandleAggregationService`
-
 ---
 
-### 7.6 TradingSetup Module
+### 7.5 TradingSetup Module
 
 Reusable trading setup templates with step-by-step entry criteria.
 
@@ -277,7 +262,7 @@ Reusable trading setup templates with step-by-step entry criteria.
 
 ---
 
-### 7.7 AiInsights Module
+### 7.6 AiInsights Module
 
 AI-powered trade analysis using OpenRouter AI (Nemotron model).
 
@@ -287,7 +272,7 @@ AI-powered trade analysis using OpenRouter AI (Nemotron model).
 
 ---
 
-### 7.8 Notifications Module (`Notification` schema)
+### 7.7 Notifications Module (`Notification` schema)
 
 Cross-module notification system with real-time SignalR push.
 
@@ -311,7 +296,7 @@ Cross-module notification system with real-time SignalR push.
 
 ---
 
-### 7.9 Scanner Module (`Scanner` schema) — Most Complex
+### 7.8 Scanner Module (`Scanner` schema) — Most Complex
 
 Real-time algorithmic scanner detecting ICT patterns across multiple timeframes.
 
@@ -441,7 +426,7 @@ flowchart LR
 | Decision | Rationale |
 |----------|-----------|
 | Modular monolith | Single-dev; module boundaries enable future microservice extraction |
-| Separate Backtest DB | Isolates millions of M1 candles from transactional data |
+
 | In-memory event bus | Sufficient for single-process; upgradable to RabbitMQ/Kafka |
 | Per-watchlist scanner control | Granular; `IsScannerRunning` persisted in DB survives restarts |
 | 4-hour dedup window | Prevents alert fatigue for recurring patterns |

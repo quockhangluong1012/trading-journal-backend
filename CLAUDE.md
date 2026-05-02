@@ -20,7 +20,7 @@ Run all tests:
 ```bash
 dotnet test tests/TradingJournal.Tests.Auth/TradingJournal.Tests.Auth.csproj
 dotnet test tests/TradingJournal.Tests.Trades/TradingJournal.Tests.Trades.csproj
-# Repeat for other test projects: Analytics, Backtest, Psychology, Scanner
+# Repeat for other test projects: Analytics, Psychology, Scanner
 ```
 
 Run a single test:
@@ -61,7 +61,6 @@ The application is a modular monolith with a single entry point (`TradingJournal
   - `Trades` - Trade history, technical analysis, AI summaries, review wizard, trade templates
   - `AiInsights` - AI-powered insights using Google Generative AI
   - `Psychology` - Trading psychology tracking
-  - `Backtest` - Strategy backtesting with CSV import
   - `TradingSetup` - Trading setup/playbook management
   - `Notifications` - Notification system
   - `Scanner` - Market scanner with watchlist, ICT detectors

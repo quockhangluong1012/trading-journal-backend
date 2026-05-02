@@ -44,7 +44,6 @@
     <ProjectReference Include="..\..\modules\AiInsights\TradingJournal.Modules.AiInsights\TradingJournal.Modules.AiInsights.csproj" />
     <ProjectReference Include="..\..\modules\Psychology\TradingJournal.Modules.Psychology\TradingJournal.Modules.Psychology.csproj" />
     <ProjectReference Include="..\..\modules\Auth\TradingJournal.Modules.Auth\TradingJournal.Modules.Auth.csproj" />
-    <ProjectReference Include="..\..\modules\Backtest\TradingJournal.Modules.Backtest\TradingJournal.Modules.Backtest.csproj" />
     <ProjectReference Include="..\..\modules\TradingSetup\TradingJournal.Modules.TradingSetup\TradingJournal.Modules.TradingSetup.csproj" />
     <ProjectReference Include="..\..\modules\Notifications\TradingJournal.Modules.Notifications\TradingJournal.Modules.Notifications.csproj" />
     <ProjectReference Include="..\..\modules\Scanner\TradingJournal.Modules.Scanner\TradingJournal.Modules.Scanner.csproj" />

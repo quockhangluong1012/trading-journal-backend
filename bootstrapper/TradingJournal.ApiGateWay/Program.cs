@@ -12,10 +12,8 @@ using Scalar.AspNetCore;
 using TradingJournal.Shared.Middlewares;
 using TradingJournal.Modules.Psychology;
 using TradingJournal.Modules.Auth;
-using TradingJournal.Modules.Backtest;
 
 using TradingJournal.Modules.Setups;
-using TradingJournal.Modules.Backtest.Hubs;
 using TradingJournal.Modules.Notifications;
 using TradingJournal.Modules.Notifications.Hubs;
 using TradingJournal.Modules.Scanner;
@@ -162,7 +160,6 @@ builder.Services
     .AddTradeModule(configuration, isDevelopment)
     .AddPsychologyModule(configuration, isDevelopment)
     .AddAnalyticsModule(isDevelopment)
-    .AddBacktestModule(configuration, isDevelopment)
 
     .AddTradingSetupModule(configuration, isDevelopment)
     .AddAiInsightsModule(configuration, isDevelopment)
@@ -184,7 +181,6 @@ if (app.Environment.IsDevelopment())
 {
     await app.MigrateTradingDatabase();
     await app.MigratePsychologyDatabase();
-    await app.MigrateBacktestDatabase();
 
     await app.MigrateSetupDatabase();
     await app.MigrateAiInsightsDatabase();
@@ -225,8 +221,6 @@ app.MapScalarApiReference(_ =>
 {
 });
 
-// SignalR hub for backtest real-time communication
-app.MapHub<BacktestHub>("/hubs/backtest");
 
 // SignalR hub for real-time notification delivery
 app.MapHub<NotificationHub>("/hubs/notifications");

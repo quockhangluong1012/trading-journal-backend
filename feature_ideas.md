@@ -11,7 +11,6 @@ Before proposing new features, here's what you already have:
 | **Psychology** | Psychology journals with emotion tagging, confidence levels |
 | **TradingSetup** | Trading setup/strategy definitions |
 | **Scanner** | Real-time ICT pattern detection (FVG, OB, BB, Liquidity, Sweeps) with multi-TF confluence |
-| **Backtest** | Market data, candle playback, drawings, simulated orders, session analytics |
 | **Notifications** | Real-time SignalR push notifications |
 | **AiInsights** | AI coaching and trade reviews |
 

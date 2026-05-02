@@ -189,7 +189,7 @@ internal sealed class TwelveDataLiveProvider(
 
     /// <summary>
     /// Normalizes symbols to Twelve Data format.
-    /// Mirrors the backtest module's TwelveDataMarketDataProvider normalization.
+    /// Normalizes symbols to Twelve Data format.
     /// </summary>
     private static string NormalizeSymbol(string asset)
     {

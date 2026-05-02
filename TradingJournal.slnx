@@ -9,7 +9,6 @@
     <Project Path="modules/Auth/TradingJournal.Modules.Auth/TradingJournal.Modules.Auth.csproj" />
     <Project Path="modules/Psychology/TradingJournal.Modules.Psychology/TradingJournal.Modules.Psychology.csproj" />
     <Project Path="modules/Trades/TradingJournal.Modules.Trades/TradingJournal.Modules.Trades.csproj" />
-    <Project Path="modules/Backtest/TradingJournal.Modules.Backtest/TradingJournal.Modules.Backtest.csproj" />
     <Project Path="modules/TradingSetup/TradingJournal.Modules.TradingSetup/TradingJournal.Modules.TradingSetup.csproj" />
     <Project Path="modules/AiInsights/TradingJournal.Modules.AiInsights/TradingJournal.Modules.AiInsights.csproj" />
     <Project Path="modules/Notifications/TradingJournal.Modules.Notifications/TradingJournal.Modules.Notifications.csproj" />
@@ -25,7 +24,6 @@
     <Project Path="tests/TradingJournal.Tests.Psychology/TradingJournal.Tests.Psychology.csproj" />
     <Project Path="tests/TradingJournal.Tests.Trades/TradingJournal.Tests.Trades.csproj" />
     <Project Path="tests/TradingJournal.Tests.Auth/TradingJournal.Tests.Auth.csproj" />
-    <Project Path="tests/TradingJournal.Tests.Backtest/TradingJournal.Tests.Backtest.csproj" />
     <Project Path="tests/TradingJournal.Tests.Scanner/TradingJournal.Tests.Scanner.csproj" />
   </Folder>
 </Solution>

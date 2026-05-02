@@ -37,7 +37,7 @@ public static class DependencyInjection
         // Core services
         services.AddScoped<INotificationService, NotificationService>();
 
-        // SignalR (idempotent — already registered by Backtest module, but safe to call again)
+        // SignalR (idempotent — safe to call even if already registered by another module)
         services.AddSignalR();
 
         return services;
