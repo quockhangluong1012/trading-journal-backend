@@ -98,14 +98,40 @@ public class CustomExceptionHandlerMiddleware
 
         bool isDevelopment = _environment.IsDevelopment();
 
-        string message = statusCode >= (int)HttpStatusCode.InternalServerError && !isDevelopment
-            ? "An unexpected error occurred while processing your request."
-            : exception.Message;
+        // Always include the real exception message for diagnosability
+        string message = exception.Message;
+
+        // Append inner exception messages for full context
+        string? innerExceptionMessage = GetInnerExceptionMessages(exception);
 
         string? stackTrace = isDevelopment ? exception.StackTrace : null;
+
+        string? exceptionType = isDevelopment ? exception.GetType().FullName : null;
+
+        var errorResponse = new
+        {
+            code = errorCode,
+            description = message,
+            innerErrors = innerExceptionMessage,
+            exceptionType,
+            stackTrace
+        };
         
-        Error error = new(errorCode, message, stackTrace);
-        
-        await context.Response.WriteAsync(JsonSerializer.Serialize(error, JsonOptions));
+        await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, JsonOptions));
+    }
+
+    private static string? GetInnerExceptionMessages(Exception exception)
+    {
+        if (exception.InnerException == null)
+            return null;
+
+        var messages = new List<string>();
+        var inner = exception.InnerException;
+        while (inner != null)
+        {
+            messages.Add(inner.Message);
+            inner = inner.InnerException;
+        }
+        return string.Join(" → ", messages);
     }
 }
