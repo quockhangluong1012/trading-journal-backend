@@ -33,10 +33,9 @@ public static class ModuleExtensions
             config.AddOpenBehavior(typeof(ValidationBehavior<,>));
             config.AddOpenBehavior(typeof(UserAwareBehavior<,>));
 
-            if (isDevelopment)
-            {
-                config.AddOpenBehavior(typeof(LoggingBehavior<,>));
-            }
+            // Performance logging runs in all environments — slow queries in production
+            // are exactly when you need visibility. Log level is controlled by configuration.
+            config.AddOpenBehavior(typeof(LoggingBehavior<,>));
         });
 
         return services;

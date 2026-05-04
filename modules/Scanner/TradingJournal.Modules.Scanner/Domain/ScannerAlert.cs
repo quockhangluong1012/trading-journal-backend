@@ -40,7 +40,7 @@ public sealed class ScannerAlert : EntityBase<int>
     /// </summary>
     public int ConfluenceScore { get; set; }
 
-    public DateTime DetectedAt { get; set; }
+    public DateTimeOffset DetectedAt { get; set; }
 
     public bool IsDismissed { get; set; } = false;
 }

@@ -9,10 +9,10 @@ internal static class IctHelpers
     /// <summary>
     /// Finds swing highs using a 2-bar lookback/forward confirmation.
     /// </summary>
-    public static List<(decimal Price, int Index, DateTime Timestamp)> FindSwingHighs(
+    public static List<(decimal Price, int Index, DateTimeOffset Timestamp)> FindSwingHighs(
         IReadOnlyList<CandleData> candles, int startIndex = 2, int? endIndex = null)
     {
-        var highs = new List<(decimal, int, DateTime)>();
+        var highs = new List<(decimal, int, DateTimeOffset)>();
         int end = endIndex ?? candles.Count - 2;
 
         for (int i = Math.Max(2, startIndex); i < Math.Min(candles.Count - 2, end); i++)
@@ -32,10 +32,10 @@ internal static class IctHelpers
     /// <summary>
     /// Finds swing lows using a 2-bar lookback/forward confirmation.
     /// </summary>
-    public static List<(decimal Price, int Index, DateTime Timestamp)> FindSwingLows(
+    public static List<(decimal Price, int Index, DateTimeOffset Timestamp)> FindSwingLows(
         IReadOnlyList<CandleData> candles, int startIndex = 2, int? endIndex = null)
     {
-        var lows = new List<(decimal, int, DateTime)>();
+        var lows = new List<(decimal, int, DateTimeOffset)>();
         int end = endIndex ?? candles.Count - 2;
 
         for (int i = Math.Max(2, startIndex); i < Math.Min(candles.Count - 2, end); i++)

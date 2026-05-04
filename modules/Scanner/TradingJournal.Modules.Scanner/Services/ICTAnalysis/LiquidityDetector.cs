@@ -27,8 +27,8 @@ internal sealed class LiquidityDetector : IIctDetector
 
         if (candles.Count < 5) return patterns;
 
-        List<(decimal Price, DateTime Timestamp)> swingHighs = FindSwingHighs(candles);
-        List<(decimal Price, DateTime Timestamp)> swingLows = FindSwingLows(candles);
+        List<(decimal Price, DateTimeOffset Timestamp)> swingHighs = FindSwingHighs(candles);
+        List<(decimal Price, DateTimeOffset Timestamp)> swingLows = FindSwingLows(candles);
 
         // Find clusters of equal highs (buy-side liquidity)
         var highClusters = FindClusters(swingHighs);
@@ -63,9 +63,9 @@ internal sealed class LiquidityDetector : IIctDetector
         return patterns;
     }
 
-    private static List<(decimal Price, DateTime Timestamp)> FindSwingHighs(IReadOnlyList<CandleData> candles)
+    private static List<(decimal Price, DateTimeOffset Timestamp)> FindSwingHighs(IReadOnlyList<CandleData> candles)
     {
-        var highs = new List<(decimal, DateTime)>();
+        var highs = new List<(decimal, DateTimeOffset)>();
 
         for (int i = 2; i < candles.Count - 2; i++)
         {
@@ -81,9 +81,9 @@ internal sealed class LiquidityDetector : IIctDetector
         return highs;
     }
 
-    private static List<(decimal Price, DateTime Timestamp)> FindSwingLows(IReadOnlyList<CandleData> candles)
+    private static List<(decimal Price, DateTimeOffset Timestamp)> FindSwingLows(IReadOnlyList<CandleData> candles)
     {
-        var lows = new List<(decimal, DateTime)>();
+        var lows = new List<(decimal, DateTimeOffset)>();
 
         for (int i = 2; i < candles.Count - 2; i++)
         {
@@ -99,17 +99,17 @@ internal sealed class LiquidityDetector : IIctDetector
         return lows;
     }
 
-    private static List<List<(decimal Price, DateTime Timestamp)>> FindClusters(
-        List<(decimal Price, DateTime Timestamp)> points)
+    private static List<List<(decimal Price, DateTimeOffset Timestamp)>> FindClusters(
+        List<(decimal Price, DateTimeOffset Timestamp)> points)
     {
-        var clusters = new List<List<(decimal Price, DateTime Timestamp)>>();
+        var clusters = new List<List<(decimal Price, DateTimeOffset Timestamp)>>();
         var used = new HashSet<int>();
 
         for (int i = 0; i < points.Count; i++)
         {
             if (used.Contains(i)) continue;
 
-            var cluster = new List<(decimal Price, DateTime Timestamp)> { points[i] };
+            var cluster = new List<(decimal Price, DateTimeOffset Timestamp)> { points[i] };
             decimal tolerance = points[i].Price * TolerancePercent;
 
             for (int j = i + 1; j < points.Count; j++)

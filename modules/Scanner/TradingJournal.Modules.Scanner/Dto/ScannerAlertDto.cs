@@ -12,5 +12,5 @@ public record ScannerAlertDto(
     string Description,
     int ConfluenceScore,
     string Regime,
-    DateTime DetectedAt,
+    DateTimeOffset DetectedAt,
     bool IsDismissed);

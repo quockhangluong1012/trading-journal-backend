@@ -16,5 +16,5 @@ public class DisciplineLogViewModel
 
     public string? Notes { get; set; }
 
-    public DateTime Date { get; set; }
+    public DateTimeOffset Date { get; set; }
 }

@@ -25,7 +25,7 @@ internal sealed class TwelveDataLiveProvider(
     /// <summary>
     /// In-memory cache: keyed by (Symbol, Timeframe) → (Candles, ExpiresAtUtc).
     /// </summary>
-    private static readonly ConcurrentDictionary<(string, ScannerTimeframe), (List<CandleData> Candles, DateTime ExpiresAt)>
+    private static readonly ConcurrentDictionary<(string, ScannerTimeframe), (List<CandleData> Candles, DateTimeOffset ExpiresAt)>
         Cache = new();
 
     public async Task<List<CandleData>> GetRecentCandlesAsync(
@@ -38,7 +38,7 @@ internal sealed class TwelveDataLiveProvider(
 
         // Check cache first
         if (Cache.TryGetValue((cacheKey, timeframe), out var cached) &&
-            cached.ExpiresAt > DateTime.UtcNow &&
+            cached.ExpiresAt > DateTimeOffset.UtcNow &&
             cached.Candles.Count >= count)
         {
             logger.LogDebug("Cache hit for {Symbol} {Timeframe} ({Count} candles)",
@@ -54,7 +54,7 @@ internal sealed class TwelveDataLiveProvider(
             if (candles.Count > 0)
             {
                 TimeSpan ttl = GetCacheTtl(timeframe);
-                Cache[(cacheKey, timeframe)] = (candles, DateTime.UtcNow + ttl);
+                Cache[(cacheKey, timeframe)] = (candles, DateTimeOffset.UtcNow + ttl);
 
                 logger.LogInformation(
                     "Fetched {Count} live candles for {Symbol} {Timeframe}, cached for {Ttl}",
@@ -71,7 +71,7 @@ internal sealed class TwelveDataLiveProvider(
             if (Cache.TryGetValue((cacheKey, timeframe), out var stale) && stale.Candles.Count > 0)
             {
                 logger.LogWarning("Using stale cache for {Symbol} {Timeframe} (expired {Ago} ago)",
-                    symbol, timeframe, DateTime.UtcNow - stale.ExpiresAt);
+                    symbol, timeframe, DateTimeOffset.UtcNow - stale.ExpiresAt);
                 return stale.Candles.TakeLast(count).ToList();
             }
 
@@ -136,8 +136,8 @@ internal sealed class TwelveDataLiveProvider(
 
         foreach (JsonElement candle in valuesEl.EnumerateArray())
         {
-            string datetimeStr = candle.GetProperty("datetime").GetString()!;
-            DateTime timestamp = DateTime.Parse(datetimeStr, null, DateTimeStyles.AssumeUniversal)
+            string datetimeStr = candle.GetProperty("DateTimeOffset").GetString()!;
+            DateTimeOffset timestamp = DateTimeOffset.Parse(datetimeStr, null, DateTimeStyles.AssumeUniversal)
                 .ToUniversalTime();
 
             decimal open = decimal.Parse(candle.GetProperty("open").GetString()!, CultureInfo.InvariantCulture);

@@ -2,15 +2,15 @@ using TradingJournal.Modules.Trades.Services;
 
 namespace TradingJournal.Modules.Trades.Features.V1.Trade;
 
-public class DeleteTrade
+public sealed class DeleteTrade
 {
-    public class Request : ICommand<Result<int>>
+    public sealed class Request : ICommand<Result<int>>
     {
         public int Id { get; set; }
         public int UserId { get; set; }
     }
     
-    public class Validator : AbstractValidator<Request>
+    public sealed class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
@@ -22,7 +22,7 @@ public class DeleteTrade
         }
     }
 
-    public class Handler(ITradeDbContext tradeDbContext, IScreenshotService screenshotService) : ICommandHandler<Request, Result<int>>
+    public sealed class Handler(ITradeDbContext tradeDbContext, IScreenshotService screenshotService) : ICommandHandler<Request, Result<int>>
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -51,7 +51,7 @@ public class DeleteTrade
         }
     }
 
-    public class Endpoint : ICarterModule
+    public sealed class Endpoint : ICarterModule
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {

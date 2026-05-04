@@ -29,7 +29,7 @@ public sealed record EconomicEvent
     /// <summary>
     /// Scheduled date/time in UTC.
     /// </summary>
-    public required DateTime EventDateUtc { get; init; }
+    public required DateTimeOffset EventDateUtc { get; init; }
 
     /// <summary>
     /// Impact level: Low, Medium, or High.

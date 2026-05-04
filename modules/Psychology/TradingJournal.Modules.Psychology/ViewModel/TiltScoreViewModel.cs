@@ -10,6 +10,6 @@ public sealed class TiltScoreViewModel
     public int RuleBreaksToday { get; set; }
     public decimal TodayPnl { get; set; }
     public bool CircuitBreakerTriggered { get; set; }
-    public DateTime? CooldownUntil { get; set; }
-    public DateTime RecordedAt { get; set; }
+    public DateTimeOffset? CooldownUntil { get; set; }
+    public DateTimeOffset RecordedAt { get; set; }
 }

@@ -6,7 +6,7 @@ namespace TradingJournal.Modules.AiInsights.Features.V1.Review;
 
 public sealed class ExportReviewReport
 {
-    public sealed record Request(ReviewPeriodType PeriodType, DateTime PeriodStart, int UserId = 0)
+    public sealed record Request(ReviewPeriodType PeriodType, DateTimeOffset PeriodStart, int UserId = 0)
         : IQuery<Result<ReviewReportFile>>;
 
     public sealed record ReviewReportFile(byte[] Content, string FileName, string ContentType);
@@ -117,7 +117,7 @@ public sealed class ExportReviewReport
         public void AddRoutes(IEndpointRouteBuilder app)
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Reviews);
-            group.MapGet("/export", async (ReviewPeriodType periodType, DateTime periodStart, ClaimsPrincipal user, ISender sender) =>
+            group.MapGet("/export", async (ReviewPeriodType periodType, DateTimeOffset periodStart, ClaimsPrincipal user, ISender sender) =>
             {
                 Result<ReviewReportFile> result = await sender.Send(new Request(periodType, periodStart) with { UserId = user.GetCurrentUserId() });
                 if (!result.IsSuccess) return Results.Problem(result.Errors[0].Description);

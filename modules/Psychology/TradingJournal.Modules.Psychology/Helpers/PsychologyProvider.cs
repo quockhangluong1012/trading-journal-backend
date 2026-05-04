@@ -1,8 +1,8 @@
-﻿namespace TradingJournal.Modules.Psychology.Helpers;
+namespace TradingJournal.Modules.Psychology.Helpers;
 
 internal sealed class PsychologyProvider(IPsychologyDbContext context) : IPsychologyProvider
 {
-    public async Task<List<string>> GetPsychologyByDate(DateTime date, CancellationToken cancellationToken)
+    public async Task<List<string>> GetPsychologyByDate(DateTimeOffset date, CancellationToken cancellationToken)
     {
         PsychologyJournal? psychologyJournal = (await LoadPsychologyJournalsAsync(date, date, cancellationToken))
             .FirstOrDefault();
@@ -27,7 +27,7 @@ internal sealed class PsychologyProvider(IPsychologyDbContext context) : IPsycho
         return summary;
     }
 
-    public async Task<List<string>> GetPsychologyByPeriod(DateTime fromDate, DateTime toDate, CancellationToken cancellationToken)
+    public async Task<List<string>> GetPsychologyByPeriod(DateTimeOffset fromDate, DateTimeOffset toDate, CancellationToken cancellationToken)
     {
         List<PsychologyJournal> journals = await LoadPsychologyJournalsAsync(fromDate, toDate, cancellationToken);
 
@@ -35,12 +35,12 @@ internal sealed class PsychologyProvider(IPsychologyDbContext context) : IPsycho
     }
 
     private async Task<List<PsychologyJournal>> LoadPsychologyJournalsAsync(
-        DateTime fromDate,
-        DateTime toDate,
+        DateTimeOffset fromDate,
+        DateTimeOffset toDate,
         CancellationToken cancellationToken)
     {
-        DateTime start = fromDate.Date;
-        DateTime end = toDate.Date.AddDays(1).AddTicks(-1);
+        DateTimeOffset start = fromDate.Date;
+        DateTimeOffset end = toDate.Date.AddDays(1).AddTicks(-1);
 
         return await context.PsychologyJournals
             .AsNoTracking()

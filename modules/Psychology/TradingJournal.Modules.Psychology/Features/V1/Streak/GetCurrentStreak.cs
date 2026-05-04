@@ -23,7 +23,7 @@ public sealed class GetCurrentStreak
                     BestWinStreak = 0,
                     WorstLossStreak = 0,
                     TotalClosedTrades = 0,
-                    RecordedAt = DateTime.UtcNow
+                    RecordedAt = DateTimeOffset.UtcNow
                 });
             }
 

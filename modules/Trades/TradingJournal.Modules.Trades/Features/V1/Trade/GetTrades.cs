@@ -5,9 +5,9 @@ using TradingJournal.Shared.Extensions;
 
 namespace TradingJournal.Modules.Trades.Features.V1.Trade;
 
-public class GetTrades
+public sealed class GetTrades
 {
-    public class Request : IQuery<Result<PaginationViewModel<TradeHistoryViewModel>>>
+    public sealed class Request : IQuery<Result<PaginationViewModel<TradeHistoryViewModel>>>
     {
         public string? Asset { get; set; }
 
@@ -15,9 +15,9 @@ public class GetTrades
 
         public TradeStatus? Status { get; set; }
 
-        public DateTime? FromDate { get; set; }
+        public DateTimeOffset? FromDate { get; set; }
 
-        public DateTime? ToDate { get; set; }
+        public DateTimeOffset? ToDate { get; set; }
 
         public int Page { get; set; } = 1;
 
@@ -141,7 +141,7 @@ public class GetTrades
         }
     }
 
-    public class Endpoint : ICarterModule
+    public sealed class Endpoint : ICarterModule
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
@@ -153,8 +153,8 @@ public class GetTrades
                 [FromQuery] string? asset,
                 [FromQuery] PositionType? position,
                 [FromQuery] TradeStatus? status,
-                [FromQuery] DateTime? fromDate,
-                [FromQuery] DateTime? toDate,
+                [FromQuery] DateTimeOffset? fromDate,
+                [FromQuery] DateTimeOffset? toDate,
                 [FromQuery] int page = 1,
                 [FromQuery] int pageSize = 10) =>
             {

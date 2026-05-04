@@ -24,8 +24,21 @@ using TradingJournal.Messaging.Shared;
 using System.Security.Claims;
 using System.Net;
 using System.Threading.RateLimiting;
+using TradingJournal.Shared.Audit;
+using Serilog;
+
+// Bootstrap logger — catches any errors during startup before the full pipeline is ready.
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+try
+{
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog from appsettings.json (replaces default logging provider)
+builder.AddSerilog();
 
 const string frontendCorsPolicyName = "FrontendApp";
 const string authRateLimitPolicyName = "auth";
@@ -36,16 +49,16 @@ builder.Services.AddSwagger();
 
 ConfigurationManager configuration = builder.Configuration;
 
-string jwtSecret = GetRequiredConfigurationValue(configuration, "Jwt:Secret");
-string jwtIssuer = GetRequiredConfigurationValue(configuration, "Jwt:Issuer");
-string jwtAudience = GetRequiredConfigurationValue(configuration, "Jwt:Audience");
-string[] allowedOrigins = GetAllowedOrigins(configuration);
-int authPermitLimit = GetPositiveIntConfigurationValue(configuration, "RateLimiting:Auth:PermitLimit", 5);
-int authWindowMinutes = GetPositiveIntConfigurationValue(configuration, "RateLimiting:Auth:WindowMinutes", 15);
-int globalPermitLimit = GetPositiveIntConfigurationValue(configuration, "RateLimiting:Global:PermitLimit", 120);
-int globalWindowMinutes = GetPositiveIntConfigurationValue(configuration, "RateLimiting:Global:WindowMinutes", 1);
+string jwtSecret = configuration.GetRequiredConfigurationValue("Jwt:Secret");
+string jwtIssuer = configuration.GetRequiredConfigurationValue("Jwt:Issuer");
+string jwtAudience = configuration.GetRequiredConfigurationValue("Jwt:Audience");
+string[] allowedOrigins = configuration.GetAllowedOrigins();
+int authPermitLimit = configuration.GetPositiveIntConfigurationValue("RateLimiting:Auth:PermitLimit", 5);
+int authWindowMinutes = configuration.GetPositiveIntConfigurationValue("RateLimiting:Auth:WindowMinutes", 15);
+int globalPermitLimit = configuration.GetPositiveIntConfigurationValue("RateLimiting:Global:PermitLimit", 120);
+int globalWindowMinutes = configuration.GetPositiveIntConfigurationValue("RateLimiting:Global:WindowMinutes", 1);
 
-ValidateJwtConfiguration(jwtSecret, jwtIssuer, jwtAudience);
+StartupConfigurationExtensions.ValidateJwtConfiguration(jwtSecret, jwtIssuer, jwtAudience);
 
 builder.Services.AddCors(options =>
 {
@@ -75,7 +88,7 @@ builder.Services.AddRateLimiter(options =>
 
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            $"global:{GetGlobalRateLimitPartitionKey(httpContext)}",
+            $"global:{StartupConfigurationExtensions.GetClientIpAddress(httpContext)}",
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = globalPermitLimit,
@@ -86,7 +99,7 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy(authRateLimitPolicyName, httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            $"auth:{GetAuthRateLimitPartitionKey(httpContext)}",
+            $"auth:{StartupConfigurationExtensions.GetClientIpAddress(httpContext)}:{httpContext.Request.Method}",
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = authPermitLimit,
@@ -209,6 +222,10 @@ app.UseCors(frontendCorsPolicyName);
 
 app.UseCustomExceptionHandler();
 
+app.UseSerilogHttpLogging();
+
+app.UseIdempotency();
+
 app.UseRateLimiter();
 
 app.UseSwaggerDoc();
@@ -217,6 +234,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapCarter();
+
+app.MapAuditLogEndpoint();
 
 app.MapHealthChecks("/health");
 
@@ -235,97 +254,15 @@ app.MapHub<ScannerHub>("/hubs/scanner");
 
 await app.RunAsync();
 
-static string GetRequiredConfigurationValue(IConfiguration configuration, string key)
+}
+catch (Exception ex)
 {
-    string? value = configuration[key];
-    if (string.IsNullOrWhiteSpace(value))
-    {
-        throw new InvalidOperationException($"Configuration value '{key}' is required.");
-    }
-
-    return value;
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
 }
 
-static void ValidateJwtConfiguration(string secret, string issuer, string audience)
-{
-    if (secret.Length < 32)
-    {
-        throw new InvalidOperationException("JWT Secret must be at least 32 characters long.");
-    }
-
-    if (secret.StartsWith("REPLACE_", StringComparison.OrdinalIgnoreCase) ||
-        issuer.StartsWith("REPLACE_", StringComparison.OrdinalIgnoreCase) ||
-        audience.StartsWith("REPLACE_", StringComparison.OrdinalIgnoreCase))
-    {
-        throw new InvalidOperationException("JWT configuration contains unreplaced placeholder values.");
-    }
-}
-
-static string[] GetAllowedOrigins(IConfiguration configuration)
-{
-    return CorsOriginNormalizer.Normalize(configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? []);
-}
-
-static int GetPositiveIntConfigurationValue(IConfiguration configuration, string key, int fallback)
-{
-    int value = configuration.GetValue<int?>(key) ?? fallback;
-    if (value <= 0)
-    {
-        throw new InvalidOperationException($"Configuration value '{key}' must be greater than zero.");
-    }
-
-    return value;
-}
-
-static string GetGlobalRateLimitPartitionKey(HttpContext httpContext)
-{
-    return GetClientIpAddress(httpContext);
-}
-
-static string GetAuthRateLimitPartitionKey(HttpContext httpContext)
-{
-    string remoteIp = GetClientIpAddress(httpContext);
-    string method = httpContext.Request.Method;
-    return $"{remoteIp}:{method}";
-}
-
-static string GetClientIpAddress(HttpContext httpContext)
-{
-    IPAddress? remoteIp = httpContext.Connection.RemoteIpAddress;
-    if (remoteIp is not null && IsPrivateOrLoopback(remoteIp) &&
-        httpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var forwardedFor))
-    {
-        string? forwardedIp = forwardedFor.ToString()
-            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .FirstOrDefault();
-
-        if (!string.IsNullOrWhiteSpace(forwardedIp) && IPAddress.TryParse(forwardedIp, out IPAddress? parsedForwardedIp))
-        {
-            return parsedForwardedIp.ToString();
-        }
-    }
-
-    return remoteIp?.ToString() ?? "unknown";
-}
-
-static bool IsPrivateOrLoopback(IPAddress address)
-{
-    IPAddress normalizedAddress = address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address;
-
-    if (IPAddress.IsLoopback(normalizedAddress))
-    {
-        return true;
-    }
-
-    byte[] bytes = normalizedAddress.GetAddressBytes();
-
-    if (normalizedAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-    {
-        return bytes[0] == 10 ||
-               (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31) ||
-               (bytes[0] == 192 && bytes[1] == 168);
-    }
-
-    return normalizedAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 &&
-           (normalizedAddress.IsIPv6LinkLocal || normalizedAddress.IsIPv6SiteLocal || bytes[0] == 0xfc || bytes[0] == 0xfd);
-}
+// Marker class for WebApplicationFactory<Program> in integration tests
+public partial class Program;

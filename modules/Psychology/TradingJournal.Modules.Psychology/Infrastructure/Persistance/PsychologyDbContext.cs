@@ -23,6 +23,8 @@ internal sealed class PsychologyDbContext(DbContextOptions<PsychologyDbContext> 
 
     public DbSet<Achievement> Achievements { get; set; } = null!;
 
+    public DbSet<DailyNote> DailyNotes { get; set; } = null!;
+
     public async Task BeginTransaction()
     {
         _transaction = await Database.BeginTransactionAsync();
@@ -53,11 +55,11 @@ internal sealed class PsychologyDbContext(DbContextOptions<PsychologyDbContext> 
             switch (entry.State)
             {
                 case EntityState.Added:
-                    entry.Entity.CreatedDate = DateTime.UtcNow;
+                    entry.Entity.CreatedDate = DateTimeOffset.UtcNow;
                     entry.Entity.CreatedBy = userId;
                     break;
                 case EntityState.Modified:
-                    entry.Entity.UpdatedDate = DateTime.UtcNow;
+                    entry.Entity.UpdatedDate = DateTimeOffset.UtcNow;
                     entry.Entity.UpdatedBy = userId;
                     break;
             }

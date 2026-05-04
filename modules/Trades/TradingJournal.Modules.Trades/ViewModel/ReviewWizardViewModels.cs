@@ -4,10 +4,10 @@ public sealed class TradingReviewViewModel
 {
     public int Id { get; set; }
     public int PeriodType { get; set; }
-    public DateTime PeriodStart { get; set; }
-    public DateTime PeriodEnd { get; set; }
+    public DateTimeOffset PeriodStart { get; set; }
+    public DateTimeOffset PeriodEnd { get; set; }
     public int Status { get; set; }
-    public DateTime? CompletedDate { get; set; }
+    public DateTimeOffset? CompletedDate { get; set; }
     public int? ExecutionRating { get; set; }
     public int? DisciplineRating { get; set; }
     public int? PsychologyRating { get; set; }
@@ -38,10 +38,10 @@ public sealed class ReviewActionItemViewModel
     public int Priority { get; set; }
     public int Status { get; set; }
     public int Category { get; set; }
-    public DateTime? DueDate { get; set; }
-    public DateTime? CompletedDate { get; set; }
+    public DateTimeOffset? DueDate { get; set; }
+    public DateTimeOffset? CompletedDate { get; set; }
     public string? CompletionNotes { get; set; }
-    public DateTime CreatedDate { get; set; }
+    public DateTimeOffset CreatedDate { get; set; }
 }
 
 public sealed class ReviewWizardDataViewModel
@@ -100,8 +100,8 @@ public sealed class ReviewWizardDataViewModel
 public sealed class WizardPeriodMetrics
 {
     public string PeriodLabel { get; set; } = string.Empty;
-    public DateTime PeriodStart { get; set; }
-    public DateTime PeriodEnd { get; set; }
+    public DateTimeOffset PeriodStart { get; set; }
+    public DateTimeOffset PeriodEnd { get; set; }
     public int TotalTrades { get; set; }
     public int Wins { get; set; }
     public int Losses { get; set; }
@@ -128,8 +128,8 @@ public sealed class WizardTradeHighlight
     public string Asset { get; set; } = string.Empty;
     public string Position { get; set; } = string.Empty;
     public decimal Pnl { get; set; }
-    public DateTime OpenDate { get; set; }
-    public DateTime ClosedDate { get; set; }
+    public DateTimeOffset OpenDate { get; set; }
+    public DateTimeOffset ClosedDate { get; set; }
     public decimal EntryPrice { get; set; }
     public decimal? ExitPrice { get; set; }
     public bool IsRuleBroken { get; set; }
@@ -165,5 +165,5 @@ public sealed class ReviewStreakViewModel
     public int CurrentStreak { get; set; }
     public int LongestStreak { get; set; }
     public int TotalReviews { get; set; }
-    public DateTime? LastReviewDate { get; set; }
+    public DateTimeOffset? LastReviewDate { get; set; }
 }

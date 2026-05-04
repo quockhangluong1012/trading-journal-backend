@@ -7,9 +7,9 @@ public record NotificationDto(
     string Type,
     string Priority,
     bool IsRead,
-    DateTime? ReadAt,
+    DateTimeOffset? ReadAt,
     string? Metadata,
     string? ActionUrl,
-    DateTime CreatedDate);
+    DateTimeOffset CreatedDate);
 
 public record UnreadCountDto(int Count);

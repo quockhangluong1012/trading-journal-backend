@@ -8,13 +8,13 @@ public sealed class TradingReview : EntityBase<int>
 {
     public ReviewPeriodType PeriodType { get; set; }
 
-    public DateTime PeriodStart { get; set; }
+    public DateTimeOffset PeriodStart { get; set; }
 
-    public DateTime PeriodEnd { get; set; }
+    public DateTimeOffset PeriodEnd { get; set; }
 
     public ReviewWizardStatus Status { get; set; } = ReviewWizardStatus.Draft;
 
-    public DateTime? CompletedDate { get; set; }
+    public DateTimeOffset? CompletedDate { get; set; }
 
     #region Step Ratings (1-5 scale)
 

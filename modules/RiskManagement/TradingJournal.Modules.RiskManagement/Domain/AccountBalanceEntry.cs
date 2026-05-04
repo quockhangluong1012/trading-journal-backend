@@ -28,5 +28,5 @@ public sealed class AccountBalanceEntry : EntityBase<int>
     /// <summary>
     /// The date of this balance entry.
     /// </summary>
-    public DateTime EntryDate { get; set; }
+    public DateTimeOffset EntryDate { get; set; }
 }

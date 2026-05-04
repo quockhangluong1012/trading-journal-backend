@@ -21,4 +21,10 @@ public interface IScreenshotService
     /// Determines if a string is a base64-encoded image (vs an existing URL).
     /// </summary>
     bool IsBase64Image(string value);
+
+    /// <summary>
+    /// Validates the number of screenshots does not exceed the per-trade limit.
+    /// Throws InvalidOperationException if exceeded.
+    /// </summary>
+    void ValidateScreenshotCount(int count);
 }

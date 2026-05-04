@@ -30,7 +30,7 @@ public sealed class ManageActionItems
                 item.CompletionNotes = request.CompletionNotes;
 
             if (request.Status == ActionItemStatus.Completed && !item.CompletedDate.HasValue)
-                item.CompletedDate = DateTime.UtcNow;
+                item.CompletedDate = DateTimeOffset.UtcNow;
 
             await context.SaveChangesAsync(cancellationToken);
 
@@ -121,7 +121,7 @@ public sealed class ManageActionItems
                 .ToListAsync(cancellationToken);
 
             int currentStreak = 0, longestStreak = 0, tempStreak = 0;
-            DateTime? lastDate = null;
+            DateTimeOffset? lastDate = null;
 
             foreach (var review in reviews)
             {
@@ -131,7 +131,7 @@ public sealed class ManageActionItems
                 }
                 else
                 {
-                    DateTime expected = GetPrev(request.PeriodType, lastDate.Value);
+                    DateTimeOffset expected = GetPrev(request.PeriodType, lastDate.Value);
                     tempStreak = review.PeriodStart == expected ? tempStreak + 1 : 1;
                 }
 
@@ -151,7 +151,7 @@ public sealed class ManageActionItems
             });
         }
 
-        private static DateTime GetPrev(ReviewPeriodType pt, DateTime d) => pt switch
+        private static DateTimeOffset GetPrev(ReviewPeriodType pt, DateTimeOffset d) => pt switch
         {
             ReviewPeriodType.Daily => d.AddDays(-1),
             ReviewPeriodType.Weekly => d.AddDays(-7),

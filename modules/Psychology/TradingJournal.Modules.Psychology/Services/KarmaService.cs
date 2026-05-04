@@ -59,52 +59,125 @@ internal sealed class KarmaService(
         [KarmaActionType.SystemAdjustment] = 0,
     };
 
-    // ── Karma Levels ────────────────────────────────────────────────────
+    // ── Karma Levels (25 tiers) ─────────────────────────────────────────
 
     private static readonly (int Threshold, string Title)[] KarmaLevels =
     [
-        (0, "Novice Trader"),
-        (50, "Apprentice"),
-        (150, "Journeyman"),
-        (300, "Skilled Trader"),
-        (500, "Expert"),
-        (750, "Master Trader"),
-        (1100, "Grandmaster"),
-        (1500, "Elite"),
-        (2000, "Legend"),
-        (3000, "Trading Sage"),
+        (0, "Novice Trader"),       // 1
+        (50, "Apprentice"),          // 2
+        (150, "Journeyman"),         // 3
+        (300, "Skilled Trader"),     // 4
+        (500, "Expert"),             // 5
+        (750, "Master Trader"),      // 6
+        (1100, "Grandmaster"),       // 7
+        (1500, "Elite"),             // 8
+        (2000, "Legend"),            // 9
+        (3000, "Trading Sage"),      // 10
+        (4000, "Warlord"),           // 11
+        (5500, "Champion"),          // 12
+        (7500, "Conqueror"),         // 13
+        (10000, "Titan"),            // 14
+        (13000, "Overlord"),         // 15
+        (16500, "Sovereign"),        // 16
+        (20500, "Ascendant"),        // 17
+        (25000, "Celestial"),        // 18
+        (30000, "Transcendent"),     // 19
+        (36000, "Mythical"),         // 20
+        (43000, "Immortal"),         // 21
+        (51000, "Demigod"),          // 22
+        (60000, "Divine"),           // 23
+        (72000, "Eternal"),          // 24
+        (85000, "Trading God"),      // 25
     ];
 
-    // ── Achievement Definitions ─────────────────────────────────────────
+    // ── Achievement Definitions (68 achievements) ──────────────────────
 
     private static readonly AchievementDefinition[] AchievementDefinitions =
     [
-        // Trade milestones
-        new(AchievementType.FirstTrade, "First Blood", "Log your first trade", "🎯", "Trades"),
+        // ── Trade milestones (12) ──
+        new(AchievementType.FirstTrade, "First Blood", "Log your very first trade", "🎯", "Trades"),
         new(AchievementType.TenTrades, "Getting Started", "Log 10 trades", "📊", "Trades"),
+        new(AchievementType.TwentyFiveTrades, "Quarter Century", "Log 25 trades", "📈", "Trades"),
+        new(AchievementType.FiftyTrades, "Half Century", "Log 50 trades", "📉", "Trades"),
         new(AchievementType.HundredTrades, "Century Trader", "Log 100 trades", "💯", "Trades"),
+        new(AchievementType.TwoFiftyTrades, "Seasoned Trader", "Log 250 trades", "🎪", "Trades"),
+        new(AchievementType.FiveHundredTrades, "Market Veteran", "Log 500 trades", "⚔️", "Trades"),
         new(AchievementType.ThousandTrades, "Trading Machine", "Log 1,000 trades", "🏆", "Trades"),
+        new(AchievementType.TwoThousandFiveHundredTrades, "War Machine", "Log 2,500 trades", "🤖", "Trades"),
+        new(AchievementType.FiveThousandTrades, "Trade God", "Log 5,000 trades", "👁️", "Trades"),
+        new(AchievementType.SevenThousandFiveHundredTrades, "Market Oracle", "Log 7,500 trades", "🔮", "Trades"),
+        new(AchievementType.TenThousandTrades, "Eternal Trader", "Log 10,000 trades", "♾️", "Trades"),
 
-        // Review milestones
+        // ── Review milestones (8) ──
         new(AchievementType.FirstReview, "Self-Aware", "Complete your first trade review", "📝", "Reviews"),
+        new(AchievementType.FiveReviews, "Curious Mind", "Complete 5 trade reviews", "🔍", "Reviews"),
+        new(AchievementType.TenReviews, "Reflective Mind", "Complete 10 trade reviews", "🪞", "Reviews"),
+        new(AchievementType.TwentyFiveReviews, "Analyst", "Complete 25 trade reviews", "🔬", "Reviews"),
+        new(AchievementType.FiftyReviews, "Deep Thinker", "Complete 50 trade reviews", "🧐", "Reviews"),
+        new(AchievementType.HundredReviews, "Review Oracle", "Complete 100 trade reviews", "📚", "Reviews"),
+        new(AchievementType.TwoHundredReviews, "Trade Scientist", "Complete 200 trade reviews", "🔭", "Reviews"),
+        new(AchievementType.FiveHundredReviews, "Review Grandmaster", "Complete 500 trade reviews", "🏛️", "Reviews"),
 
-        // Journaling streaks
+        // ── Journaling streaks (14) ──
+        new(AchievementType.ThreeDayStreak, "Warming Up", "3-day journaling streak", "🌱", "Streaks"),
+        new(AchievementType.FiveDayStreak, "Building Habit", "5-day journaling streak", "🌿", "Streaks"),
         new(AchievementType.WeekStreak, "Week Warrior", "7-day journaling streak", "🔥", "Streaks"),
+        new(AchievementType.TwoWeekStreak, "Fortnight Force", "14-day journaling streak", "💪", "Streaks"),
+        new(AchievementType.ThreeWeekStreak, "Consistency King", "21-day journaling streak", "👑", "Streaks"),
         new(AchievementType.MonthStreak, "Monthly Master", "30-day journaling streak", "⚡", "Streaks"),
+        new(AchievementType.FortyFiveDayStreak, "Habit Forged", "45-day journaling streak", "🔨", "Streaks"),
+        new(AchievementType.SixtyDayStreak, "Two-Month Titan", "60-day journaling streak", "🌊", "Streaks"),
         new(AchievementType.QuarterStreak, "Quarter Legend", "90-day journaling streak", "💎", "Streaks"),
+        new(AchievementType.FourMonthStreak, "Relentless", "120-day journaling streak", "🦁", "Streaks"),
+        new(AchievementType.HalfYearStreak, "Half-Year Hero", "180-day journaling streak", "🏔️", "Streaks"),
+        new(AchievementType.EightMonthStreak, "Marathon Mind", "240-day journaling streak", "🏃", "Streaks"),
+        new(AchievementType.TenMonthStreak, "Almost There", "300-day journaling streak", "🎯", "Streaks"),
+        new(AchievementType.YearStreak, "Yearly Immortal", "365-day journaling streak", "🌌", "Streaks"),
 
-        // Win streaks
+        // ── Win streaks (8) ──
+        new(AchievementType.WinStreak3, "Lucky Run", "3 consecutive winning trades", "🍀", "Performance"),
         new(AchievementType.WinStreak5, "Hot Hand", "5 consecutive winning trades", "🎰", "Performance"),
+        new(AchievementType.WinStreak7, "On Fire", "7 consecutive winning trades", "🔥", "Performance"),
         new(AchievementType.WinStreak10, "Unstoppable", "10 consecutive winning trades", "🌟", "Performance"),
+        new(AchievementType.WinStreak15, "Legendary Run", "15 consecutive winning trades", "💫", "Performance"),
+        new(AchievementType.WinStreak20, "Invincible", "20 consecutive winning trades", "☄️", "Performance"),
+        new(AchievementType.WinStreak25, "Mythic Streak", "25 consecutive winning trades", "🐉", "Performance"),
+        new(AchievementType.WinStreak30, "Godlike", "30 consecutive winning trades", "🏅", "Performance"),
 
-        // Karma levels
+        // ── Karma levels (10) ──
+        new(AchievementType.KarmaLevel2, "First Steps", "Reach karma level 2", "🌱", "Karma"),
+        new(AchievementType.KarmaLevel3, "Finding Rhythm", "Reach karma level 3", "🎵", "Karma"),
         new(AchievementType.KarmaLevel5, "Rising Star", "Reach karma level 5", "⭐", "Karma"),
+        new(AchievementType.KarmaLevel7, "Gaining Momentum", "Reach karma level 7", "🚀", "Karma"),
         new(AchievementType.KarmaLevel10, "Moonwalker", "Reach karma level 10", "🌙", "Karma"),
+        new(AchievementType.KarmaLevel12, "Orbit Breaker", "Reach karma level 12", "🛸", "Karma"),
+        new(AchievementType.KarmaLevel15, "Galaxy Brain", "Reach karma level 15", "🌌", "Karma"),
+        new(AchievementType.KarmaLevel18, "Nebula Walker", "Reach karma level 18", "🪐", "Karma"),
+        new(AchievementType.KarmaLevel20, "Ascended", "Reach karma level 20", "🔱", "Karma"),
         new(AchievementType.KarmaLevel25, "Trading Royalty", "Reach karma level 25", "👑", "Karma"),
 
-        // Psychology
+        // ── Psychology (16) ──
+        new(AchievementType.TiltRecovery1, "First Breath", "Recover from tilt for the first time", "🌬️", "Psychology"),
+        new(AchievementType.TiltRecovery3, "Steady Hands", "Recover from tilt 3 times", "🙏", "Psychology"),
         new(AchievementType.TiltMaster, "Zen Master", "Recover from tilt 5 times", "🧘", "Psychology"),
-        new(AchievementType.Disciplined, "Iron Discipline", "20 trades with no rule breaks", "🎖️", "Psychology"),
+        new(AchievementType.TiltGuru, "Inner Peace", "Recover from tilt 10 times", "☮️", "Psychology"),
+        new(AchievementType.TiltRecovery15, "Tilt Slayer", "Recover from tilt 15 times", "⚔️", "Psychology"),
+        new(AchievementType.TiltEnlightened, "Enlightened", "Recover from tilt 25 times", "🕊️", "Psychology"),
+        new(AchievementType.TiltRecovery50, "Emotion Architect", "Recover from tilt 50 times", "🏛️", "Psychology"),
+        new(AchievementType.Disciplined, "Iron Discipline", "20 consecutive trades with no rule breaks", "🎖️", "Psychology"),
+        new(AchievementType.Disciplined30, "Steely Resolve", "30 consecutive trades with no rule breaks", "🔩", "Psychology"),
+        new(AchievementType.Disciplined50, "Steel Mind", "50 consecutive trades with no rule breaks", "⚙️", "Psychology"),
+        new(AchievementType.Disciplined100, "Diamond Hands", "100 consecutive trades with no rule breaks", "💎", "Psychology"),
+        new(AchievementType.Disciplined200, "Unbreakable", "200 consecutive trades with no rule breaks", "🛡️", "Psychology"),
+        new(AchievementType.Disciplined300, "Fortress", "300 consecutive trades with no rule breaks", "🏰", "Psychology"),
+        new(AchievementType.Disciplined500, "Absolute Zero", "500 consecutive trades with no rule breaks", "❄️", "Psychology"),
+        new(AchievementType.JournalEntries5, "First Reflections", "Write 5 psychology journal entries", "📓", "Psychology"),
+        new(AchievementType.JournalEntries10, "Mind Explorer", "Write 10 psychology journal entries", "🧠", "Psychology"),
+        new(AchievementType.JournalEntries25, "Thought Leader", "Write 25 psychology journal entries", "💡", "Psychology"),
+        new(AchievementType.JournalEntries50, "Psych Adept", "Write 50 psychology journal entries", "🔮", "Psychology"),
+        new(AchievementType.JournalEntries100, "Mental Fortress", "Write 100 psychology journal entries", "🏰", "Psychology"),
+        new(AchievementType.JournalEntries250, "Soul Architect", "Write 250 psychology journal entries", "🏗️", "Psychology"),
+        new(AchievementType.JournalEntries500, "Consciousness Master", "Write 500 psychology journal entries", "🧬", "Psychology"),
     ];
 
     // ── Public API ──────────────────────────────────────────────────────
@@ -121,7 +194,7 @@ internal sealed class KarmaService(
             Points = points,
             Description = description,
             ReferenceId = referenceId,
-            RecordedAt = DateTime.UtcNow
+            RecordedAt = DateTimeOffset.UtcNow
         };
 
         psychologyDb.KarmaRecords.Add(record);
@@ -188,7 +261,7 @@ internal sealed class KarmaService(
 
     public async Task<List<KarmaEventViewModel>> GetKarmaHistoryAsync(int userId, int days = 30, CancellationToken ct = default)
     {
-        DateTime since = DateTime.UtcNow.AddDays(-days);
+        DateTimeOffset since = DateTimeOffset.UtcNow.AddDays(-days);
 
         return await psychologyDb.KarmaRecords
             .AsNoTracking()
@@ -351,7 +424,7 @@ internal sealed class KarmaService(
 
         // Count consecutive days from today
         int streak = 0;
-        DateTime checkDate = DateTime.UtcNow.Date;
+        DateTime checkDate = DateTimeOffset.UtcNow.Date;
 
         // Allow today or yesterday as the start of the streak
         if (!tradeDates.Contains(checkDate))
@@ -433,6 +506,12 @@ internal sealed class KarmaService(
                 break;
         }
 
+        // Get psychology journal entry count
+        int journalEntryCount = await psychologyDb.KarmaRecords
+            .AsNoTracking()
+            .Where(k => k.CreatedBy == userId && k.ActionType == KarmaActionType.PsychologyJournalEntry)
+            .CountAsync(ct);
+
         // Check each achievement
         var achievementsToUnlock = new List<(AchievementType type, AchievementDefinition def)>();
 
@@ -443,21 +522,95 @@ internal sealed class KarmaService(
 
             bool shouldUnlock = def.Type switch
             {
+                // Trade milestones
                 AchievementType.FirstTrade => tradeCount >= 1,
                 AchievementType.TenTrades => tradeCount >= 10,
+                AchievementType.TwentyFiveTrades => tradeCount >= 25,
+                AchievementType.FiftyTrades => tradeCount >= 50,
                 AchievementType.HundredTrades => tradeCount >= 100,
+                AchievementType.TwoFiftyTrades => tradeCount >= 250,
+                AchievementType.FiveHundredTrades => tradeCount >= 500,
                 AchievementType.ThousandTrades => tradeCount >= 1000,
+                AchievementType.TwoThousandFiveHundredTrades => tradeCount >= 2500,
+                AchievementType.FiveThousandTrades => tradeCount >= 5000,
+                AchievementType.SevenThousandFiveHundredTrades => tradeCount >= 7500,
+                AchievementType.TenThousandTrades => tradeCount >= 10000,
+
+                // Review milestones
                 AchievementType.FirstReview => reviewCount >= 1,
+                AchievementType.FiveReviews => reviewCount >= 5,
+                AchievementType.TenReviews => reviewCount >= 10,
+                AchievementType.TwentyFiveReviews => reviewCount >= 25,
+                AchievementType.FiftyReviews => reviewCount >= 50,
+                AchievementType.HundredReviews => reviewCount >= 100,
+                AchievementType.TwoHundredReviews => reviewCount >= 200,
+                AchievementType.FiveHundredReviews => reviewCount >= 500,
+
+                // Journaling streaks
+                AchievementType.ThreeDayStreak => journalingStreak >= 3,
+                AchievementType.FiveDayStreak => journalingStreak >= 5,
                 AchievementType.WeekStreak => journalingStreak >= 7,
+                AchievementType.TwoWeekStreak => journalingStreak >= 14,
+                AchievementType.ThreeWeekStreak => journalingStreak >= 21,
                 AchievementType.MonthStreak => journalingStreak >= 30,
+                AchievementType.FortyFiveDayStreak => journalingStreak >= 45,
+                AchievementType.SixtyDayStreak => journalingStreak >= 60,
                 AchievementType.QuarterStreak => journalingStreak >= 90,
+                AchievementType.FourMonthStreak => journalingStreak >= 120,
+                AchievementType.HalfYearStreak => journalingStreak >= 180,
+                AchievementType.EightMonthStreak => journalingStreak >= 240,
+                AchievementType.TenMonthStreak => journalingStreak >= 300,
+                AchievementType.YearStreak => journalingStreak >= 365,
+
+                // Win streaks
+                AchievementType.WinStreak3 => bestWinStreak >= 3,
                 AchievementType.WinStreak5 => bestWinStreak >= 5,
+                AchievementType.WinStreak7 => bestWinStreak >= 7,
                 AchievementType.WinStreak10 => bestWinStreak >= 10,
+                AchievementType.WinStreak15 => bestWinStreak >= 15,
+                AchievementType.WinStreak20 => bestWinStreak >= 20,
+                AchievementType.WinStreak25 => bestWinStreak >= 25,
+                AchievementType.WinStreak30 => bestWinStreak >= 30,
+
+                // Karma levels
+                AchievementType.KarmaLevel2 => level >= 2,
+                AchievementType.KarmaLevel3 => level >= 3,
                 AchievementType.KarmaLevel5 => level >= 5,
+                AchievementType.KarmaLevel7 => level >= 7,
                 AchievementType.KarmaLevel10 => level >= 10,
+                AchievementType.KarmaLevel12 => level >= 12,
+                AchievementType.KarmaLevel15 => level >= 15,
+                AchievementType.KarmaLevel18 => level >= 18,
+                AchievementType.KarmaLevel20 => level >= 20,
                 AchievementType.KarmaLevel25 => level >= 25,
+
+                // Psychology — tilt
+                AchievementType.TiltRecovery1 => tiltRecoveryCount >= 1,
+                AchievementType.TiltRecovery3 => tiltRecoveryCount >= 3,
                 AchievementType.TiltMaster => tiltRecoveryCount >= 5,
+                AchievementType.TiltGuru => tiltRecoveryCount >= 10,
+                AchievementType.TiltRecovery15 => tiltRecoveryCount >= 15,
+                AchievementType.TiltEnlightened => tiltRecoveryCount >= 25,
+                AchievementType.TiltRecovery50 => tiltRecoveryCount >= 50,
+
+                // Psychology — discipline
                 AchievementType.Disciplined => consecutiveDisciplinedTrades >= 20,
+                AchievementType.Disciplined30 => consecutiveDisciplinedTrades >= 30,
+                AchievementType.Disciplined50 => consecutiveDisciplinedTrades >= 50,
+                AchievementType.Disciplined100 => consecutiveDisciplinedTrades >= 100,
+                AchievementType.Disciplined200 => consecutiveDisciplinedTrades >= 200,
+                AchievementType.Disciplined300 => consecutiveDisciplinedTrades >= 300,
+                AchievementType.Disciplined500 => consecutiveDisciplinedTrades >= 500,
+
+                // Psychology — journal entries
+                AchievementType.JournalEntries5 => journalEntryCount >= 5,
+                AchievementType.JournalEntries10 => journalEntryCount >= 10,
+                AchievementType.JournalEntries25 => journalEntryCount >= 25,
+                AchievementType.JournalEntries50 => journalEntryCount >= 50,
+                AchievementType.JournalEntries100 => journalEntryCount >= 100,
+                AchievementType.JournalEntries250 => journalEntryCount >= 250,
+                AchievementType.JournalEntries500 => journalEntryCount >= 500,
+
                 _ => false
             };
 
@@ -474,7 +627,7 @@ internal sealed class KarmaService(
             {
                 Id = 0,
                 AchievementType = type,
-                UnlockedAt = DateTime.UtcNow
+                UnlockedAt = DateTimeOffset.UtcNow
             };
 
             psychologyDb.Achievements.Add(achievement);

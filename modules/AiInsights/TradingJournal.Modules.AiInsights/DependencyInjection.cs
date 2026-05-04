@@ -25,7 +25,10 @@ public static class DependencyInjection
             sp.GetRequiredService<AiInsightsDbContext>());
 
         // AI services
-        services.Configure<OpenRouterOptions>(configuration.GetSection(OpenRouterOptions.BindLocator));
+        services.AddOptions<OpenRouterOptions>()
+            .Bind(configuration.GetSection(OpenRouterOptions.BindLocator))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
         services.AddScoped<IPromptService, PromptService>();
         services.AddScoped<IImageHelper, ImageHelper>();
 

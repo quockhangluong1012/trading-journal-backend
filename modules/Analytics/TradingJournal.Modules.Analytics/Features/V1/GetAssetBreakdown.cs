@@ -24,11 +24,11 @@ public sealed class GetAssetBreakdown
         public async Task<Result<IReadOnlyCollection<AssetBreakdownViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
             List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
-            DateTime fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
+            DateTimeOffset fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
 
             List<TradeCacheDto> closed = [.. trades
                 .Where(t => t.Status == TradeStatus.Closed && t.Pnl.HasValue)
-                .Where(t => fromDate == DateTime.MinValue || (t.ClosedDate.HasValue && t.ClosedDate.Value >= fromDate))];
+                .Where(t => fromDate == DateTimeOffset.MinValue || (t.ClosedDate.HasValue && t.ClosedDate.Value >= fromDate))];
 
             var assetGroups = closed
                 .GroupBy(t => t.Asset)

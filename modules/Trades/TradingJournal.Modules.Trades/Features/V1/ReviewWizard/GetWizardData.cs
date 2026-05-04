@@ -9,7 +9,7 @@ public sealed class GetWizardData
     public sealed class Request : IQuery<Result<ReviewWizardDataViewModel>>, IUserAwareRequest
     {
         public ReviewPeriodType PeriodType { get; set; }
-        public DateTime PeriodStart { get; set; }
+        public DateTimeOffset PeriodStart { get; set; }
         public int UserId { get; set; }
     }
 
@@ -36,7 +36,7 @@ public sealed class GetWizardData
                 request.PeriodType, request.PeriodStart, request.UserId, cancellationToken);
 
             // Build previous period snapshot for comparison
-            DateTime previousRef = GetPreviousPeriodStart(request.PeriodType, currentBounds.Start);
+            DateTimeOffset previousRef = GetPreviousPeriodStart(request.PeriodType, currentBounds.Start);
             ReviewSnapshot previousSnapshot = await snapshotBuilder.BuildAsync(
                 request.PeriodType, previousRef, request.UserId, cancellationToken);
 
@@ -127,7 +127,7 @@ public sealed class GetWizardData
             return Result<ReviewWizardDataViewModel>.Success(result);
         }
 
-        private static DateTime GetPreviousPeriodStart(ReviewPeriodType periodType, DateTime currentStart)
+        private static DateTimeOffset GetPreviousPeriodStart(ReviewPeriodType periodType, DateTimeOffset currentStart)
         {
             return periodType switch
             {
@@ -252,7 +252,7 @@ public sealed class GetWizardData
         }
 
         private async Task<int> CalculateReviewStreakAsync(
-            int userId, ReviewPeriodType periodType, DateTime currentPeriodStart,
+            int userId, ReviewPeriodType periodType, DateTimeOffset currentPeriodStart,
             CancellationToken cancellationToken)
         {
             List<TradingReview> completedReviews = await context.TradingReviews
@@ -266,7 +266,7 @@ public sealed class GetWizardData
             if (completedReviews.Count == 0) return 0;
 
             int streak = 0;
-            DateTime expectedPeriodStart = currentPeriodStart;
+            DateTimeOffset expectedPeriodStart = currentPeriodStart;
 
             foreach (TradingReview review in completedReviews)
             {
@@ -342,7 +342,7 @@ public sealed class GetWizardData
 
             group.MapGet("/data", async (
                 [FromQuery] ReviewPeriodType periodType,
-                [FromQuery] DateTime periodStart,
+                [FromQuery] DateTimeOffset periodStart,
                 ClaimsPrincipal user,
                 ISender sender) =>
             {

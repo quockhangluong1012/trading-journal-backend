@@ -31,7 +31,7 @@ public sealed class DeleteNotification
 
             // Soft-delete using the existing IsDisabled field from EntityBase
             notification.IsDisabled = true;
-            notification.UpdatedDate = DateTime.UtcNow;
+            notification.UpdatedDate = DateTimeOffset.UtcNow;
             await context.SaveChangesAsync(cancellationToken);
 
             // Push updated unread count if the deleted notification was unread

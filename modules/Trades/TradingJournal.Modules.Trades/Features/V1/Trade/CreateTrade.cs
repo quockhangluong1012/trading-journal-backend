@@ -15,11 +15,11 @@ public sealed class CreateTrade
         decimal? TargetTier3,
         decimal StopLoss,
         string Notes,
-        DateTime Date,
+        DateTimeOffset Date,
         TradeStatus Status,
         decimal? ExitPrice,
         decimal? Pnl,
-        DateTime? ClosedDate,
+        DateTimeOffset? ClosedDate,
         List<string>? Screenshots,
         List<int>? TradeTechnicalAnalysisTags,
         List<int>? EmotionTags,
@@ -154,6 +154,7 @@ public sealed class CreateTrade
                 }) ?? [], cancellationToken);
 
                 List<string> filteredScreenshots = request.Screenshots?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? [];
+                screenshotService.ValidateScreenshotCount(filteredScreenshots.Count);
 
                 List<TradeScreenShot> screenshotEntities = [];
                 foreach (string screenshot in filteredScreenshots)
@@ -183,7 +184,7 @@ public sealed class CreateTrade
                 return insertedRow > 0 ? Result<int>.Success(tradeHistory.Id)
                     : Result<int>.Failure(Error.Create("Failed to create trade history."));
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
                 await context.RollbackTransaction();
                 return Result<int>.Failure(Error.Create(ex.Message));

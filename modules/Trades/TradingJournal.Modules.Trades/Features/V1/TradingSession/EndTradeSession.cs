@@ -2,7 +2,7 @@ namespace TradingJournal.Modules.Trades.Features.V1.TradingSession;
 
 public sealed class EndTradeSession
 {
-    public sealed record Request(int Id, DateTime ToTime, string? Duration, string? Note, int UserId = 0) : ICommand<Result<bool>>;
+    public sealed record Request(int Id, DateTimeOffset ToTime, string? Duration, string? Note, int UserId = 0) : ICommand<Result<bool>>;
 
     public sealed class Validator : AbstractValidator<Request>
     {

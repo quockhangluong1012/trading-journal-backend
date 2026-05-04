@@ -98,11 +98,15 @@ public class CustomExceptionHandlerMiddleware
 
         bool isDevelopment = _environment.IsDevelopment();
 
-        // Always include the real exception message for diagnosability
-        string message = exception.Message;
+        // Only expose real exception details in development to prevent leaking
+        // internal infrastructure information (SQL errors, file paths, etc.).
+        string message = isDevelopment
+            ? exception.Message
+            : IsBusinessException(exception)
+                ? exception.Message
+                : "An internal error occurred. Please try again later.";
 
-        // Append inner exception messages for full context
-        string? innerExceptionMessage = GetInnerExceptionMessages(exception);
+        string? innerExceptionMessage = isDevelopment ? GetInnerExceptionMessages(exception) : null;
 
         string? stackTrace = isDevelopment ? exception.StackTrace : null;
 
@@ -134,4 +138,13 @@ public class CustomExceptionHandlerMiddleware
         }
         return string.Join(" → ", messages);
     }
+
+    /// <summary>
+    /// Known business/domain exceptions whose messages are safe to expose in production.
+    /// </summary>
+    private static bool IsBusinessException(Exception exception) =>
+        exception is AccessDeniedException
+            or NotFoundException
+            or IntegrationException
+            or BusinessRuleException;
 }

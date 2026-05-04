@@ -8,9 +8,9 @@ public sealed class DashboardFilterHelperTests
     [Fact]
     public void GetFromDate_OneDay_ReturnsYesterday()
     {
-        DateTime before = DateTime.UtcNow.AddDays(-1);
-        DateTime result = DashboardFilterHelper.GetFromDate(DashboardFilter.OneDay);
-        DateTime after = DateTime.UtcNow.AddDays(-1);
+        DateTimeOffset before = DateTimeOffset.UtcNow.AddDays(-1);
+        DateTimeOffset result = DashboardFilterHelper.GetFromDate(DashboardFilter.OneDay);
+        DateTimeOffset after = DateTimeOffset.UtcNow.AddDays(-1);
 
         Assert.InRange(result, before, after);
     }
@@ -18,9 +18,9 @@ public sealed class DashboardFilterHelperTests
     [Fact]
     public void GetFromDate_OneWeek_ReturnsOneWeekAgo()
     {
-        DateTime before = DateTime.UtcNow.AddDays(-7);
-        DateTime result = DashboardFilterHelper.GetFromDate(DashboardFilter.OneWeek);
-        DateTime after = DateTime.UtcNow.AddDays(-7);
+        DateTimeOffset before = DateTimeOffset.UtcNow.AddDays(-7);
+        DateTimeOffset result = DashboardFilterHelper.GetFromDate(DashboardFilter.OneWeek);
+        DateTimeOffset after = DateTimeOffset.UtcNow.AddDays(-7);
 
         Assert.InRange(result, before, after);
     }
@@ -28,9 +28,9 @@ public sealed class DashboardFilterHelperTests
     [Fact]
     public void GetFromDate_OneMonth_ReturnsOneMonthAgo()
     {
-        DateTime before = DateTime.UtcNow.AddMonths(-1);
-        DateTime result = DashboardFilterHelper.GetFromDate(DashboardFilter.OneMonth);
-        DateTime after = DateTime.UtcNow.AddMonths(-1);
+        DateTimeOffset before = DateTimeOffset.UtcNow.AddMonths(-1);
+        DateTimeOffset result = DashboardFilterHelper.GetFromDate(DashboardFilter.OneMonth);
+        DateTimeOffset after = DateTimeOffset.UtcNow.AddMonths(-1);
 
         Assert.InRange(result, before, after);
     }
@@ -38,9 +38,9 @@ public sealed class DashboardFilterHelperTests
     [Fact]
     public void GetFromDate_ThreeMonths_ReturnsThreeMonthsAgo()
     {
-        DateTime before = DateTime.UtcNow.AddMonths(-3);
-        DateTime result = DashboardFilterHelper.GetFromDate(DashboardFilter.ThreeMonths);
-        DateTime after = DateTime.UtcNow.AddMonths(-3);
+        DateTimeOffset before = DateTimeOffset.UtcNow.AddMonths(-3);
+        DateTimeOffset result = DashboardFilterHelper.GetFromDate(DashboardFilter.ThreeMonths);
+        DateTimeOffset after = DateTimeOffset.UtcNow.AddMonths(-3);
 
         Assert.InRange(result, before, after);
     }
@@ -48,8 +48,8 @@ public sealed class DashboardFilterHelperTests
     [Fact]
     public void GetFromDate_AllTime_ReturnsMinValue()
     {
-        DateTime result = DashboardFilterHelper.GetFromDate(DashboardFilter.AllTime);
-        Assert.Equal(DateTime.MinValue, result);
+        DateTimeOffset result = DashboardFilterHelper.GetFromDate(DashboardFilter.AllTime);
+        Assert.Equal(DateTimeOffset.MinValue, result);
     }
 
     [Fact]

@@ -5,7 +5,7 @@ namespace TradingJournal.Modules.AiInsights.Features.V1.Review;
 
 public sealed class GetReviewSummaryStatus
 {
-    public sealed record Request(ReviewPeriodType PeriodType, DateTime PeriodStart, int UserId = 0)
+    public sealed record Request(ReviewPeriodType PeriodType, DateTimeOffset PeriodStart, int UserId = 0)
         : IQuery<Result<ReviewSummaryStatusViewModel>>;
 
     public sealed record ReviewSummaryStatusViewModel(
@@ -47,7 +47,7 @@ public sealed class GetReviewSummaryStatus
         public void AddRoutes(IEndpointRouteBuilder app)
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Reviews);
-            group.MapGet("/summary-status", async (ReviewPeriodType periodType, DateTime periodStart, ClaimsPrincipal user, ISender sender) =>
+            group.MapGet("/summary-status", async (ReviewPeriodType periodType, DateTimeOffset periodStart, ClaimsPrincipal user, ISender sender) =>
             {
                 Result<ReviewSummaryStatusViewModel> result = await sender.Send(new Request(periodType, periodStart) with { UserId = user.GetCurrentUserId() });
                 return result.IsSuccess ? Results.Ok(result) : Results.Problem(result.Errors[0].Description);

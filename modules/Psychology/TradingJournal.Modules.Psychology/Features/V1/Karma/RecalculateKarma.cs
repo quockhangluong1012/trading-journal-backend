@@ -20,7 +20,9 @@ public sealed class RecalculateKarma
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapPost("api/v1/karma/recalculate", async (ClaimsPrincipal user, ISender sender) =>
+            RouteGroupBuilder group = app.MapGroup("api/v1/karma");
+
+            group.MapPost("recalculate", async (ClaimsPrincipal user, ISender sender) =>
             {
                 var result = await sender.Send(new Request(user.GetCurrentUserId()));
                 return result;

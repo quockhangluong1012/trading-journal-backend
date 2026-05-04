@@ -20,9 +20,9 @@ public class LessonLearnedDetailViewModel
 
     public int ImpactScore { get; set; }
 
-    public DateTime CreatedDate { get; set; }
+    public DateTimeOffset CreatedDate { get; set; }
 
-    public DateTime? UpdatedDate { get; set; }
+    public DateTimeOffset? UpdatedDate { get; set; }
 
     public List<LinkedTradeViewModel> LinkedTrades { get; set; } = [];
 }
@@ -43,7 +43,7 @@ public class LinkedTradeViewModel
 
     public string? TradingResult { get; set; }
 
-    public DateTime Date { get; set; }
+    public DateTimeOffset Date { get; set; }
 
     public bool IsRuleBroken { get; set; }
 }

@@ -42,7 +42,7 @@ internal sealed class ScannerEngine(
         var allCandleData = await FetchAllCandleDataAsync(symbols, enabledTimeframes, ct);
 
         // Prefetch existing alerts for dedup in one query instead of N queries in loop
-        var dedupCutoff = DateTime.UtcNow - DedupWindow;
+        var dedupCutoff = DateTimeOffset.UtcNow - DedupWindow;
         var existingAlerts = await scannerDb.ScannerAlerts.AsNoTracking()
             .Where(a => a.UserId == userId && symbols.Contains(a.Symbol) && a.DetectedAt > dedupCutoff && !a.IsDisabled)
             .Select(a => new { a.Symbol, a.PatternType, a.DetectionTimeframe })
@@ -161,8 +161,8 @@ internal sealed class ScannerEngine(
                 PriceAtDetection = pattern.PriceAtDetection,
                 ZoneHighPrice = pattern.ZoneHigh, ZoneLowPrice = pattern.ZoneLow,
                 Description = pattern.Description, ConfluenceScore = score,
-                Regime = regime, DetectedAt = DateTime.UtcNow,
-                CreatedDate = DateTime.UtcNow, CreatedBy = userId
+                Regime = regime, DetectedAt = DateTimeOffset.UtcNow,
+                CreatedDate = DateTimeOffset.UtcNow, CreatedBy = userId
             });
             existingKeys.Add((symbol, pattern.Type, pattern.Timeframe));
         }

@@ -51,12 +51,12 @@ internal sealed class EconomicCalendarBackgroundService(
     /// <summary>
     /// Last time we refreshed the calendar cache.
     /// </summary>
-    private DateTime _lastCacheRefresh = DateTime.MinValue;
+    private DateTimeOffset _lastCacheRefresh = DateTimeOffset.MinValue;
 
     /// <summary>
     /// Track the current date to clear notification history at midnight.
     /// </summary>
-    private DateOnly _currentDate = DateOnly.FromDateTime(DateTime.UtcNow);
+    private DateOnly _currentDate = DateOnly.FromDateTime(DateTimeOffset.UtcNow.UtcDateTime);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -96,7 +96,7 @@ internal sealed class EconomicCalendarBackgroundService(
             scope.ServiceProvider.GetRequiredService<IHubContext<ScannerHub>>();
 
         // Clear notification history at midnight UTC (new trading day)
-        DateOnly today = DateOnly.FromDateTime(DateTime.UtcNow);
+        DateOnly today = DateOnly.FromDateTime(DateTimeOffset.UtcNow.UtcDateTime);
         if (today != _currentDate)
         {
             _currentDate = today;
@@ -105,10 +105,10 @@ internal sealed class EconomicCalendarBackgroundService(
         }
 
         // Periodically refresh the cache
-        if (DateTime.UtcNow - _lastCacheRefresh > CacheRefreshInterval)
+        if (DateTimeOffset.UtcNow - _lastCacheRefresh > CacheRefreshInterval)
         {
             await RefreshCalendarCacheAsync(calendarProvider, hubContext, ct);
-            _lastCacheRefresh = DateTime.UtcNow;
+            _lastCacheRefresh = DateTimeOffset.UtcNow;
         }
 
         // Check for upcoming high-impact events
@@ -132,7 +132,7 @@ internal sealed class EconomicCalendarBackgroundService(
             {
                 TodayEventCount = todayEvents.Count,
                 HighImpactCount = highImpactCount,
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTimeOffset.UtcNow
             }, ct);
 
             logger.LogInformation(
@@ -153,7 +153,7 @@ internal sealed class EconomicCalendarBackgroundService(
         List<EconomicEvent> upcomingEvents =
             await provider.GetUpcomingHighImpactEventsAsync(WarningWindow, ct);
 
-        DateTime now = DateTime.UtcNow;
+        DateTimeOffset now = DateTimeOffset.UtcNow;
 
         foreach (EconomicEvent evt in upcomingEvents)
         {
@@ -177,7 +177,7 @@ internal sealed class EconomicCalendarBackgroundService(
                     evt.Forecast,
                     evt.Previous,
                     Message = $"⚠️ STOP TRADING — {evt.EventName} ({evt.Country}) releasing in {minutesUntil} minutes!",
-                    Timestamp = DateTime.UtcNow
+                    Timestamp = DateTimeOffset.UtcNow
                 }, ct);
 
                 logger.LogWarning(
@@ -212,7 +212,7 @@ internal sealed class EconomicCalendarBackgroundService(
                 evt.Previous,
                 Message = $"📊 {evt.EventName} ({evt.Country}) released! " +
                           (evt.Actual.HasValue ? $"Actual: {evt.Actual}" : "Awaiting data..."),
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTimeOffset.UtcNow
             }, ct);
 
             logger.LogInformation(

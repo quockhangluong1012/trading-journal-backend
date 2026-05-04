@@ -13,7 +13,7 @@ public sealed class User : EntityBase<int>
 
     public string? RefreshToken { get; set; }
 
-    public DateTime? RefreshTokenExpiry { get; set; }
+    public DateTimeOffset? RefreshTokenExpiry { get; set; }
 
     public bool IsActive { get; set; } = true;
 }

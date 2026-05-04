@@ -31,7 +31,7 @@ public sealed class CreateStaff
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 FullName = request.FullName,
                 IsActive = request.IsActive,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = DateTimeOffset.UtcNow
             };
 
             await context.Staffs.AddAsync(newStaff, cancellationToken);

@@ -6,7 +6,7 @@ namespace TradingJournal.Modules.AiInsights.Features.V1.Review;
 public sealed class SaveReview
 {
     public sealed record Request(
-        ReviewPeriodType PeriodType, DateTime PeriodStart, DateTime PeriodEnd,
+        ReviewPeriodType PeriodType, DateTimeOffset PeriodStart, DateTimeOffset PeriodEnd,
         string? UserNotes, int UserId = 0) : ICommand<Result<int>>;
 
     public sealed class Validator : AbstractValidator<Request>

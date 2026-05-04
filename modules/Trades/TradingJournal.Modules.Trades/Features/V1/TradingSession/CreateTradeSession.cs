@@ -4,7 +4,7 @@ namespace TradingJournal.Modules.Trades.Features.V1.TradingSession;
 
 public sealed class CreateTradeSession
 {
-    public record Request(DateTime? FromTime, int UserId = 0) : ICommand<Result<int>>;
+    public record Request(DateTimeOffset? FromTime, int UserId = 0) : ICommand<Result<int>>;
 
     public sealed class Validator : AbstractValidator<Request>
     {

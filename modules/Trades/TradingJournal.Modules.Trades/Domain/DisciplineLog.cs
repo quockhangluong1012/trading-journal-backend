@@ -18,7 +18,7 @@ public sealed class DisciplineLog : EntityBase<int>
     [MaxLength(500)]
     public string? Notes { get; set; }
 
-    public DateTime Date { get; set; }
+    public DateTimeOffset Date { get; set; }
 
     [ForeignKey(nameof(DisciplineRuleId))]
     public DisciplineRule DisciplineRule { get; set; } = null!;

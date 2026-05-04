@@ -26,7 +26,7 @@ public class EmotionDistributionViewModel
 
 public class MoodAndConfidenceTrendViewModel
 {
-    public DateTime Date { get; set; }
+    public DateTimeOffset Date { get; set; }
     public int Mood { get; set; }
     public int Confidence { get; set; }
 }

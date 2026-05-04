@@ -7,7 +7,7 @@ public interface IReviewSnapshotBuilder
 {
     Task<ReviewSnapshot> BuildAsync(
         ReviewPeriodType periodType,
-        DateTime referenceDate,
+        DateTimeOffset referenceDate,
         int userId,
         CancellationToken cancellationToken);
 }
@@ -19,7 +19,7 @@ public sealed class ReviewSnapshotBuilder(
 {
     public async Task<ReviewSnapshot> BuildAsync(
         ReviewPeriodType periodType,
-        DateTime referenceDate,
+        DateTimeOffset referenceDate,
         int userId,
         CancellationToken cancellationToken)
     {

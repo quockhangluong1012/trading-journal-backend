@@ -46,12 +46,12 @@ public sealed class GetSetupPerformance
         {
             List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
             List<SetupSummaryDto> setups = await setupProvider.GetSetupsAsync(request.UserId, cancellationToken);
-            DateTime fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
+            DateTimeOffset fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
 
             // Filter to closed trades with a setup assigned
             List<TradeCacheDto> closed = [.. trades
                 .Where(t => t.Status == TradeStatus.Closed && t.Pnl.HasValue && t.TradingSetupId.HasValue)
-                .Where(t => fromDate == DateTime.MinValue || (t.ClosedDate.HasValue && t.ClosedDate.Value >= fromDate))];
+                .Where(t => fromDate == DateTimeOffset.MinValue || (t.ClosedDate.HasValue && t.ClosedDate.Value >= fromDate))];
 
             // Build setup name lookup
             Dictionary<int, string> setupNames = setups.ToDictionary(s => s.Id, s => s.Name);

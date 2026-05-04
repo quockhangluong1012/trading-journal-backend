@@ -5,11 +5,11 @@ namespace TradingJournal.Modules.AiInsights.Features.V1.Review;
 
 public sealed class GetReview
 {
-    public sealed record Request(ReviewPeriodType PeriodType, DateTime PeriodStart, int UserId = 0)
+    public sealed record Request(ReviewPeriodType PeriodType, DateTimeOffset PeriodStart, int UserId = 0)
         : IQuery<Result<ReviewViewModel>>;
 
     public sealed record ReviewViewModel(
-        int? Id, ReviewPeriodType PeriodType, DateTime PeriodStart, DateTime PeriodEnd,
+        int? Id, ReviewPeriodType PeriodType, DateTimeOffset PeriodStart, DateTimeOffset PeriodEnd,
         string? UserNotes, string? AiSummary, string? AiStrengths, string? AiWeaknesses,
         string? AiActionItems, string? AiTechnicalInsights, string? AiPsychologyAnalysis,
         string? AiCriticalMistakesTechnical, string? AiCriticalMistakesPsychological,
@@ -70,7 +70,7 @@ public sealed class GetReview
         public void AddRoutes(IEndpointRouteBuilder app)
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.Reviews);
-            group.MapGet("/", async (ReviewPeriodType periodType, DateTime periodStart, ClaimsPrincipal user, ISender sender) =>
+            group.MapGet("/", async (ReviewPeriodType periodType, DateTimeOffset periodStart, ClaimsPrincipal user, ISender sender) =>
             {
                 Result<ReviewViewModel> result = await sender.Send(new Request(periodType, periodStart) with { UserId = user.GetCurrentUserId() });
                 return result.IsSuccess ? Results.Ok(result) : Results.Problem(result.Errors[0].Description);

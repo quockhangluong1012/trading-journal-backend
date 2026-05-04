@@ -19,8 +19,8 @@ public sealed class AiTradeDetailDto
     public decimal? Pnl { get; set; }
     public string ConfidenceLevel { get; set; } = string.Empty;
     public string TradingZone { get; set; } = string.Empty;
-    public DateTime OpenDate { get; set; }
-    public DateTime ClosedDate { get; set; }
+    public DateTimeOffset OpenDate { get; set; }
+    public DateTimeOffset ClosedDate { get; set; }
     public List<string> TechnicalAnalysisTags { get; set; } = [];
     public List<string> EmotionTags { get; set; } = [];
     public List<string> ChecklistItems { get; set; } = [];

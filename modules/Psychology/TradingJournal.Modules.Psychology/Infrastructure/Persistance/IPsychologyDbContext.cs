@@ -16,6 +16,8 @@ public interface IPsychologyDbContext
 
     public DbSet<Achievement> Achievements { get; set; }
 
+    public DbSet<DailyNote> DailyNotes { get; set; }
+
     Task BeginTransaction();
 
     Task CommitTransaction();

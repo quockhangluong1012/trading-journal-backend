@@ -21,9 +21,9 @@ public sealed class ReviewActionItem : EntityBase<int>
 
     public LessonCategory Category { get; set; }
 
-    public DateTime? DueDate { get; set; }
+    public DateTimeOffset? DueDate { get; set; }
 
-    public DateTime? CompletedDate { get; set; }
+    public DateTimeOffset? CompletedDate { get; set; }
 
     [MaxLength(500)]
     public string? CompletionNotes { get; set; }

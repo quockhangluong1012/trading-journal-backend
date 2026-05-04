@@ -20,7 +20,9 @@ public sealed class GetKarmaHistory
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapGet("api/v1/karma/history", async (ClaimsPrincipal user, ISender sender, int days = 30) =>
+            RouteGroupBuilder group = app.MapGroup("api/v1/karma");
+
+            group.MapGet("history", async (ClaimsPrincipal user, ISender sender, int days = 30) =>
             {
                 var result = await sender.Send(new Request(user.GetCurrentUserId(), days));
                 return result;

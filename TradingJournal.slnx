@@ -21,6 +21,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/TradingJournal.Tests.Analytics/TradingJournal.Tests.Analytics.csproj" />
+    <Project Path="tests/TradingJournal.Tests.Integration/TradingJournal.Tests.Integration.csproj" />
     <Project Path="tests/TradingJournal.Tests.Psychology/TradingJournal.Tests.Psychology.csproj" />
     <Project Path="tests/TradingJournal.Tests.Trades/TradingJournal.Tests.Trades.csproj" />
     <Project Path="tests/TradingJournal.Tests.Auth/TradingJournal.Tests.Auth.csproj" />

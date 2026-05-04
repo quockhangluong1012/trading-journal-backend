@@ -20,7 +20,9 @@ public sealed class GetKarmaSummary
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapGet("api/v1/karma/summary", async (ClaimsPrincipal user, ISender sender) =>
+            RouteGroupBuilder group = app.MapGroup("api/v1/karma");
+
+            group.MapGet("summary", async (ClaimsPrincipal user, ISender sender) =>
             {
                 var result = await sender.Send(new Request(user.GetCurrentUserId()));
                 return result;

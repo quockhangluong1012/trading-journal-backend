@@ -4,8 +4,8 @@ namespace TradingJournal.Modules.AiInsights.Dto;
 
 public record ReviewSummaryRequestDto(
     ReviewPeriodType PeriodType,
-    DateTime PeriodStart,
-    DateTime PeriodEnd,
+    DateTimeOffset PeriodStart,
+    DateTimeOffset PeriodEnd,
     int UserId);
 
 public class ReviewSummaryResultDto

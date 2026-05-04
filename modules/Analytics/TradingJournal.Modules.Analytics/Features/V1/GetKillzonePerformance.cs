@@ -56,12 +56,12 @@ public sealed class GetKillzonePerformance
         {
             List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
             List<ZoneSummaryDto> zones = await zoneProvider.GetZonesAsync(cancellationToken);
-            DateTime fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
+            DateTimeOffset fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
 
             // Filter to closed trades with a zone assigned
             List<TradeCacheDto> closed = [.. trades
                 .Where(t => t.Status == TradeStatus.Closed && t.Pnl.HasValue && t.TradingZoneId.HasValue)
-                .Where(t => fromDate == DateTime.MinValue || (t.ClosedDate.HasValue && t.ClosedDate.Value >= fromDate))];
+                .Where(t => fromDate == DateTimeOffset.MinValue || (t.ClosedDate.HasValue && t.ClosedDate.Value >= fromDate))];
 
             // Build zone name lookup
             Dictionary<int, ZoneSummaryDto> zoneLookup = zones.ToDictionary(z => z.Id);

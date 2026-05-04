@@ -10,7 +10,7 @@ public sealed class GetStreakHistory
     {
         public async Task<Result<List<StreakViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            DateTime since = DateTime.UtcNow.AddDays(-request.Days);
+            DateTimeOffset since = DateTimeOffset.UtcNow.AddDays(-request.Days);
 
             var records = await context.StreakRecords
                 .AsNoTracking()

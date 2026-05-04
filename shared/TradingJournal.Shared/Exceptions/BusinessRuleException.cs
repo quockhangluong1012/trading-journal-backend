@@ -1,11 +1,10 @@
-﻿using FluentValidation.Results;
+using FluentValidation.Results;
 
 namespace TradingJournal.Shared.Exceptions;
 
 /// <summary>
 /// Represent various business rules violations.
 /// </summary>
-[Serializable]
 public class BusinessRuleException : Exception
 {
     public string ErrorCode { get; private set; } = string.Empty;

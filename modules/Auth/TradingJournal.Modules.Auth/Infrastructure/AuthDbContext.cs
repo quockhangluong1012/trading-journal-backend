@@ -34,11 +34,11 @@ internal sealed class AuthDbContext : DbContext, IAuthDbContext
         {
             if (entry.State == EntityState.Added)
             {
-                entry.Entity.CreatedDate = DateTime.UtcNow;
+                entry.Entity.CreatedDate = DateTimeOffset.UtcNow;
             }
             else if (entry.State == EntityState.Modified)
             {
-                entry.Entity.UpdatedDate = DateTime.UtcNow;
+                entry.Entity.UpdatedDate = DateTimeOffset.UtcNow;
             }
         }
         return base.SaveChangesAsync(cancellationToken);

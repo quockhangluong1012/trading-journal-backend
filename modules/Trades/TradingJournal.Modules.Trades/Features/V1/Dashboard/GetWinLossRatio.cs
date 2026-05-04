@@ -10,7 +10,7 @@ public sealed class GetWinLossRatio
     {
         public async Task<Result<IReadOnlyCollection<WinLossRatioViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            DateTime fromDate = DashboardFilterHelper.GetFromDate(request.Filter);
+            DateTimeOffset fromDate = DashboardFilterHelper.GetFromDate(request.Filter);
 
             List<TradeHistory>? trades = await context.TradeHistories
                 .AsNoTracking()

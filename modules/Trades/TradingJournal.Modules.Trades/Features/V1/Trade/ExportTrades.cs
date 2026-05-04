@@ -18,8 +18,8 @@ public class ExportTrades
         public string? Asset { get; set; }
         public PositionType? Position { get; set; }
         public TradeStatus? Status { get; set; }
-        public DateTime? FromDate { get; set; }
-        public DateTime? ToDate { get; set; }
+        public DateTimeOffset? FromDate { get; set; }
+        public DateTimeOffset? ToDate { get; set; }
         public ExportFormat Format { get; set; } = ExportFormat.Csv;
         public int UserId { get; set; }
     }
@@ -162,7 +162,7 @@ public class ExportTrades
                 ]));
             }
 
-            string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            string timestamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd_HHmmss");
             return new ExportResult
             {
                 FileContent = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(sb.ToString())).ToArray(),
@@ -205,7 +205,7 @@ public class ExportTrades
                 ws.Cell(rowIdx, 2).Value = row.Asset;
                 ws.Cell(rowIdx, 3).Value = row.Position;
                 ws.Cell(rowIdx, 4).Value = row.Status;
-                ws.Cell(rowIdx, 5).Value = row.Date;
+                ws.Cell(rowIdx, 5).Value = row.Date.DateTime;
                 ws.Cell(rowIdx, 5).Style.NumberFormat.Format = "yyyy-MM-dd HH:mm:ss";
                 ws.Cell(rowIdx, 6).Value = row.EntryPrice;
                 ws.Cell(rowIdx, 6).Style.NumberFormat.Format = "#,##0.00###";
@@ -227,7 +227,7 @@ public class ExportTrades
 
                 if (row.ClosedDate.HasValue)
                 {
-                    ws.Cell(rowIdx, 9).Value = row.ClosedDate.Value;
+                    ws.Cell(rowIdx, 9).Value = row.ClosedDate.Value.DateTime;
                     ws.Cell(rowIdx, 9).Style.NumberFormat.Format = "yyyy-MM-dd HH:mm:ss";
                 }
 
@@ -320,7 +320,7 @@ public class ExportTrades
                 : XLColor.FromArgb(239, 68, 68);
 
             summary.Cell(10, 1).Value = "Export Date";
-            summary.Cell(10, 2).Value = DateTime.UtcNow;
+            summary.Cell(10, 2).Value = DateTimeOffset.UtcNow.DateTime;
             summary.Cell(10, 2).Style.NumberFormat.Format = "yyyy-MM-dd HH:mm:ss";
 
             summary.Column(1).Style.Font.Bold = true;
@@ -329,7 +329,7 @@ public class ExportTrades
             using MemoryStream ms = new();
             workbook.SaveAs(ms);
 
-            string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            string timestamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd_HHmmss");
             return new ExportResult
             {
                 FileContent = ms.ToArray(),
@@ -356,11 +356,11 @@ public class ExportTrades
         public string Asset { get; set; } = "";
         public string Position { get; set; } = "";
         public string Status { get; set; } = "";
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public decimal EntryPrice { get; set; }
         public decimal? ExitPrice { get; set; }
         public decimal? Pnl { get; set; }
-        public DateTime? ClosedDate { get; set; }
+        public DateTimeOffset? ClosedDate { get; set; }
         public decimal StopLoss { get; set; }
         public decimal TargetTier1 { get; set; }
         public decimal? TargetTier2 { get; set; }

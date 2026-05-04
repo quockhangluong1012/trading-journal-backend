@@ -89,7 +89,7 @@ internal sealed class AiTradeDataProvider(
 
     public Task<ReviewSnapshot> BuildReviewSnapshotAsync(
         ReviewPeriodType periodType,
-        DateTime referenceDate,
+        DateTimeOffset referenceDate,
         int userId,
         CancellationToken cancellationToken)
     {

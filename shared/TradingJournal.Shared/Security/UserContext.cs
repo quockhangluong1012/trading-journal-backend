@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using TradingJournal.Shared.Exceptions;
 
 namespace TradingJournal.Shared.Security;
 
@@ -10,11 +11,21 @@ internal sealed class UserContext(IHttpContextAccessor httpContextAccessor) : IU
         get
         {
             var claims = httpContextAccessor.HttpContext?.User;
-            if (claims == null) return 0;
+
+            if (claims is null || claims.Identity?.IsAuthenticated != true)
+            {
+                throw new AccessDeniedException("User is not authenticated.");
+            }
 
             string? userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value
                 ?? claims.FindFirst("UserId")?.Value;
-            return int.TryParse(userIdClaim, out var id) ? id : 0;
+
+            if (!int.TryParse(userIdClaim, out var id) || id <= 0)
+            {
+                throw new AccessDeniedException("Valid user identity could not be determined.");
+            }
+
+            return id;
         }
     }
 

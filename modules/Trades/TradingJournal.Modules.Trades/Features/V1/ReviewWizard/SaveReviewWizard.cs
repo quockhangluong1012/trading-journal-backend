@@ -7,8 +7,8 @@ public sealed class SaveReviewWizard
 {
     public sealed record Request(
         ReviewPeriodType PeriodType,
-        DateTime PeriodStart,
-        DateTime PeriodEnd,
+        DateTimeOffset PeriodStart,
+        DateTimeOffset PeriodEnd,
         bool MarkAsCompleted,
         int? ExecutionRating,
         int? DisciplineRating,
@@ -32,7 +32,7 @@ public sealed class SaveReviewWizard
     public sealed record ActionItemRequest(
         int? Id, string Title, string? Description,
         ActionItemPriority Priority, ActionItemStatus Status,
-        LessonCategory Category, DateTime? DueDate);
+        LessonCategory Category, DateTimeOffset? DueDate);
 
     public sealed class Validator : AbstractValidator<Request>
     {
@@ -108,7 +108,7 @@ public sealed class SaveReviewWizard
             if (request.MarkAsCompleted && review.Status != ReviewWizardStatus.Completed)
             {
                 review.Status = ReviewWizardStatus.Completed;
-                review.CompletedDate = DateTime.UtcNow;
+                review.CompletedDate = DateTimeOffset.UtcNow;
             }
 
             SyncActionItems(review, request.ActionItems);
@@ -142,7 +142,7 @@ public sealed class SaveReviewWizard
                         existing.Category = req.Category;
                         existing.DueDate = req.DueDate;
                         if (req.Status == ActionItemStatus.Completed && !existing.CompletedDate.HasValue)
-                            existing.CompletedDate = DateTime.UtcNow;
+                            existing.CompletedDate = DateTimeOffset.UtcNow;
                     }
                 }
                 else

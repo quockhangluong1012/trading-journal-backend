@@ -65,7 +65,7 @@ public sealed class TradingSetup : EntityBase<int>
     /// <summary>
     /// Date when this setup was retired.
     /// </summary>
-    public DateTime? RetiredDate { get; set; }
+    public DateTimeOffset? RetiredDate { get; set; }
 
     #endregion
 

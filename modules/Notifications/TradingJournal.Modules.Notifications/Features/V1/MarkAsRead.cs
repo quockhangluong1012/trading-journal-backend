@@ -35,7 +35,7 @@ public sealed class MarkAsRead
             }
 
             notification.IsRead = true;
-            notification.ReadAt = DateTime.UtcNow;
+            notification.ReadAt = DateTimeOffset.UtcNow;
             await context.SaveChangesAsync(cancellationToken);
 
             // Push updated unread count to user

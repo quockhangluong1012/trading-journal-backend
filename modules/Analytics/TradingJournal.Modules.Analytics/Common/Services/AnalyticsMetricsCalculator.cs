@@ -48,11 +48,11 @@ public sealed class AnalyticsMetricsCalculator
     /// </summary>
     public static AnalyticsMetrics? Calculate(List<TradeCacheDto> trades, AnalyticsFilter filter)
     {
-        DateTime fromDate = AnalyticsFilterHelper.GetFromDate(filter);
+        DateTimeOffset fromDate = AnalyticsFilterHelper.GetFromDate(filter);
 
         List<TradeCacheDto> closed = [.. trades
             .Where(t => t.Status == TradeStatus.Closed && t.Pnl.HasValue)
-            .Where(t => fromDate == DateTime.MinValue || (t.ClosedDate.HasValue && t.ClosedDate.Value >= fromDate))];
+            .Where(t => fromDate == DateTimeOffset.MinValue || (t.ClosedDate.HasValue && t.ClosedDate.Value >= fromDate))];
 
         if (closed.Count == 0)
             return null;

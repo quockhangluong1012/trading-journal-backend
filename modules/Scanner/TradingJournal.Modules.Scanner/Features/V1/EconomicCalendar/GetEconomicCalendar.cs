@@ -31,8 +31,8 @@ public sealed class GetEconomicCalendar
     {
         public async Task<Result<EconomicCalendarDto>> Handle(Query request, CancellationToken cancellationToken)
         {
-            DateOnly from = request.From ?? DateOnly.FromDateTime(DateTime.UtcNow);
-            DateOnly to = request.To ?? DateOnly.FromDateTime(DateTime.UtcNow);
+            DateOnly from = request.From ?? DateOnly.FromDateTime(DateTimeOffset.UtcNow.UtcDateTime);
+            DateOnly to = request.To ?? DateOnly.FromDateTime(DateTimeOffset.UtcNow.UtcDateTime);
 
             // Limit range to 30 days max
             if (to.DayNumber - from.DayNumber > 30)
@@ -49,7 +49,7 @@ public sealed class GetEconomicCalendar
                 events = events.Where(e => e.Impact == impactFilter).ToList();
             }
 
-            DateTime now = DateTime.UtcNow;
+            DateTimeOffset now = DateTimeOffset.UtcNow;
 
             var eventDtos = events.Select(e =>
             {

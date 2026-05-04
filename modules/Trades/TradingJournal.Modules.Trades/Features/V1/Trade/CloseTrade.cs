@@ -5,7 +5,7 @@ namespace TradingJournal.Modules.Trades.Features.V1.Trade;
 
 public sealed class CloseTrade
 {
-    public sealed record Request(int TradeId, decimal ExitPrice, decimal PnL, string? TradingResult, bool? HitStopLoss, DateTime? ClosedDate, int UserId = 0) : ICommand<Result<bool>>;
+    public sealed record Request(int TradeId, decimal ExitPrice, decimal PnL, string? TradingResult, bool? HitStopLoss, DateTimeOffset? ClosedDate, int UserId = 0) : ICommand<Result<bool>>;
 
     public sealed class Validator : AbstractValidator<Request>
     {
@@ -38,12 +38,12 @@ public sealed class CloseTrade
             tradeHistory.Pnl = request.PnL;
             tradeHistory.TradingResult = request.TradingResult;
             tradeHistory.HitStopLoss = request.HitStopLoss;
-            tradeHistory.ClosedDate = request.ClosedDate ?? DateTime.UtcNow;
+            tradeHistory.ClosedDate = request.ClosedDate ?? DateTimeOffset.UtcNow;
             tradeHistory.Status = TradeStatus.Closed;
 
             await tradeDbContext.SaveChangesAsync(cancellationToken);
 
-            await eventBus.PublishAsync(new SummarizeTradingOrderEvent(Guid.NewGuid(), DateTime.UtcNow, tradeHistory.Id), cancellationToken);
+            await eventBus.PublishAsync(new SummarizeTradingOrderEvent(Guid.NewGuid(), DateTimeOffset.UtcNow, tradeHistory.Id), cancellationToken);
 
             return Result<bool>.Success(true);
         }
