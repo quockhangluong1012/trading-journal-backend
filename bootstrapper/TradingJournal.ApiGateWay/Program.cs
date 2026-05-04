@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using TradingJournal.ApiGateWay.Extensions;
 using TradingJournal.Shared;
+using TradingJournal.Shared.Extensions;
 using TradingJournal.Modules.Analytics;
 using TradingJournal.Modules.Trades;
 using TradingJournal.Modules.AiInsights;
@@ -175,13 +176,15 @@ builder.Services.AddOpenApi(options =>
 
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddHealthChecks()
+    .AddSqlServer(configuration.GetConnectionString("TradeDatabase")!, name: "sqlserver");
+
 WebApplication app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     await app.MigrateTradingDatabase();
     await app.MigratePsychologyDatabase();
-
     await app.MigrateSetupDatabase();
     await app.MigrateAiInsightsDatabase();
     await app.MigrateNotificationDatabase();
@@ -214,6 +217,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapCarter();
+
+app.MapHealthChecks("/health");
 
 app.MapOpenApi();
 

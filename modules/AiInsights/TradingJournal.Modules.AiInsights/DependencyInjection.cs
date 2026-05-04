@@ -3,6 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using TradingJournal.Modules.AiInsights.Extensions;
 using TradingJournal.Modules.AiInsights.Options;
 using TradingJournal.Modules.AiInsights.Services;
+using TradingJournal.Shared.Extensions;
+using Microsoft.EntityFrameworkCore;
 
 namespace TradingJournal.Modules.AiInsights;
 
@@ -13,17 +15,11 @@ public static class DependencyInjection
         IConfiguration configuration,
         bool isDevelopment)
     {
-        services.AddDbContext<AiInsightsDbContext>(options =>
-        {
-            string connectionString = isDevelopment
-                ? configuration.GetConnectionString("TradeDatabase")!
-                : Environment.GetEnvironmentVariable("DEFAULT_CONNECTION")!;
-
-            options.UseSqlServer(connectionString, sqlOptions =>
-            {
-                sqlOptions.MigrationsHistoryTable("__AiInsightsMigrationsHistory", "Trades");
-            });
-        });
+        // Database — uses standard connection string resolution like all other modules
+        string connectionString = configuration.GetConnectionString("TradeDatabase")!;
+        services.AddModuleDbContext<AiInsightsDbContext>(connectionString,
+            migrationsHistoryTable: "__AiInsightsMigrationsHistory",
+            migrationsSchema: "Trades");
 
         services.AddScoped<IAiInsightsDbContext>(sp =>
             sp.GetRequiredService<AiInsightsDbContext>());
@@ -41,7 +37,8 @@ public static class DependencyInjection
 
             client.BaseAddress = new Uri(openRouterOptions.BaseUrl);
             client.Timeout = TimeSpan.FromMinutes(5);
-        });
+        })
+        .AddStandardResilienceHandler();
 
         // MediatR for this assembly (features + event handlers)
         services.AddMediatR(cfg =>

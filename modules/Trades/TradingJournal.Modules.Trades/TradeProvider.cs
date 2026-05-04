@@ -36,11 +36,31 @@ internal sealed class TradeProvider(ITradeDbContext context, ICacheRepository ca
                     EmotionTags = t.TradeEmotionTags?.Select(e => e.EmotionTagId).ToList() ?? [],
                     TradingSetupId = t.TradingSetupId,
                     TechnicalAnalysisTagIds = t.TradeTechnicalAnalysisTags?.Select(ta => ta.TechnicalAnalysisId).ToList() ?? [],
+                    IsRuleBroken = t.IsRuleBroken,
                     CreatedBy = t.CreatedBy
                 })];
             },
             expiration: TimeSpan.FromMinutes(5),
             cancellationToken: cancellationToken) ?? [];
+    }
+
+    public async Task<List<TradeCacheDto>> GetRecentTradesAsync(int userId, DateTime since, CancellationToken cancellationToken = default)
+    {
+        var allTrades = await GetTradesAsync(userId, cancellationToken);
+        return allTrades
+            .Where(t => t.Date >= since)
+            .OrderByDescending(t => t.Date)
+            .ToList();
+    }
+
+    public async Task<List<TradeCacheDto>> GetClosedTradesDescendingAsync(int userId, int count, CancellationToken cancellationToken = default)
+    {
+        var allTrades = await GetTradesAsync(userId, cancellationToken);
+        return allTrades
+            .Where(t => t.Status == TradeStatus.Closed && t.ClosedDate.HasValue)
+            .OrderByDescending(t => t.ClosedDate)
+            .Take(count)
+            .ToList();
     }
 }
 

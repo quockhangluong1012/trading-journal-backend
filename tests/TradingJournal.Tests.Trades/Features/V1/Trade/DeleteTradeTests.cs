@@ -3,7 +3,7 @@ using Moq;
 using TradingJournal.Modules.Trades.Features.V1.Trade;
 using TradingJournal.Modules.Trades.Infrastructure;
 using TradingJournal.Modules.Trades.Domain;
-using Microsoft.AspNetCore.Hosting;
+using TradingJournal.Modules.Trades.Services;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Trade;
 
@@ -28,15 +28,14 @@ public sealed class DeleteTradeValidatorTests
 public sealed class DeleteTradeHandlerTests
 {
     private Mock<ITradeDbContext> _ctx = null!;
-    private Mock<IWebHostEnvironment> _env = null!;
+    private Mock<IScreenshotService> _screenshotMock = null!;
     private DeleteTrade.Handler _handler = null!;
 
     public DeleteTradeHandlerTests()
     {
         _ctx = new Mock<ITradeDbContext>();
-        _env = new Mock<IWebHostEnvironment>();
-        _env.Setup(x => x.ContentRootPath).Returns("/tmp");
-        _handler = new DeleteTrade.Handler(_ctx.Object, _env.Object);
+        _screenshotMock = new Mock<IScreenshotService>();
+        _handler = new DeleteTrade.Handler(_ctx.Object, _screenshotMock.Object);
     }
     [Fact]
     public async Task Handle_TradeNotFound_ReturnsFailure()
@@ -46,7 +45,7 @@ public sealed class DeleteTradeHandlerTests
         Assert.False(result.IsSuccess);
     }
     [Fact]
-    public async Task Handle_TradeFound_DeletesAndReturnsSuccess()
+    public async Task Handle_TradeFound_SoftDeletesAndReturnsSuccess()
     {
         var trade = new TradeHistory { Id = 1, CreatedBy = 42, TradeScreenShots = new List<TradeScreenShot>(), TradeChecklists = new List<TradeHistoryChecklist>(), TradeTechnicalAnalysisTags = new List<TradeTechnicalAnalysisTag>() };
         _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory> { trade }.AsQueryable()).Object);
@@ -54,6 +53,7 @@ public sealed class DeleteTradeHandlerTests
         var result = await _handler.Handle(new DeleteTrade.Request { Id = 1, UserId = 42 }, CancellationToken.None);
         Assert.True(result.IsSuccess);
         Assert.Equal(1, result.Value);
+        Assert.True(trade.IsDisabled); // Soft-delete check
         _ctx.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

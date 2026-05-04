@@ -11,5 +11,6 @@ public record ScannerAlertDto(
     decimal? ZoneLowPrice,
     string Description,
     int ConfluenceScore,
+    string Regime,
     DateTime DetectedAt,
     bool IsDismissed);

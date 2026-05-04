@@ -1,13 +1,11 @@
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using TradingJournal.Modules.Scanner.Services;
 using TradingJournal.Modules.Scanner.Services.EconomicCalendar;
 using TradingJournal.Modules.Scanner.Services.ICTAnalysis;
 using TradingJournal.Modules.Scanner.Services.LiveData;
-using TradingJournal.Shared.Behaviors;
-using TradingJournal.Shared.MediatR;
+using TradingJournal.Shared.Extensions;
 
 namespace TradingJournal.Modules.Scanner;
 
@@ -16,27 +14,12 @@ public static class DependencyInjection
     public static IServiceCollection AddScannerModule(this IServiceCollection services,
         IConfiguration configuration, bool isDevelopment = false)
     {
-        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
-
-        services.AddMediatR(config =>
-        {
-            config.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
-            config.AddOpenBehavior(typeof(ValidationBehavior<,>));
-            config.AddOpenBehavior(typeof(UserAwareBehavior<,>));
-
-            if (isDevelopment)
-            {
-                config.AddOpenBehavior(typeof(LoggingBehavior<,>));
-            }
-        });
+        services.AddModuleDefaults(Assembly.GetExecutingAssembly(), isDevelopment);
 
         // Database
+        string connectionString = configuration.GetConnectionString("TradeDatabase")!;
+        services.AddModuleDbContext<ScannerDbContext>(connectionString);
         services.AddScoped<IScannerDbContext, ScannerDbContext>();
-
-        services.AddDbContext<ScannerDbContext>(options =>
-        {
-            options.UseSqlServer(configuration.GetConnectionString("ScannerDatabase"));
-        });
 
         // ICT Pattern Detectors
         services.AddSingleton<IIctDetector, FvgDetector>();
@@ -60,7 +43,8 @@ public static class DependencyInjection
         services.AddSingleton<IMultiAssetDetector, SmtDivergenceDetector>();
 
         // Live market data provider (Yahoo Finance — free, supports all symbols including NASDAQ indices)
-        services.AddHttpClient<ILiveMarketDataProvider, YahooFinanceLiveProvider>();
+        services.AddHttpClient<ILiveMarketDataProvider, YahooFinanceLiveProvider>()
+            .AddStandardResilienceHandler();
 
         // Core services
         services.AddSingleton<MultiTimeframeAnalyzer>();
@@ -70,7 +54,8 @@ public static class DependencyInjection
         services.AddHostedService<ScannerBackgroundService>();
 
         // Economic Calendar (Forex Factory feed — free, no API key needed)
-        services.AddHttpClient<IEconomicCalendarProvider, EconomicCalendarProvider>();
+        services.AddHttpClient<IEconomicCalendarProvider, EconomicCalendarProvider>()
+            .AddStandardResilienceHandler();
         services.AddHostedService<EconomicCalendarBackgroundService>();
 
         // SignalR (idempotent)
@@ -79,22 +64,10 @@ public static class DependencyInjection
         return services;
     }
 
-    public static async Task<IApplicationBuilder> MigrateScannerDatabase(this IApplicationBuilder app)
+    public static async Task MigrateScannerDatabase(this WebApplication app)
     {
-        using IServiceScope scope = app.ApplicationServices.CreateScope();
-
-        try
-        {
-            ScannerDbContext dbContext = scope.ServiceProvider.GetRequiredService<ScannerDbContext>();
-            await dbContext.Database.MigrateAsync();
-        }
-        catch (Exception ex)
-        {
-            var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("ScannerMigration");
-            logger.LogError(ex, "Failed to migrate Scanner database.");
-        }
-
-        return app;
+        using IServiceScope scope = app.Services.CreateScope();
+        ScannerDbContext context = scope.ServiceProvider.GetRequiredService<ScannerDbContext>();
+        await context.Database.MigrateAsync();
     }
 }

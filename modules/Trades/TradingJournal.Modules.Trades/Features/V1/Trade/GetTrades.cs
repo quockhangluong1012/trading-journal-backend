@@ -28,6 +28,8 @@ public class GetTrades
 
     public sealed class Validator : AbstractValidator<Request>
     {
+        private const int MaxPageSize = 100;
+
         public Validator()
         {
             RuleFor(x => x.Page)
@@ -40,7 +42,10 @@ public class GetTrades
                 .Cascade(CascadeMode.Stop)
                 .GreaterThan(0)
                 .WithErrorCode(HttpStatusCode.BadRequest.ToString())
-                .WithMessage("Page size must be greater than 0.");
+                .WithMessage("Page size must be greater than 0.")
+                .LessThanOrEqualTo(MaxPageSize)
+                .WithErrorCode(HttpStatusCode.BadRequest.ToString())
+                .WithMessage($"Page size must not exceed {MaxPageSize}.");
         }
     }
 
@@ -142,9 +147,29 @@ public class GetTrades
         {
             RouteGroupBuilder group = app.MapGroup(ApiGroup.V1.TradeHistory);
 
-            group.MapPost("/search", async (ISender sender, [FromBody] Request request, ClaimsPrincipal user) =>
+            group.MapGet("/", async (
+                ISender sender,
+                ClaimsPrincipal user,
+                [FromQuery] string? asset,
+                [FromQuery] PositionType? position,
+                [FromQuery] TradeStatus? status,
+                [FromQuery] DateTime? fromDate,
+                [FromQuery] DateTime? toDate,
+                [FromQuery] int page = 1,
+                [FromQuery] int pageSize = 10) =>
             {
-                request.UserId = user.GetCurrentUserId();
+                Request request = new()
+                {
+                    Asset = asset,
+                    Position = position,
+                    Status = status,
+                    FromDate = fromDate,
+                    ToDate = toDate,
+                    Page = page,
+                    PageSize = pageSize,
+                    UserId = user.GetCurrentUserId()
+                };
+
                 Result<PaginationViewModel<TradeHistoryViewModel>> result = await sender.Send(request);
 
                 return result.IsSuccess ? Results.Ok(result)
@@ -153,8 +178,8 @@ public class GetTrades
             .Produces<Result<PaginationViewModel<TradeHistoryViewModel>>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status500InternalServerError)
-            .WithSummary("Search trade histories.")
-            .WithDescription("Retrieves a list of trade histories.")
+            .WithSummary("Get trade histories.")
+            .WithDescription("Retrieves a paginated list of trade histories with optional filters.")
             .WithTags(Tags.TradeHistory)
             .RequireAuthorization();
         }

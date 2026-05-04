@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Hosting;
+using TradingJournal.Modules.Trades.Services;
 
 namespace TradingJournal.Modules.Trades.Features.V1.Trade;
 
@@ -22,14 +22,12 @@ public class DeleteTrade
         }
     }
 
-    public class Handler(ITradeDbContext tradeDbContext, IWebHostEnvironment env) : ICommandHandler<Request, Result<int>>
+    public class Handler(ITradeDbContext tradeDbContext, IScreenshotService screenshotService) : ICommandHandler<Request, Result<int>>
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {
             Domain.TradeHistory? trade = await tradeDbContext.TradeHistories
                 .Include(x => x.TradeScreenShots)
-                .Include(x => x.TradeChecklists)
-                .Include(x => x.TradeTechnicalAnalysisTags)
                 .FirstOrDefaultAsync(x => x.Id == request.Id && x.CreatedBy == request.UserId, cancellationToken);
 
             if (trade == null)
@@ -40,40 +38,16 @@ public class DeleteTrade
             // Delete physical screenshot files from disk
             foreach (var screenshot in trade.TradeScreenShots)
             {
-                DeleteScreenshotFile(screenshot.Url);
+                await screenshotService.DeleteScreenshotAsync(screenshot.Url, cancellationToken);
             }
 
-            tradeDbContext.TradeHistories.Remove(trade);
+            // Soft-delete: mark as disabled instead of hard-removing from the database.
+            // The global query filter on EntityBase<int>.IsDisabled will exclude it from queries.
+            trade.IsDisabled = true;
 
             await tradeDbContext.SaveChangesAsync(cancellationToken);
 
             return Result<int>.Success(trade.Id);
-        }
-
-        private void DeleteScreenshotFile(string url)
-        {
-            if (string.IsNullOrEmpty(url))
-                return;
-
-            // Extract filename from either absolute or relative URLs:
-            // - "/screenshots/abc.png"
-            // - "https://host/screenshots/abc.png"
-            string[] parts = url.Split("/screenshots/");
-
-            if (parts.Length < 2)
-                return;
-
-            string fileName = parts[^1];
-
-            if (string.IsNullOrEmpty(fileName))
-                return;
-
-            var filePath = Path.Combine(env.ContentRootPath, "wwwroot", "screenshots", fileName);
-
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
         }
     }
 
@@ -93,7 +67,7 @@ public class DeleteTrade
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status500InternalServerError)
             .WithSummary("Delete a trade history by ID.")
-            .WithDescription("Deletes a trade history by its ID.") 
+            .WithDescription("Soft-deletes a trade history by its ID.") 
             .WithTags(Tags.TradeHistory)
             .RequireAuthorization();
         }

@@ -3,7 +3,7 @@ using Moq;
 using TradingJournal.Modules.Trades.Features.V1.Trade;
 using TradingJournal.Modules.Trades.Infrastructure;
 using TradingJournal.Modules.Trades.Domain;
-using Microsoft.AspNetCore.Hosting;
+using TradingJournal.Modules.Trades.Services;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using SharedEnums = TradingJournal.Shared.Common.Enum;
@@ -144,16 +144,18 @@ public sealed class CreateTradeValidatorTests
 public sealed class CreateTradeHandlerTests
 {
     private Mock<ITradeDbContext> _contextMock = null!;
-    private Mock<IWebHostEnvironment> _envMock = null!;
+    private Mock<IScreenshotService> _screenshotMock = null!;
+    private Mock<IDisciplineEvaluator> _disciplineMock = null!;
     private Mock<IHttpContextAccessor> _httpContextAccessorMock = null!;
     private CreateTrade.Handler _handler = null!;
 
     public CreateTradeHandlerTests()
     {
         _contextMock = new Mock<ITradeDbContext>();
-        _envMock = new Mock<IWebHostEnvironment>();
+        _screenshotMock = new Mock<IScreenshotService>();
+        _disciplineMock = new Mock<IDisciplineEvaluator>();
         _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
-        _handler = new CreateTrade.Handler(_contextMock.Object, _envMock.Object, _httpContextAccessorMock.Object);
+        _handler = new CreateTrade.Handler(_contextMock.Object, _screenshotMock.Object, _disciplineMock.Object, _httpContextAccessorMock.Object);
     }
 
     private void SetCurrentUser(int userId)
@@ -307,4 +309,3 @@ public sealed class CreateTradeHandlerTests
         _contextMock.Verify(c => c.RollbackTransaction(), Times.Once);
     }
 }
-

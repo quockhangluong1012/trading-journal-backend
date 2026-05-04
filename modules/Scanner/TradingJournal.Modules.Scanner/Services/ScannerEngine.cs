@@ -14,19 +14,11 @@ internal sealed class ScannerEngine(
     IEventBus eventBus,
     ILogger<ScannerEngine> logger) : IScannerEngine
 {
-    /// <summary>
-    /// Dedup window: don't re-alert for the same pattern+symbol+timeframe within this period.
-    /// </summary>
     private static readonly TimeSpan DedupWindow = TimeSpan.FromHours(4);
-
-    /// <summary>
-    /// Number of candles to fetch per timeframe for analysis.
-    /// </summary>
     private const int CandlesPerTimeframe = 100;
 
     public async Task<int> ScanForWatchlistAsync(int watchlistId, int userId, CancellationToken ct = default)
     {
-        // 1. Load user config with navigation properties
         ScannerConfig? config = await scannerDb.ScannerConfigs
             .Include(c => c.EnabledPatterns)
             .Include(c => c.EnabledTimeframes)
@@ -34,17 +26,10 @@ internal sealed class ScannerEngine(
 
         if (config is null) return 0;
 
-        List<IctPatternType> globalEnabledPatterns = config.EnabledPatterns
-            .Select(p => p.PatternType)
-            .ToList();
-
-        List<ScannerTimeframe> enabledTimeframes = config.EnabledTimeframes
-            .Select(t => t.Timeframe)
-            .ToList();
-
+        List<IctPatternType> globalEnabledPatterns = config.EnabledPatterns.Select(p => p.PatternType).ToList();
+        List<ScannerTimeframe> enabledTimeframes = config.EnabledTimeframes.Select(t => t.Timeframe).ToList();
         if (globalEnabledPatterns.Count == 0 || enabledTimeframes.Count == 0) return 0;
 
-        // 2. Load assets for this specific watchlist (with per-asset detector overrides)
         var assets = await scannerDb.WatchlistAssets
             .Where(a => a.WatchlistId == watchlistId && !a.IsDisabled)
             .Include(a => a.EnabledDetectors)
@@ -53,188 +38,152 @@ internal sealed class ScannerEngine(
         var symbols = assets.Select(a => a.Symbol).Distinct().ToList();
         if (symbols.Count == 0) return 0;
 
-        // 3. Build per-asset enabled patterns map (with fallback to global config)
-        var perAssetPatterns = new Dictionary<string, List<IctPatternType>>();
-        foreach (string symbol in symbols)
-        {
-            var assetDetectors = assets
-                .Where(a => a.Symbol == symbol)
-                .SelectMany(a => a.EnabledDetectors)
-                .Where(d => d.IsEnabled && !d.IsDisabled)
-                .Select(d => d.PatternType)
-                .Distinct()
-                .ToList();
+        var perAssetPatterns = BuildPerAssetPatterns(assets, symbols, globalEnabledPatterns);
+        var allCandleData = await FetchAllCandleDataAsync(symbols, enabledTimeframes, ct);
 
-            // Fallback: if no per-asset config exists, use global config
-            perAssetPatterns[symbol] = assetDetectors.Count > 0
-                ? assetDetectors
-                : globalEnabledPatterns;
-        }
-
-        // 4. Prefetch LIVE candle data for all symbols+timeframes
-        var allCandleData = new Dictionary<(string Symbol, ScannerTimeframe Tf), List<CandleData>>();
-
-        foreach (string symbol in symbols)
-        {
-            foreach (ScannerTimeframe tf in enabledTimeframes)
-            {
-                List<CandleData> candles = await liveDataProvider.GetRecentCandlesAsync(
-                    symbol, tf, CandlesPerTimeframe, ct);
-
-                if (candles.Count > 0)
-                {
-                    allCandleData[(symbol, tf)] = candles;
-                }
-            }
-        }
+        // Prefetch existing alerts for dedup in one query instead of N queries in loop
+        var dedupCutoff = DateTime.UtcNow - DedupWindow;
+        var existingAlerts = await scannerDb.ScannerAlerts.AsNoTracking()
+            .Where(a => a.UserId == userId && symbols.Contains(a.Symbol) && a.DetectedAt > dedupCutoff && !a.IsDisabled)
+            .Select(a => new { a.Symbol, a.PatternType, a.DetectionTimeframe })
+            .ToListAsync(ct);
+        var existingKeys = new HashSet<(string, IctPatternType, ScannerTimeframe)>(
+            existingAlerts.Select(a => (a.Symbol, a.PatternType, a.DetectionTimeframe)));
 
         int totalAlerts = 0;
 
-        // 5. Run single-asset detectors
         foreach (string symbol in symbols)
         {
             try
             {
-                var candlesByTimeframe = enabledTimeframes
+                var candlesByTf = enabledTimeframes
                     .Where(tf => allCandleData.ContainsKey((symbol, tf)))
                     .ToDictionary(tf => tf, tf => allCandleData[(symbol, tf)]);
 
-                var effectivePatterns = perAssetPatterns[symbol];
-
-                int alertsForSymbol = await ProcessDetectionsAsync(
-                    userId, symbol, watchlistId,
-                    analyzer.Analyze(symbol, candlesByTimeframe, effectivePatterns),
-                    config.MinConfluenceScore, ct);
-
-                totalAlerts += alertsForSymbol;
+                totalAlerts += await ProcessDetectionsAsync(userId, symbol, watchlistId,
+                    analyzer.Analyze(symbol, candlesByTf, perAssetPatterns[symbol]),
+                    config.MinConfluenceScore, candlesByTf, existingKeys, ct);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error scanning symbol {Symbol} in watchlist {WatchlistId} for user {UserId}",
-                    symbol, watchlistId, userId);
+                logger.LogError(ex, "Error scanning {Symbol} in watchlist {WatchlistId}", symbol, watchlistId);
             }
         }
 
-        // 6. Run multi-asset detectors (SMT Divergence)
+        // Multi-asset detectors (SMT Divergence)
         foreach (string symbol in symbols)
         {
-            var effectivePatterns = perAssetPatterns[symbol];
-            if (!effectivePatterns.Contains(IctPatternType.SMTDivergence)) continue;
-
-            string? correlatedSymbol = SmtDivergenceDetector.GetCorrelatedSymbol(symbol);
-            if (correlatedSymbol is null) continue;
+            if (!perAssetPatterns[symbol].Contains(IctPatternType.SMTDivergence)) continue;
+            string? corr = SmtDivergenceDetector.GetCorrelatedSymbol(symbol);
+            if (corr is null) continue;
 
             try
             {
                 foreach (ScannerTimeframe tf in enabledTimeframes)
                 {
-                    if (!allCandleData.TryGetValue((symbol, tf), out var primaryCandles)) continue;
-
-                    // Try to get correlated candles — may need to fetch if not in watchlist
-                    if (!allCandleData.TryGetValue((correlatedSymbol, tf), out var correlatedCandles))
-                    {
-                        correlatedCandles = await liveDataProvider.GetRecentCandlesAsync(
-                            correlatedSymbol, tf, CandlesPerTimeframe, ct);
-                    }
-
-                    if (correlatedCandles.Count == 0) continue;
+                    if (!allCandleData.TryGetValue((symbol, tf), out var primary)) continue;
+                    if (!allCandleData.TryGetValue((corr, tf), out var corrCandles))
+                        corrCandles = await liveDataProvider.GetRecentCandlesAsync(corr, tf, CandlesPerTimeframe, ct);
+                    if (corrCandles.Count == 0) continue;
 
                     foreach (var detector in multiAssetDetectors)
                     {
-                        var smtPatterns = detector.Detect(
-                            symbol, primaryCandles, correlatedSymbol, correlatedCandles, tf);
-
-                        var smtResults = smtPatterns.Select(p => (p, ConfluenceScore: 1)).ToList();
-
-                        int smtAlerts = await ProcessDetectionsAsync(
-                            userId, symbol, watchlistId, smtResults,
-                            config.MinConfluenceScore, ct);
-
-                        totalAlerts += smtAlerts;
+                        var results = detector.Detect(symbol, primary, corr, corrCandles, tf)
+                            .Select(p => (p, ConfluenceScore: 1)).ToList();
+                        var map = new Dictionary<ScannerTimeframe, List<CandleData>> { { tf, corrCandles } };
+                        totalAlerts += await ProcessDetectionsAsync(userId, symbol, watchlistId,
+                            results, config.MinConfluenceScore, map, existingKeys, ct);
                     }
                 }
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error running SMT Divergence for {Symbol} vs {Correlated} in watchlist {WatchlistId}",
-                    symbol, correlatedSymbol, watchlistId);
+                logger.LogError(ex, "Error running SMT for {Symbol} vs {Correlated}", symbol, corr);
             }
         }
 
         return totalAlerts;
     }
 
+    private static Dictionary<string, List<IctPatternType>> BuildPerAssetPatterns(
+        List<WatchlistAsset> assets, List<string> symbols, List<IctPatternType> globalPatterns)
+    {
+        var result = new Dictionary<string, List<IctPatternType>>();
+        foreach (string symbol in symbols)
+        {
+            var detectors = assets.Where(a => a.Symbol == symbol)
+                .SelectMany(a => a.EnabledDetectors)
+                .Where(d => d.IsEnabled && !d.IsDisabled)
+                .Select(d => d.PatternType).Distinct().ToList();
+            result[symbol] = detectors.Count > 0 ? detectors : globalPatterns;
+        }
+        return result;
+    }
+
+    private async Task<Dictionary<(string, ScannerTimeframe), List<CandleData>>> FetchAllCandleDataAsync(
+        List<string> symbols, List<ScannerTimeframe> timeframes, CancellationToken ct)
+    {
+        var data = new Dictionary<(string, ScannerTimeframe), List<CandleData>>();
+        foreach (string symbol in symbols)
+            foreach (ScannerTimeframe tf in timeframes)
+            {
+                var candles = await liveDataProvider.GetRecentCandlesAsync(symbol, tf, CandlesPerTimeframe, ct);
+                if (candles.Count > 0) data[(symbol, tf)] = candles;
+            }
+        return data;
+    }
+
     /// <summary>
-    /// Processes detections: deduplicates, persists alerts, and publishes events.
+    /// Batched alert processing: dedup against prefetched data, save all alerts in one round-trip.
     /// </summary>
     private async Task<int> ProcessDetectionsAsync(
-        int userId,
-        string symbol,
-        int watchlistId,
+        int userId, string symbol, int watchlistId,
         List<(DetectedPattern Pattern, int ConfluenceScore)> detections,
         int minConfluenceScore,
+        Dictionary<ScannerTimeframe, List<CandleData>> candlesByTf,
+        HashSet<(string, IctPatternType, ScannerTimeframe)> existingKeys,
         CancellationToken ct)
     {
-        var qualifiedDetections = detections
-            .Where(d => d.ConfluenceScore >= minConfluenceScore)
-            .ToList();
+        List<ScannerAlert> batch = [];
 
-        int newAlerts = 0;
-
-        foreach (var (pattern, confluenceScore) in qualifiedDetections)
+        foreach (var (pattern, score) in detections.Where(d => d.ConfluenceScore >= minConfluenceScore))
         {
-            // Deduplication check — pre-compute cutoff so EF Core can translate it
-            var dedupCutoff = DateTime.UtcNow - DedupWindow;
-            bool isDuplicate = await scannerDb.ScannerAlerts.AnyAsync(a =>
-                a.UserId == userId &&
-                a.Symbol == symbol &&
-                a.PatternType == pattern.Type &&
-                a.DetectionTimeframe == pattern.Timeframe &&
-                a.DetectedAt > dedupCutoff &&
-                !a.IsDisabled, ct);
+            if (existingKeys.Contains((symbol, pattern.Type, pattern.Timeframe))) continue;
 
-            if (isDuplicate) continue;
+            var candles = candlesByTf.TryGetValue(pattern.Timeframe, out var c) ? c : null;
+            var regime = Indicators.MarketRegimeClassifier.Classify(candles);
 
-            // Save alert
-            var alert = new ScannerAlert
+            batch.Add(new ScannerAlert
             {
-                Id = default!,
-                UserId = userId,
-                Symbol = symbol,
-                PatternType = pattern.Type,
-                Timeframe = pattern.Timeframe,
+                Id = default!, UserId = userId, Symbol = symbol,
+                PatternType = pattern.Type, Timeframe = pattern.Timeframe,
                 DetectionTimeframe = pattern.Timeframe,
                 PriceAtDetection = pattern.PriceAtDetection,
-                ZoneHighPrice = pattern.ZoneHigh,
-                ZoneLowPrice = pattern.ZoneLow,
-                Description = pattern.Description,
-                ConfluenceScore = confluenceScore,
-                DetectedAt = DateTime.UtcNow,
-                CreatedDate = DateTime.UtcNow,
-                CreatedBy = userId
-            };
-
-            scannerDb.ScannerAlerts.Add(alert);
-            await scannerDb.SaveChangesAsync(ct);
-
-            // Publish integration event for the Notification module
-            await eventBus.PublishAsync(new ScannerAlertEvent(
-                EventId: Guid.NewGuid(),
-                UserId: userId,
-                Symbol: symbol,
-                PatternType: pattern.Type.ToString(),
-                Timeframe: pattern.Timeframe.ToString(),
-                Price: pattern.PriceAtDetection,
-                Description: pattern.Description,
-                ConfluenceScore: confluenceScore), ct);
-
-            newAlerts++;
-
-            logger.LogInformation(
-                "Scanner alert: {Pattern} on {Symbol} ({Timeframe}) in watchlist {WatchlistId}, confluence={Score}",
-                pattern.Type, symbol, pattern.Timeframe, watchlistId, confluenceScore);
+                ZoneHighPrice = pattern.ZoneHigh, ZoneLowPrice = pattern.ZoneLow,
+                Description = pattern.Description, ConfluenceScore = score,
+                Regime = regime, DetectedAt = DateTime.UtcNow,
+                CreatedDate = DateTime.UtcNow, CreatedBy = userId
+            });
+            existingKeys.Add((symbol, pattern.Type, pattern.Timeframe));
         }
 
-        return newAlerts;
+        if (batch.Count == 0) return 0;
+
+        // Single DB round-trip for all alerts
+        scannerDb.ScannerAlerts.AddRange(batch);
+        await scannerDb.SaveChangesAsync(ct);
+
+        foreach (var alert in batch)
+        {
+            await eventBus.PublishAsync(new ScannerAlertEvent(
+                Guid.NewGuid(), userId, alert.Symbol, alert.PatternType.ToString(),
+                alert.DetectionTimeframe.ToString(), alert.PriceAtDetection,
+                alert.Description, alert.ConfluenceScore), ct);
+
+            logger.LogInformation("Scanner alert: {Pattern} on {Symbol} ({Tf}) watchlist {Wl}, confluence={Score}",
+                alert.PatternType, alert.Symbol, alert.DetectionTimeframe, watchlistId, alert.ConfluenceScore);
+        }
+
+        return batch.Count;
     }
 }

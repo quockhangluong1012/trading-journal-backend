@@ -3,10 +3,9 @@ using Moq;
 using TradingJournal.Modules.Trades.Features.V1.Trade;
 using TradingJournal.Modules.Trades.Infrastructure;
 using TradingJournal.Modules.Trades.Domain;
-using Microsoft.AspNetCore.Hosting;
+using TradingJournal.Modules.Trades.Services;
 using SharedEnums = TradingJournal.Shared.Common.Enum;
 using TradingJournal.Shared.Common.Enum;
-using Microsoft.AspNetCore.Http;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Trade;
 
@@ -21,7 +20,7 @@ public sealed class UpdateTradeValidatorTests
             null, null, 1.0800m, "Notes", DateTime.UtcNow,
             SharedEnums.TradeStatus.Open, null, null, null, [],
             null, null, ConfidenceLevel.Neutral, null,
-            [1], 1, null);
+            [1], 1, null, null);
 
     [Fact]
     public void Validate_ValidRequest_ReturnsValid()
@@ -69,14 +68,14 @@ public sealed class UpdateTradeValidatorTests
 public sealed class UpdateTradeHandlerTests
 {
     private Mock<ITradeDbContext> _ctx = null!;
-    private Mock<IWebHostEnvironment> _env = null!;
+    private Mock<IScreenshotService> _screenshotMock = null!;
     private UpdateTrade.Handler _handler = null!;
 
     public UpdateTradeHandlerTests()
     {
         _ctx = new Mock<ITradeDbContext>();
-        _env = new Mock<IWebHostEnvironment>();
-        _handler = new UpdateTrade.Handler(_ctx.Object, _env.Object, new Mock<IHttpContextAccessor>().Object);
+        _screenshotMock = new Mock<IScreenshotService>();
+        _handler = new UpdateTrade.Handler(_ctx.Object, _screenshotMock.Object);
     }
 
     [Fact]
@@ -87,7 +86,7 @@ public sealed class UpdateTradeHandlerTests
             null, null, 1.0800m, "Notes", DateTime.UtcNow,
             SharedEnums.TradeStatus.Open, null, null, null, [],
             null, null, ConfidenceLevel.Neutral, null,
-            [1], 1, null, UserId: 42);
+            [1], 1, null, null, UserId: 42);
 
         _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
 
@@ -104,7 +103,7 @@ public sealed class UpdateTradeHandlerTests
             null, null, 1.0800m, "Updated", DateTime.UtcNow,
             SharedEnums.TradeStatus.Open, null, null, null, [],
             null, null, ConfidenceLevel.Neutral, null,
-            [1], 1, null, UserId: 42);
+            [1], 1, null, null, UserId: 42);
 
         var trade = new TradeHistory { Id = 1, CreatedBy = 42, Asset = "GBPUSD",
             TradeEmotionTags = [], TradeChecklists = [], TradeTechnicalAnalysisTags = [], TradeScreenShots = [] };
@@ -135,7 +134,7 @@ public sealed class UpdateTradeHandlerTests
             null, null, 1.0800m, "Updated", DateTime.UtcNow,
             SharedEnums.TradeStatus.Open, null, null, null, [],
             null, null, ConfidenceLevel.Neutral, null,
-            [1], 1, null, UserId: 42);
+            [1], 1, null, null, UserId: 42);
 
         var trade = new TradeHistory
         {
@@ -160,4 +159,3 @@ public sealed class UpdateTradeHandlerTests
         _ctx.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }
-

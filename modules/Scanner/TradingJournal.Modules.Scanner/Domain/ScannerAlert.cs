@@ -33,6 +33,8 @@ public sealed class ScannerAlert : EntityBase<int>
     [MaxLength(500)]
     public string Description { get; set; } = string.Empty;
 
+    public TradingJournal.Modules.Scanner.Common.Enums.MarketRegime Regime { get; set; }
+
     /// <summary>
     /// Multi-timeframe confluence score (higher = more timeframes confirm).
     /// </summary>

@@ -46,6 +46,10 @@ public class StopScannerHandlerTests
             }
         };
         _dbMock.Setup(x => x.ScannerConfigs).Returns(DbSetMockHelper.CreateMockDbSet(new List<ScannerConfig> { config }).Object);
+        _dbMock.Setup(x => x.Watchlists).Returns(DbSetMockHelper.CreateMockDbSet(new List<Watchlist>
+        {
+            new() { Id = 1, UserId = 1, Name = "Test", IsActive = true, IsScannerRunning = true }
+        }).Object);
         _dbMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var cmd = new StopScanner.Command { UserId = 1 };
@@ -103,7 +107,17 @@ public class GetScannerStatusHandlerTests
             }
         };
         _dbMock.Setup(x => x.ScannerConfigs).Returns(DbSetMockHelper.CreateMockDbSet(new List<ScannerConfig> { config }).Object);
-        _dbMock.Setup(x => x.Watchlists).Returns(DbSetMockHelper.CreateMockDbSet(new List<Watchlist>()).Object);
+
+        // Handler determines status from Watchlists.IsScannerRunning, not config.IsRunning
+        var watchlist = new Watchlist
+        {
+            Id = 1, UserId = 1, Name = "Test", IsActive = true, IsScannerRunning = true,
+            Assets = new List<WatchlistAsset>
+            {
+                new() { Id = 1, Symbol = "EURUSD" }
+            }
+        };
+        _dbMock.Setup(x => x.Watchlists).Returns(DbSetMockHelper.CreateMockDbSet(new List<Watchlist> { watchlist }).Object);
 
         var req = new GetScannerStatus.Request { UserId = 1 };
         var result = await _handler.Handle(req, CancellationToken.None);

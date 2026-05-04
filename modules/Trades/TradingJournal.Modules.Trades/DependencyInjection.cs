@@ -1,11 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using System.Reflection;
 using TradingJournal.Modules.Trades.Features.V1.Review;
 using TradingJournal.Modules.Trades.Services;
-using TradingJournal.Shared.Behaviors;
-using TradingJournal.Shared.MediatR;
+using TradingJournal.Shared.Extensions;
 
 namespace TradingJournal.Modules.Trades;
 
@@ -14,27 +12,12 @@ public static class DependencyInjection
     public static IServiceCollection AddTradeModule(this IServiceCollection services, IConfiguration configuration,
         bool isDevelopment = false)
     {
-        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+        services.AddModuleDefaults(Assembly.GetExecutingAssembly(), isDevelopment);
 
-        services.AddMediatR(config =>
-        {
-            config.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
-            config.AddOpenBehavior(typeof(ValidationBehavior<,>));
-            config.AddOpenBehavior(typeof(UserAwareBehavior<,>));
-
-            if (isDevelopment)
-            {
-                config.AddOpenBehavior(typeof(LoggingBehavior<,>));
-            }
-        });
+        string connectionString = configuration.GetConnectionString("TradeDatabase")!;
+        services.AddModuleDbContext<TradeDbContext>(connectionString);
 
         services.AddScoped<ITradeDbContext, TradeDbContext>();
-
-        services.AddDbContext<TradeDbContext>(options =>
-        {
-            options.UseSqlServer(configuration.GetConnectionString("TradeDatabase"));
-        });
-
         services.AddScoped<ITradeProvider, TradeProvider>();
         services.AddScoped<IZoneProvider, ZoneProvider>();
         services.AddScoped<ITechnicalAnalysisTagProvider, TechnicalAnalysisTagProvider>();
@@ -45,25 +28,17 @@ public static class DependencyInjection
         // Cross-module data provider for AiInsights module
         services.AddScoped<IAiTradeDataProvider, AiTradeDataProvider>();
 
+        // Extracted services from fat handlers
+        services.AddScoped<IScreenshotService, ScreenshotService>();
+        services.AddScoped<IDisciplineEvaluator, DisciplineEvaluator>();
+
         return services;
     }
 
-    public static async Task<IApplicationBuilder> MigrateTradingDatabase(this IApplicationBuilder app)
+    public static async Task MigrateTradingDatabase(this WebApplication app)
     {
-        using IServiceScope scope = app.ApplicationServices.CreateScope();
-
-        try
-        {
-            TradeDbContext dbContext = scope.ServiceProvider.GetRequiredService<TradeDbContext>();
-            await dbContext.Database.MigrateAsync();
-        }
-        catch (Exception ex)
-        {
-            var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("TradesMigration");
-            logger.LogError(ex, "Failed to migrate Trades database.");
-        }
-
-        return app;
+        using IServiceScope scope = app.Services.CreateScope();
+        TradeDbContext context = scope.ServiceProvider.GetRequiredService<TradeDbContext>();
+        await context.Database.MigrateAsync();
     }
 }

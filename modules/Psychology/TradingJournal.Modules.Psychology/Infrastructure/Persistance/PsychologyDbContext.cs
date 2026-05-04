@@ -15,6 +15,14 @@ internal sealed class PsychologyDbContext(DbContextOptions<PsychologyDbContext> 
 
     public DbSet<PsychologyJournalEmotion> PsychologyJournalEmotions { get; set; } = null!;
 
+    public DbSet<TiltSnapshot> TiltSnapshots { get; set; } = null!;
+
+    public DbSet<StreakRecord> StreakRecords { get; set; } = null!;
+
+    public DbSet<KarmaRecord> KarmaRecords { get; set; } = null!;
+
+    public DbSet<Achievement> Achievements { get; set; } = null!;
+
     public async Task BeginTransaction()
     {
         _transaction = await Database.BeginTransactionAsync();

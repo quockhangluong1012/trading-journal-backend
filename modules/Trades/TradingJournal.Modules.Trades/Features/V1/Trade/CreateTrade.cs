@@ -1,5 +1,5 @@
 using Mapster;
-using Microsoft.AspNetCore.Hosting;
+using TradingJournal.Modules.Trades.Services;
 using TradingJournal.Shared.CQRS;
 using TradingJournal.Shared.Extensions;
 
@@ -94,7 +94,10 @@ public sealed class CreateTrade
         }
     }
 
-    public sealed class Handler(ITradeDbContext context, IWebHostEnvironment env, 
+    public sealed class Handler(
+        ITradeDbContext context,
+        IScreenshotService screenshotService,
+        IDisciplineEvaluator disciplineEvaluator,
         IHttpContextAccessor httpContextAccessor) : ICommandHandler<Request, Result<int>>
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
@@ -126,7 +129,7 @@ public sealed class CreateTrade
 
                 if (userId > 0)
                 {
-                    await EvaluateDisciplineRules(tradeHistory, userId, context, cancellationToken);
+                    await disciplineEvaluator.EvaluateAsync(tradeHistory, userId, cancellationToken);
                 }
 
                 tradeHistory.TradeTechnicalAnalysisTags = [];
@@ -155,7 +158,7 @@ public sealed class CreateTrade
                 List<TradeScreenShot> screenshotEntities = [];
                 foreach (string screenshot in filteredScreenshots)
                 {
-                    string url = SaveBase64ToFile(screenshot);
+                    string url = await screenshotService.SaveScreenshotAsync(screenshot, cancellationToken);
                     screenshotEntities.Add(new TradeScreenShot
                     {
                         Id = 0,
@@ -184,102 +187,6 @@ public sealed class CreateTrade
             {
                 await context.RollbackTransaction();
                 return Result<int>.Failure(Error.Create(ex.Message));
-            }
-        }
-
-        private const int MaxImageSizeBytes = 10 * 1024 * 1024; // 10 MB
-
-        private string SaveBase64ToFile(string base64String)
-        {
-            // Strip the data URI prefix if present (e.g., "data:image/png;base64,")
-            if (base64String.Contains(','))
-            {
-                base64String = base64String[(base64String.IndexOf(',') + 1)..];
-            }
-
-            byte[] imageBytes = Convert.FromBase64String(base64String);
-
-            if (imageBytes.Length > MaxImageSizeBytes)
-            {
-                throw new InvalidOperationException($"Screenshot exceeds maximum allowed size of {MaxImageSizeBytes / (1024 * 1024)} MB.");
-            }
-
-            var screenshotDir = Path.Combine(env.ContentRootPath, "wwwroot", "screenshots");
-            if (!Directory.Exists(screenshotDir))
-            {
-                Directory.CreateDirectory(screenshotDir);
-            }
-
-            var fileName = Guid.NewGuid().ToString() + ".png";
-            var filePath = Path.Combine(screenshotDir, fileName);
-
-            File.WriteAllBytes(filePath, imageBytes);
-
-            HttpContext? httpContext = httpContextAccessor.HttpContext;
-            
-            if (httpContext != null)
-            {
-                return $"{httpContext.Request.Scheme}://{httpContext.Request.Host}/screenshots/{fileName}";
-            }
-        
-            return $"/screenshots/{fileName}";
-        }
-
-        private async Task EvaluateDisciplineRules(TradeHistory tradeHistory, int userId, ITradeDbContext dbContext, CancellationToken cancellationToken)
-        {
-            var profile = await dbContext.TradingProfiles.AsNoTracking().FirstOrDefaultAsync(x => x.CreatedBy == userId, cancellationToken);
-            
-            if (profile == null || !profile.IsDisciplineEnabled) return;
-
-            List<string> brokenReasons = [];
-
-            // Max Trades Per Day
-            if (profile.MaxTradesPerDay.HasValue && profile.MaxTradesPerDay > 0)
-            {
-                var today = DateTime.UtcNow.Date;
-                var tradesToday = await dbContext.TradeHistories
-                    .AsNoTracking()
-                    .CountAsync(x => x.CreatedBy == userId && x.CreatedDate >= today, cancellationToken);
-
-                if (tradesToday >= profile.MaxTradesPerDay.Value)
-                {
-                    brokenReasons.Add($"Exceeded max trades per day ({profile.MaxTradesPerDay.Value}).");
-                }
-            }
-
-            // Max Consecutive Losses
-            if (profile.MaxConsecutiveLosses.HasValue && profile.MaxConsecutiveLosses > 0)
-            {
-                var recentTrades = await dbContext.TradeHistories
-                    .AsNoTracking()
-                    .Where(x => x.CreatedBy == userId && x.Status == TradeStatus.Closed)
-                    .OrderByDescending(x => x.ClosedDate ?? x.CreatedDate)
-                    .Take(profile.MaxConsecutiveLosses.Value + 1)
-                    .ToListAsync(cancellationToken);
-
-                int consecutiveLosses = 0;
-                foreach (var trade in recentTrades)
-                {
-                    if (trade.Pnl < 0 || trade.TradingResult == "Loss")
-                    {
-                        consecutiveLosses++;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-
-                if (consecutiveLosses >= profile.MaxConsecutiveLosses.Value)
-                {
-                    brokenReasons.Add($"Exceeded max consecutive losses ({profile.MaxConsecutiveLosses.Value}).");
-                }
-            }
-
-            if (brokenReasons.Count > 0)
-            {
-                tradeHistory.IsRuleBroken = true;
-                tradeHistory.RuleBreakReason = string.Join("; ", brokenReasons);
             }
         }
     }

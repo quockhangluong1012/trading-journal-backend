@@ -10,7 +10,6 @@
     <PackageReference Include="Carter" Version="10.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.6" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Core" Version="1.2.9" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.6" />
   </ItemGroup>
 
@@ -18,6 +17,7 @@
     <ProjectReference Include="..\..\..\shared\TradingJournal.Messaging.Shared\TradingJournal.Messaging.Shared.csproj" />
     <ProjectReference Include="..\..\..\shared\TradingJournal.Shared\TradingJournal.Shared.csproj" />
     <ProjectReference Include="..\..\Scanner\TradingJournal.Modules.Scanner\TradingJournal.Modules.Scanner.csproj" />
+    <ProjectReference Include="..\..\Psychology\TradingJournal.Modules.Psychology\TradingJournal.Modules.Psychology.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -40,6 +40,7 @@ public sealed class GetAlerts
                     a.ZoneLowPrice,
                     a.Description,
                     a.ConfluenceScore,
+                    a.Regime.ToString(),
                     a.DetectedAt,
                     a.IsDismissed))
                 .ToListAsync(cancellationToken);

@@ -1,5 +1,5 @@
 using Mapster;
-using Microsoft.AspNetCore.Hosting;
+using TradingJournal.Modules.Trades.Services;
 
 namespace TradingJournal.Modules.Trades.Features.V1.Trade;
 
@@ -96,8 +96,8 @@ public sealed class UpdateTrade
         }
     }
 
-    public sealed class Handler(ITradeDbContext context, IWebHostEnvironment env,
-        IHttpContextAccessor httpContextAccessor) : ICommandHandler<Request, Result<bool>>
+    public sealed class Handler(ITradeDbContext context,
+        IScreenshotService screenshotService) : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -186,14 +186,14 @@ public sealed class UpdateTrade
                 // Delete physical files for removed screenshots
                 foreach (var screenshot in screenshotsToDelete)
                 {
-                    DeleteScreenshotFile(screenshot.Url);
+                    await screenshotService.DeleteScreenshotAsync(screenshot.Url, cancellationToken);
                 }
                 context.TradeScreenShots.RemoveRange(screenshotsToDelete);
 
                 // Save new base64 screenshots as files
                 foreach (string base64 in newBase64Screenshots)
                 {
-                    string url = SaveBase64ToFile(base64);
+                    string url = await screenshotService.SaveScreenshotAsync(base64, cancellationToken);
                     await context.TradeScreenShots.AddAsync(new TradeScreenShot
                     {
                         Id = 0,
@@ -213,48 +213,6 @@ public sealed class UpdateTrade
             return value.StartsWith("data:image", StringComparison.OrdinalIgnoreCase)
                 || (!value.StartsWith("http", StringComparison.OrdinalIgnoreCase)
                     && !value.StartsWith("/", StringComparison.Ordinal));
-        }
-
-        private string SaveBase64ToFile(string base64String)
-        {
-            if (base64String.Contains(','))
-            {
-                base64String = base64String[(base64String.IndexOf(',') + 1)..];
-            }
-
-            byte[] imageBytes = Convert.FromBase64String(base64String);
-
-            var screenshotDir = Path.Combine(env.ContentRootPath, "wwwroot", "screenshots");
-            if (!Directory.Exists(screenshotDir))
-            {
-                Directory.CreateDirectory(screenshotDir);
-            }
-
-            var fileName = Guid.NewGuid().ToString() + ".png";
-            var filePath = Path.Combine(screenshotDir, fileName);
-
-            File.WriteAllBytes(filePath, imageBytes);
-
-            HttpContext? httpContext = httpContextAccessor.HttpContext;
-
-            if (httpContext != null)
-            {
-                return $"{httpContext.Request.Scheme}://{httpContext.Request.Host}/screenshots/{fileName}";
-            }
-
-            return $"/screenshots/{fileName}";
-        }
-
-        private void DeleteScreenshotFile(string url)
-        {
-            if (string.IsNullOrEmpty(url) || !url.StartsWith("/screenshots/"))
-                return;
-
-            var filePath = Path.Combine(env.ContentRootPath, "wwwroot", url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
         }
     }
 

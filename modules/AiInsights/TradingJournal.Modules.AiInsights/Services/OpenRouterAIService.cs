@@ -77,83 +77,24 @@ internal sealed class OpenRouterAiService(
         return sb.ToString();
     }
 
-    private async Task<string> SendOpenRouterRequest(
+    private Task<string> SendOpenRouterRequest(
         string prompt,
         List<byte[]> imageContents,
         CancellationToken cancellationToken)
     {
-        List<object> allPromptParts =
-        [
-            new { type = "text", text = prompt }
-        ];
+        List<object> userContentParts = [new { type = "text", text = prompt }];
 
         foreach (byte[] content in imageContents)
         {
-            allPromptParts.Add(new
+            userContentParts.Add(new
             {
                 type = "image_url",
-                image_url = new
-                {
-                    url = $"data:image/jpeg;base64,{Convert.ToBase64String(content)}"
-                }
+                image_url = new { url = $"data:image/jpeg;base64,{Convert.ToBase64String(content)}" }
             });
         }
 
-        var requestBody = new
-        {
-            model = options.Value.Model,
-            messages = new[]
-            {
-                new
-                {
-                    role = "user",
-                    content = allPromptParts
-                }
-            }
-        };
-
-        using HttpRequestMessage request = new(HttpMethod.Post, "api/v1/chat/completions");
-        
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", options.Value.ApiKey);
-
-        HttpContext? httpContext = httpContextAccessor.HttpContext;
-
-        if (httpContext != null)
-        {
-            request.Headers.Add("HTTP-Referer", $"{httpContext.Request.Scheme}://{httpContext.Request.Host}");
-        }
-        else
-        {
-            request.Headers.Add("HTTP-Referer", "http://localhost:3000");
-        }
-        request.Headers.Add("X-Title", "TradingJournal");
-
-        string jsonBody = JsonSerializer.Serialize(requestBody);
-        request.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
-
-        using HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken);
-        
-        if (!response.IsSuccessStatusCode)
-        {
-            string errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new InvalidOperationException($"OpenRouter API failed with status {response.StatusCode}: {errorContent}");
-        }
-
-        string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-        
-        using JsonDocument doc = JsonDocument.Parse(responseContent);
-        JsonElement root = doc.RootElement;
-        
-        if (root.TryGetProperty("choices", out JsonElement choices) && choices.GetArrayLength() > 0)
-        {
-            JsonElement message = choices[0].GetProperty("message");
-            if (message.TryGetProperty("content", out JsonElement textContent))
-            {
-                return textContent.GetString() ?? string.Empty;
-            }
-        }
-
-        throw new InvalidOperationException("OpenRouter returned an empty or invalid response.");
+        List<object> messages = [new { role = "user", content = (object)userContentParts }];
+        return SendChatCompletionAsync(messages, cancellationToken: cancellationToken);
     }
 
     private static TradeAnalysisResultDto? ParseAiResponse(string responseText)
@@ -411,43 +352,48 @@ internal sealed class OpenRouterAiService(
         return new AiCoachResponseDto(reply);
     }
 
-    private async Task<string> SendCoachRequest(
+    private Task<string> SendCoachRequest(
         string systemPrompt,
         List<AiCoachMessageDto> conversationHistory,
         CancellationToken cancellationToken)
     {
-        List<object> messages =
-        [
-            new { role = "system", content = systemPrompt }
-        ];
+        List<object> messages = [new { role = "system", content = (object)systemPrompt }];
 
-        foreach (AiCoachMessageDto message in conversationHistory)
+        foreach (AiCoachMessageDto msg in conversationHistory)
         {
-            messages.Add(new { role = message.Role, content = message.Content });
+            messages.Add(new { role = msg.Role, content = (object)msg.Content });
         }
 
-        var requestBody = new
+        return SendChatCompletionAsync(messages, maxTokens: 1024, temperature: 0.7, cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
+    /// Shared HTTP request method for all OpenRouter chat completions.
+    /// Eliminates duplicated auth, header, serialization, and response parsing logic.
+    /// </summary>
+    private async Task<string> SendChatCompletionAsync(
+        List<object> messages,
+        int? maxTokens = null,
+        double? temperature = null,
+        CancellationToken cancellationToken = default)
+    {
+        var requestBody = new Dictionary<string, object>
         {
-            model = options.Value.Model,
-            messages,
-            max_tokens = 1024,
-            temperature = 0.7
+            ["model"] = options.Value.Model,
+            ["messages"] = messages
         };
 
-        using HttpRequestMessage request = new(HttpMethod.Post, "api/v1/chat/completions");
+        if (maxTokens.HasValue) requestBody["max_tokens"] = maxTokens.Value;
+        if (temperature.HasValue) requestBody["temperature"] = temperature.Value;
 
+        using HttpRequestMessage request = new(HttpMethod.Post, "api/v1/chat/completions");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", options.Value.ApiKey);
 
         HttpContext? httpContext = httpContextAccessor.HttpContext;
-
-        if (httpContext != null)
-        {
-            request.Headers.Add("HTTP-Referer", $"{httpContext.Request.Scheme}://{httpContext.Request.Host}");
-        }
-        else
-        {
-            request.Headers.Add("HTTP-Referer", "http://localhost:3000");
-        }
+        string referer = httpContext is not null
+            ? $"{httpContext.Request.Scheme}://{httpContext.Request.Host}"
+            : "http://localhost:3000";
+        request.Headers.Add("HTTP-Referer", referer);
         request.Headers.Add("X-Title", "TradingJournal");
 
         string jsonBody = JsonSerializer.Serialize(requestBody);
@@ -458,7 +404,8 @@ internal sealed class OpenRouterAiService(
         if (!response.IsSuccessStatusCode)
         {
             string errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new InvalidOperationException($"OpenRouter AI Coach failed with status {response.StatusCode}: {errorContent}");
+            throw new InvalidOperationException(
+                $"OpenRouter API failed with status {response.StatusCode}: {errorContent}");
         }
 
         string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -475,7 +422,7 @@ internal sealed class OpenRouterAiService(
             }
         }
 
-        throw new InvalidOperationException("OpenRouter returned an empty or invalid response for AI Coach.");
+        throw new InvalidOperationException("OpenRouter returned an empty or invalid response.");
     }
 
     private static string CleanJsonResponse(string responseText)

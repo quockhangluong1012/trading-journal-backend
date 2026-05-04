@@ -20,5 +20,6 @@ public class TradeCacheDto
     public List<int>? EmotionTags { get; set; }
     public int? TradingSetupId { get; set; }
     public List<int>? TechnicalAnalysisTagIds { get; set; }
+    public bool IsRuleBroken { get; set; }
     public int CreatedBy { get; set; }
 }

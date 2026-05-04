@@ -1,6 +1,7 @@
 using TradingJournal.Shared.Security;
 using TradingJournal.Shared.Common;
 using TradingJournal.Shared.Interfaces;
+using TradingJournal.Shared.Infrastructure;
 using TradingJournal.Shared.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,10 +14,10 @@ public static class DependencyInjection
         services.AddSingleton<ICacheRepository, CacheRepository>();
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IUserContext, UserContext>();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
         services.AddHybridCache();
 
         return services;
     }
-
 }

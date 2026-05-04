@@ -62,6 +62,9 @@ namespace TradingJournal.Modules.Scanner.Migrations
                     b.Property<decimal>("PriceAtDetection")
                         .HasColumnType("decimal(28,10)");
 
+                    b.Property<int>("Regime")
+                        .HasColumnType("int");
+
                     b.Property<string>("Symbol")
                         .IsRequired()
                         .HasMaxLength(30)

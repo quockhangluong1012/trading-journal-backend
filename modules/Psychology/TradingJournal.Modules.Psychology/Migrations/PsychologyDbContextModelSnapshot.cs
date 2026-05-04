@@ -17,10 +17,44 @@ namespace TradingJournal.Modules.Psychology.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.3")
+                .HasAnnotation("ProductVersion", "10.0.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("TradingJournal.Modules.Psychology.Domain.Achievement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AchievementType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDisabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UnlockedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Achievements", "Psychology");
+                });
 
             modelBuilder.Entity("TradingJournal.Modules.Psychology.Domain.EmotionTag", b =>
                 {
@@ -55,6 +89,50 @@ namespace TradingJournal.Modules.Psychology.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("EmotionTags", "Psychology");
+                });
+
+            modelBuilder.Entity("TradingJournal.Modules.Psychology.Domain.KarmaRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActionType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDisabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ReferenceId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("KarmaRecords", "Psychology");
                 });
 
             modelBuilder.Entity("TradingJournal.Modules.Psychology.Domain.PsychologyJournal", b =>
@@ -136,6 +214,113 @@ namespace TradingJournal.Modules.Psychology.Migrations
                     b.ToTable("PsychologyJournalEmotions", "Psychology");
                 });
 
+            modelBuilder.Entity("TradingJournal.Modules.Psychology.Domain.StreakRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BestWinStreak")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDisabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Length")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("StreakPnl")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("StreakType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalClosedTrades")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("WorstLossStreak")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("StreakRecords", "Psychology");
+                });
+
+            modelBuilder.Entity("TradingJournal.Modules.Psychology.Domain.TiltSnapshot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("CircuitBreakerTriggered")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ConsecutiveLosses")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ConsecutiveWins")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CooldownUntil")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDisabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RuleBreaksToday")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Score")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TodayPnl")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TradesLastHour")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TiltSnapshots", "Psychology");
+                });
+
             modelBuilder.Entity("TradingJournal.Modules.Psychology.Domain.PsychologyJournalEmotion", b =>
                 {
                     b.HasOne("TradingJournal.Modules.Psychology.Domain.EmotionTag", "EmotionTag")
@@ -145,7 +330,7 @@ namespace TradingJournal.Modules.Psychology.Migrations
                         .IsRequired();
 
                     b.HasOne("TradingJournal.Modules.Psychology.Domain.PsychologyJournal", "PsychologyJournal")
-                        .WithMany("EmotionTags")
+                        .WithMany("PsychologyJournalEmotions")
                         .HasForeignKey("PsychologyJournalId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -157,7 +342,7 @@ namespace TradingJournal.Modules.Psychology.Migrations
 
             modelBuilder.Entity("TradingJournal.Modules.Psychology.Domain.PsychologyJournal", b =>
                 {
-                    b.Navigation("EmotionTags");
+                    b.Navigation("PsychologyJournalEmotions");
                 });
 #pragma warning restore 612, 618
         }
