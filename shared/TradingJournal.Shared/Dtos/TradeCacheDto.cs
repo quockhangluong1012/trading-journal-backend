@@ -22,4 +22,10 @@ public class TradeCacheDto
     public List<int>? TechnicalAnalysisTagIds { get; set; }
     public bool IsRuleBroken { get; set; }
     public int CreatedBy { get; set; }
+
+    // ICT Methodology fields (nullable enum int values)
+    public int? PowerOf3Phase { get; set; }
+    public int? DailyBias { get; set; }
+    public int? MarketStructure { get; set; }
+    public int? PremiumDiscount { get; set; }
 }

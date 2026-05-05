@@ -14,7 +14,7 @@ public sealed class DailyNote : EntityBase<int>
     /// The calendar date this note applies to (date-only, stored as midnight UTC).
     /// </summary>
     [Column(TypeName = "date")]
-    public DateTimeOffset NoteDate { get; set; }
+    public DateOnly NoteDate { get; set; }
 
     /// <summary>
     /// Higher-timeframe directional bias: Bullish, Bearish, or Neutral.

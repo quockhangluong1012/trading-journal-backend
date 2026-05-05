@@ -29,6 +29,9 @@ public enum KarmaActionType
     /// <summary>Recovering from high tilt back to calm (+20)</summary>
     TiltRecovery = 8,
 
+    /// <summary>Writing a daily pre-market note (+6)</summary>
+    DailyNoteWritten = 9,
+
     /// <summary>System recalculation adjustment (±N)</summary>
     SystemAdjustment = 99
 }

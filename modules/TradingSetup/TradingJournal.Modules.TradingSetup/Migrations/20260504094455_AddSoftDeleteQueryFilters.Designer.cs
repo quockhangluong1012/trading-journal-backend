@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TradingJournal.Modules.Setups.Infrastructure;
 
@@ -11,9 +12,11 @@ using TradingJournal.Modules.Setups.Infrastructure;
 namespace TradingJournal.Modules.Setups.Migrations
 {
     [DbContext(typeof(SetupDbContext))]
-    partial class SetupDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260504094455_AddSoftDeleteQueryFilters")]
+    partial class AddSoftDeleteQueryFilters
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -37,7 +37,11 @@ internal sealed class TradeProvider(ITradeDbContext context, ICacheRepository ca
                     TradingSetupId = t.TradingSetupId,
                     TechnicalAnalysisTagIds = t.TradeTechnicalAnalysisTags?.Select(ta => ta.TechnicalAnalysisId).ToList() ?? [],
                     IsRuleBroken = t.IsRuleBroken,
-                    CreatedBy = t.CreatedBy
+                    CreatedBy = t.CreatedBy,
+                    PowerOf3Phase = t.PowerOf3Phase.HasValue ? (int)t.PowerOf3Phase.Value : null,
+                    DailyBias = t.DailyBias.HasValue ? (int)t.DailyBias.Value : null,
+                    MarketStructure = t.MarketStructure.HasValue ? (int)t.MarketStructure.Value : null,
+                    PremiumDiscount = t.PremiumDiscount.HasValue ? (int)t.PremiumDiscount.Value : null
                 })];
             },
             expiration: TimeSpan.FromMinutes(5),

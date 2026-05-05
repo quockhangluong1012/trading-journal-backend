@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TradingJournal.Modules.Psychology.Infrastructure.Persistance;
 
@@ -11,9 +12,11 @@ using TradingJournal.Modules.Psychology.Infrastructure.Persistance;
 namespace TradingJournal.Modules.Psychology.Migrations
 {
     [DbContext(typeof(PsychologyDbContext))]
-    partial class PsychologyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260504093949_AddSoftDeleteQueryFilters")]
+    partial class AddSoftDeleteQueryFilters
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

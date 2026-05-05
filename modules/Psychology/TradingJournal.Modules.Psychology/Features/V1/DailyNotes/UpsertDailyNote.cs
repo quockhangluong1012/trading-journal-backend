@@ -6,7 +6,7 @@ public sealed class UpsertDailyNote
 {
     public record RequestBody
     {
-        public DateTimeOffset NoteDate { get; init; }
+        public DateOnly NoteDate { get; init; }
         public string DailyBias { get; init; } = string.Empty;
         public string MarketStructureNotes { get; init; } = string.Empty;
         public string KeyLevelsAndLiquidity { get; init; } = string.Empty;
@@ -42,7 +42,7 @@ public sealed class UpsertDailyNote
     {
         public async Task<Result<DailyNoteViewModel>> Handle(Request request, CancellationToken cancellationToken)
         {
-            DateTimeOffset dateOnly = request.Body.NoteDate.Date;
+            DateOnly dateOnly = request.Body.NoteDate;
 
             DailyNote? existing = await db.DailyNotes
                 .Where(n => n.CreatedBy == request.UserId && n.NoteDate == dateOnly)

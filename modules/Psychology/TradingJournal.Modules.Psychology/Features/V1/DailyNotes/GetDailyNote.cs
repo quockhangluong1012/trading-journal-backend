@@ -4,13 +4,13 @@ namespace TradingJournal.Modules.Psychology.Features.V1.DailyNotes;
 
 public sealed class GetDailyNote
 {
-    internal record Request(int UserId, DateTimeOffset Date) : IQuery<Result<DailyNoteViewModel?>>;
+    internal record Request(int UserId, DateOnly Date) : IQuery<Result<DailyNoteViewModel?>>;
 
     internal sealed class Handler(IPsychologyDbContext db) : IQueryHandler<Request, Result<DailyNoteViewModel?>>
     {
         public async Task<Result<DailyNoteViewModel?>> Handle(Request request, CancellationToken cancellationToken)
         {
-            DateTimeOffset dateOnly = request.Date.Date;
+            DateOnly dateOnly = request.Date;
 
             DailyNote? note = await db.DailyNotes
                 .AsNoTracking()
@@ -44,7 +44,7 @@ public sealed class GetDailyNote
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapGet("api/v1/daily-notes/{date}", async (DateTimeOffset date, ClaimsPrincipal user, ISender sender) =>
+            app.MapGet("api/v1/daily-notes/{date}", async (DateOnly date, ClaimsPrincipal user, ISender sender) =>
             {
                 var result = await sender.Send(new Request(user.GetCurrentUserId(), date));
                 return result;
