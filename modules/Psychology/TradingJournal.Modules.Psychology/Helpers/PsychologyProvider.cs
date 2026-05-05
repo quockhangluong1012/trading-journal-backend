@@ -13,7 +13,7 @@ internal sealed class PsychologyProvider(IPsychologyDbContext context) : IPsycho
         }
 
         List<string> emotions = [.. psychologyJournal.PsychologyJournalEmotions
-            .Select(e => e.EmotionTag.Name)
+            .Select(e => e.EmotionTag?.Name ?? string.Empty)
             .Where(name => !string.IsNullOrWhiteSpace(name))];
 
         List<string> summary = [
@@ -54,7 +54,7 @@ internal sealed class PsychologyProvider(IPsychologyDbContext context) : IPsycho
     private static string BuildPeriodSummary(PsychologyJournal journal)
     {
         string emotions = string.Join(", ", journal.PsychologyJournalEmotions
-            .Select(entry => entry.EmotionTag.Name)
+            .Select(entry => entry.EmotionTag?.Name ?? string.Empty)
             .Where(name => !string.IsNullOrWhiteSpace(name)));
 
         return $"- {journal.Date:yyyy-MM-dd} | Mood: {journal.OverallMood} | Confidence: {journal.ConfidentLevel} | Emotions: {(string.IsNullOrWhiteSpace(emotions) ? "None" : emotions)} | Note: {(string.IsNullOrWhiteSpace(journal.TodayTradingReview) ? "No journal note" : journal.TodayTradingReview)}";

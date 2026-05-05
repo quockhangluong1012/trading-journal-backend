@@ -38,7 +38,8 @@ public sealed class GetPsychologyStatistic
 
             string topEmotion = psychologyJournals
                 .SelectMany(x => x.PsychologyJournalEmotions)
-                .GroupBy(x => x.EmotionTag.Name)
+                .Where(x => x.EmotionTag != null)
+                .GroupBy(x => x.EmotionTag!.Name)
                 .Select(g => new { EmotionTag = g.Key, Count = g.Count() })
                 .OrderByDescending(x => x.Count)
                 .FirstOrDefault()?.EmotionTag ?? string.Empty;
@@ -48,7 +49,7 @@ public sealed class GetPsychologyStatistic
 
             int positiveCount = psychologyJournals
                 .SelectMany(x => x.PsychologyJournalEmotions)
-                .Count(x => x.EmotionTag.EmotionType == EmotionType.Positive);
+                .Count(x => x.EmotionTag != null && x.EmotionTag.EmotionType == EmotionType.Positive);
 
             PsychologyStatisticViewModel statistic = new()
             {

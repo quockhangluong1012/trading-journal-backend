@@ -45,7 +45,7 @@ internal sealed class AiTradeDataProvider(
 
         // Resolve checklist names
         List<string> checklistNames = [.. trade.TradeChecklists
-            .Select(c => c.PretradeChecklist.Name)
+            .Select(c => c.PretradeChecklist?.Name ?? string.Empty)
             .Where(n => !string.IsNullOrWhiteSpace(n))];
 
         // Resolve technical analysis tag names

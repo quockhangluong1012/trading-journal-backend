@@ -83,10 +83,12 @@ public sealed class GetPsychologyJournals
                     TodayTradingReview = x.TodayTradingReview,
                     OverallMood = x.OverallMood,
                     ConfidentLevel = x.ConfidentLevel,
-                    EmotionTags = [.. x.PsychologyJournalEmotions.Select(e => new PsychologyJournalEmotionViewModel
+                    EmotionTags = [.. x.PsychologyJournalEmotions
+                        .Where(e => e.EmotionTag != null)
+                        .Select(e => new PsychologyJournalEmotionViewModel
                     {
                         Id = e.Id,
-                        Name = e.EmotionTag.Name
+                        Name = e.EmotionTag!.Name
                     })]
                 })],
                 HasMore = totalCount > request.Page * request.PageSize,

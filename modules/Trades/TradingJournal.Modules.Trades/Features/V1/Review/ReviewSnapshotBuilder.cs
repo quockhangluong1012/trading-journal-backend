@@ -71,7 +71,7 @@ public sealed class ReviewSnapshotBuilder(
             .Where(name => !string.IsNullOrWhiteSpace(name))];
 
         IReadOnlyList<string> checklistItems = [.. trade.TradeChecklists
-            .Select(item => item.PretradeChecklist.Name)
+            .Select(item => item.PretradeChecklist?.Name ?? string.Empty)
             .Where(name => !string.IsNullOrWhiteSpace(name))];
 
         IReadOnlyList<string> emotionTags = [.. trade.TradeEmotionTags?
@@ -89,7 +89,7 @@ public sealed class ReviewSnapshotBuilder(
             trade.ExitPrice,
             trade.IsRuleBroken,
             trade.RuleBreakReason,
-            trade.TradingZoneId.HasValue ? trade.TradingZone.Name : null,
+            trade.TradingZone?.Name,
             trade.ConfidenceLevel,
             technicalThemes,
             emotionTags,
