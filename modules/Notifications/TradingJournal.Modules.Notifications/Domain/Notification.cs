@@ -22,7 +22,7 @@ public sealed class Notification : EntityBase<int>
 
     public bool IsRead { get; set; } = false;
 
-    public DateTimeOffset? ReadAt { get; set; }
+    public DateTime? ReadAt { get; set; }
 
     /// <summary>
     /// JSON payload for rich notification data (e.g., asset, timeframe, detected pattern details).

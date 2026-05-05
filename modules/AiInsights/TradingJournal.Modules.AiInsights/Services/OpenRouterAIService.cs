@@ -56,8 +56,8 @@ internal sealed class OpenRouterAiService(
             { "{{Pnl}}", detail.Pnl?.ToString(CultureInfo.InvariantCulture) ?? string.Empty },
             { "{{ConfidenceLevel}}", detail.ConfidenceLevel },
             { "{{TradingZone}}", detail.TradingZone },
-            { "{{Date}}", detail.OpenDate.DateTime.ToShortDateString() },
-            { "{{ClosedDate}}", detail.ClosedDate.DateTime.ToShortDateString() },
+            { "{{Date}}", detail.OpenDate.ToShortDateString() },
+            { "{{ClosedDate}}", detail.ClosedDate.ToShortDateString() },
             { "{{TradeTechnicalAnalysisTags}}", string.Join(", ", detail.TechnicalAnalysisTags) },
             { "{{TradeHistoryChecklists}}", string.Join(", ", detail.ChecklistItems) },
             { "{{EmotionTags}}", string.Join(", ", detail.EmotionTags) },
@@ -260,7 +260,7 @@ internal sealed class OpenRouterAiService(
         return values.Count > 0 ? string.Join(", ", values) : "None";
     }
 
-    private static string FormatPromptDate(DateTimeOffset value)
+    private static string FormatPromptDate(DateTime value)
     {
         return value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
@@ -301,7 +301,7 @@ internal sealed class OpenRouterAiService(
 
         ReviewSnapshot snapshot = await tradeDataProvider.BuildReviewSnapshotAsync(
             ReviewPeriodType.Monthly,
-            DateTimeOffset.UtcNow.AddDays(-30),
+            DateTime.UtcNow.AddDays(-30),
             request.UserId,
             cancellationToken);
         ReviewSnapshotMetrics metrics = snapshot.Metrics;

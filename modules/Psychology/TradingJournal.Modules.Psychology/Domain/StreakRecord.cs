@@ -44,5 +44,5 @@ public sealed class StreakRecord : EntityBase<int>
     /// <summary>
     /// Timestamp when this snapshot was taken (UTC).
     /// </summary>
-    public DateTimeOffset RecordedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
 }

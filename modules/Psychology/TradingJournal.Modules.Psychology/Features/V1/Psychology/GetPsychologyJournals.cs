@@ -7,8 +7,8 @@ namespace TradingJournal.Modules.Psychology.Features.V1.Psychology;
 public sealed class GetPsychologyJournals
 {
     public record Request(int Page = 1, int PageSize = 10,
-        DateTimeOffset? StartDate = null,
-        DateTimeOffset? EndDate = null,
+        DateTime? StartDate = null,
+        DateTime? EndDate = null,
         OverallMood? OverallMood = null,
         ConfidentLevel? ConfidentLevel = null,
         List<int>? EmotionTags = null,

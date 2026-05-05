@@ -77,6 +77,6 @@ public sealed record PlaybookDetailViewModel(
     string? PreferredTimeframes,
     string? PreferredAssets,
     string? RetiredReason,
-    DateTimeOffset? RetiredDate,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset LastUpdatedAt);
+    DateTime? RetiredDate,
+    DateTime CreatedAt,
+    DateTime LastUpdatedAt);

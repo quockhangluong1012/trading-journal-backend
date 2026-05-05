@@ -34,8 +34,8 @@ public sealed class GetEquityCurveWithEvents
                     new EquityCurveWithEventsDto([], [], 0, 0));
             }
 
-            DateOnly from = DateOnly.FromDateTime(closed.Min(t => t.ClosedDate!.Value.DateTime));
-            DateOnly to = DateOnly.FromDateTime(closed.Max(t => t.ClosedDate!.Value.DateTime));
+            DateOnly from = DateOnly.FromDateTime(closed.Min(t => t.ClosedDate!.Value));
+            DateOnly to = DateOnly.FromDateTime(closed.Max(t => t.ClosedDate!.Value));
 
             List<EconomicEvent> events = await calendarProvider.GetEventsAsync(from, to, ct);
             List<EconomicEvent> highEvents = events.Where(e => e.Impact == EconomicImpact.High).ToList();
@@ -47,10 +47,10 @@ public sealed class GetEquityCurveWithEvents
             foreach (TradeCacheDto t in closed)
             {
                 cumProfit += t.Pnl!.Value;
-                DateOnly tradeDate = DateOnly.FromDateTime(t.ClosedDate!.Value.DateTime);
+                DateOnly tradeDate = DateOnly.FromDateTime(t.ClosedDate!.Value);
 
                 var markers = highEvents
-                    .Where(e => DateOnly.FromDateTime(e.EventDateUtc.DateTime) == tradeDate)
+                    .Where(e => DateOnly.FromDateTime(e.EventDateUtc) == tradeDate)
                     .Select(e => new EventMarkerDto(
                         e.EventName, e.Currency, e.Impact.ToString(),
                         e.EventDateUtc, e.Actual, e.Forecast, e.Previous))

@@ -6,7 +6,7 @@ public sealed class GetEquityCurve
 {
     internal sealed record Request(AnalyticsFilter Filter, int UserId = 0) : IQuery<Result<IReadOnlyCollection<EquityPointViewModel>>>;
 
-    internal sealed record EquityPointViewModel(DateTimeOffset Date, decimal Profit);
+    internal sealed record EquityPointViewModel(DateTime Date, decimal Profit);
 
     internal sealed class Validator : AbstractValidator<Request>
     {
@@ -24,11 +24,11 @@ public sealed class GetEquityCurve
         public async Task<Result<IReadOnlyCollection<EquityPointViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
             List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
-            DateTimeOffset fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
+            DateTime fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
 
             List<TradeCacheDto> closed = [.. trades
                 .Where(t => t.Status == TradeStatus.Closed && t.Pnl.HasValue && t.ClosedDate.HasValue)
-                .Where(t => fromDate == DateTimeOffset.MinValue || t.ClosedDate!.Value >= fromDate)
+                .Where(t => fromDate == DateTime.MinValue || t.ClosedDate!.Value >= fromDate)
                 .OrderBy(t => t.ClosedDate!.Value)];
 
             decimal cumulativeProfit = 0;

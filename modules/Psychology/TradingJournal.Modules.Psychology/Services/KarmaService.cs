@@ -316,7 +316,7 @@ internal sealed class KarmaService(
             Points = points,
             Description = description,
             ReferenceId = referenceId,
-            RecordedAt = DateTimeOffset.UtcNow
+            RecordedAt = DateTime.UtcNow
         };
 
         psychologyDb.KarmaRecords.Add(record);
@@ -383,7 +383,7 @@ internal sealed class KarmaService(
 
     public async Task<List<KarmaEventViewModel>> GetKarmaHistoryAsync(int userId, int days = 30, CancellationToken ct = default)
     {
-        DateTimeOffset since = DateTimeOffset.UtcNow.AddDays(-days);
+        DateTime since = DateTime.UtcNow.AddDays(-days);
 
         return await psychologyDb.KarmaRecords
             .AsNoTracking()
@@ -546,7 +546,7 @@ internal sealed class KarmaService(
 
         // Count consecutive days from today
         int streak = 0;
-        DateTime checkDate = DateTimeOffset.UtcNow.Date;
+        DateTime checkDate = DateTime.UtcNow.Date;
 
         // Allow today or yesterday as the start of the streak
         if (!tradeDates.Contains(checkDate))
@@ -890,7 +890,7 @@ internal sealed class KarmaService(
             {
                 Id = 0,
                 AchievementType = type,
-                UnlockedAt = DateTimeOffset.UtcNow
+                UnlockedAt = DateTime.UtcNow
             };
 
             psychologyDb.Achievements.Add(achievement);
@@ -968,7 +968,7 @@ internal sealed class KarmaService(
             return 0;
 
         int streak = 0;
-        var checkDate = DateOnly.FromDateTime(DateTimeOffset.UtcNow.Date);
+        var checkDate = DateOnly.FromDateTime(DateTime.UtcNow.Date);
 
         // Allow today or yesterday as the start
         if (!noteDates.Contains(checkDate))

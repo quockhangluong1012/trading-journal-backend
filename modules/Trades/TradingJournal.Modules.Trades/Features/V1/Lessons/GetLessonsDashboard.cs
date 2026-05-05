@@ -10,9 +10,9 @@ public sealed class GetLessonsDashboard
         public async Task<Result<LessonsDashboardViewModel>> Handle(Request request, CancellationToken cancellationToken)
         {
             int userId = request.UserId;
-            DateTimeOffset now = DateTimeOffset.UtcNow;
-            DateTimeOffset thirtyDaysAgo = now.AddDays(-30);
-            DateTimeOffset sixtyDaysAgo = now.AddDays(-60);
+            DateTime now = DateTime.UtcNow;
+            DateTime thirtyDaysAgo = now.AddDays(-30);
+            DateTime sixtyDaysAgo = now.AddDays(-60);
 
             // ── Lesson Stats ──
             List<LessonLearned> allLessons = await context.LessonsLearned
@@ -62,7 +62,7 @@ public sealed class GetLessonsDashboard
             decimal disciplineScoreTrend = disciplineScore - previousScore;
 
             // ── Discipline Timeline (weekly buckets, last 12 weeks) ──
-            DateTimeOffset twelveWeeksAgo = now.AddDays(-84);
+            DateTime twelveWeeksAgo = now.AddDays(-84);
             List<DisciplineLog> timelineLogs = await context.DisciplineLogs
                 .AsNoTracking()
                 .Where(dl => dl.CreatedBy == userId && dl.Date >= twelveWeeksAgo)
@@ -71,8 +71,8 @@ public sealed class GetLessonsDashboard
             List<DisciplineTimePoint> disciplineTimeline = [];
             for (int i = 11; i >= 0; i--)
             {
-                DateTimeOffset weekStart = now.AddDays(-7 * (i + 1));
-                DateTimeOffset weekEnd = now.AddDays(-7 * i);
+                DateTime weekStart = now.AddDays(-7 * (i + 1));
+                DateTime weekEnd = now.AddDays(-7 * i);
                 var weekLogs = timelineLogs.Where(dl => dl.Date >= weekStart && dl.Date < weekEnd).ToList();
                 int followed = weekLogs.Count(dl => dl.WasFollowed);
                 int total = weekLogs.Count;

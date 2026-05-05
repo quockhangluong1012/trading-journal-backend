@@ -4,7 +4,7 @@ namespace TradingJournal.Modules.Scanner.Services.ICTAnalysis;
 /// Represents a single OHLCV candle for pattern detection.
 /// </summary>
 public record CandleData(
-    DateTimeOffset Timestamp,
+    DateTime Timestamp,
     decimal Open,
     decimal High,
     decimal Low,
@@ -21,7 +21,7 @@ public record DetectedPattern(
     decimal? ZoneHigh,
     decimal? ZoneLow,
     string Description,
-    DateTimeOffset DetectedAt);
+    DateTime DetectedAt);
 
 /// <summary>
 /// Common interface for all ICT pattern detectors.

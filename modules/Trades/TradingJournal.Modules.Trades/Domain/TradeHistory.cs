@@ -13,7 +13,7 @@ public sealed class TradeHistory : EntityBase<int>
 
     public decimal EntryPrice { get; set; }
 
-    public DateTimeOffset Date { get; set; }
+    public DateTime Date { get; set; }
 
     public TradeStatus Status { get; set; }
 
@@ -21,7 +21,7 @@ public sealed class TradeHistory : EntityBase<int>
 
     public decimal? Pnl { get; set; }
 
-    public DateTimeOffset? ClosedDate { get; set; }
+    public DateTime? ClosedDate { get; set; }
 
     public string? TradingResult { get; set; }
 

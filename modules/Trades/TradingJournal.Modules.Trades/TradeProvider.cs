@@ -48,7 +48,7 @@ internal sealed class TradeProvider(ITradeDbContext context, ICacheRepository ca
             cancellationToken: cancellationToken) ?? [];
     }
 
-    public async Task<List<TradeCacheDto>> GetRecentTradesAsync(int userId, DateTimeOffset since, CancellationToken cancellationToken = default)
+    public async Task<List<TradeCacheDto>> GetRecentTradesAsync(int userId, DateTime since, CancellationToken cancellationToken = default)
     {
         var allTrades = await GetTradesAsync(userId, cancellationToken);
         return allTrades

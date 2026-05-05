@@ -7,7 +7,7 @@ public sealed class LogDiscipline
         int? TradeHistoryId,
         bool WasFollowed,
         string? Notes,
-        DateTimeOffset Date) : ICommand<Result<int>>;
+        DateTime Date) : ICommand<Result<int>>;
 
     public sealed class Validator : AbstractValidator<Request>
     {

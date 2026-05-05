@@ -46,8 +46,8 @@ public sealed class GetRiskDashboard
 
             List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
 
-            DateTimeOffset today = DateTimeOffset.UtcNow.Date;
-            DateTimeOffset weekStart = today.AddDays(-(int)today.DayOfWeek + (int)DayOfWeek.Monday);
+            DateTime today = DateTime.UtcNow.Date;
+            DateTime weekStart = today.AddDays(-(int)today.DayOfWeek + (int)DayOfWeek.Monday);
             if (today.DayOfWeek == DayOfWeek.Sunday) weekStart = weekStart.AddDays(-7);
 
             // Today's closed trades

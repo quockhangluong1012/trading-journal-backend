@@ -9,8 +9,8 @@ public sealed class GetDisciplineLogs
         public int? DisciplineRuleId { get; set; }
         public int? TradeHistoryId { get; set; }
         public bool? WasFollowed { get; set; }
-        public DateTimeOffset? FromDate { get; set; }
-        public DateTimeOffset? ToDate { get; set; }
+        public DateTime? FromDate { get; set; }
+        public DateTime? ToDate { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 20;
         public int UserId { get; set; }

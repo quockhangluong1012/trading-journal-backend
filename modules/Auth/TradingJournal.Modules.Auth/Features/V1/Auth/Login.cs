@@ -9,7 +9,7 @@ public sealed class Login
 {
     internal sealed record Request(string Email, string Password, bool RememberMe = false) : IQuery<Result<AuthResponse>>;
 
-    internal sealed record AuthResponse(string Token, string RefreshToken, string Email, string FullName, DateTimeOffset Expiry);
+    internal sealed record AuthResponse(string Token, string RefreshToken, string Email, string FullName, DateTime Expiry);
 
     internal sealed class Validator : AbstractValidator<Request>
     {
@@ -47,11 +47,11 @@ public sealed class Login
             string token = GenerateJwtToken(user, configuration, request.RememberMe);
             string refreshToken = RefreshToken.Handler.GenerateRefreshToken();
             int expiryMinutes = request.RememberMe ? 30 * 24 * 60 : configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
-            DateTimeOffset expiry = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes);
+            DateTime expiry = DateTime.UtcNow.AddMinutes(expiryMinutes);
 
             // Store refresh token on the user
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiry = DateTimeOffset.UtcNow.AddDays(7);
+            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
             await context.SaveChangesAsync(cancellationToken);
 
             return Result<AuthResponse>.Success(new AuthResponse(token, refreshToken, user.Email, user.FullName, expiry));
@@ -79,7 +79,7 @@ public sealed class Login
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTimeOffset.UtcNow.AddMinutes(expiryMinutes).UtcDateTime,
+                expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);

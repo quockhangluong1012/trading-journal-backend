@@ -6,7 +6,7 @@ namespace TradingJournal.Modules.Psychology.Domain;
 [Table(name: "PsychologyJournals", Schema = "Psychology")]
 public sealed class PsychologyJournal : EntityBase<int>
 {
-    public DateTimeOffset Date { get; set; }
+    public DateTime Date { get; set; }
 
     public OverallMood OverallMood { get; set; } = OverallMood.Neutral;
 

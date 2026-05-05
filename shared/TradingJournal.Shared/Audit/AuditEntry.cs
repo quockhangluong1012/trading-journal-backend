@@ -14,7 +14,7 @@ namespace TradingJournal.Shared.Audit;
 ///     EntityId NVARCHAR(128) NOT NULL,
 ///     Action NVARCHAR(16) NOT NULL,
 ///     ChangedBy INT NOT NULL,
-///     Timestamp DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+///     Timestamp DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
 ///     OldValues NVARCHAR(MAX) NULL,
 ///     NewValues NVARCHAR(MAX) NULL,
 ///     AffectedColumns NVARCHAR(MAX) NULL
@@ -28,7 +28,7 @@ public sealed class AuditEntry
     public string EntityId { get; set; } = string.Empty;
     public string Action { get; set; } = string.Empty; // "Create", "Update", "Delete"
     public int ChangedBy { get; set; }
-    public DateTimeOffset Timestamp { get; set; }
+    public DateTime Timestamp { get; set; }
     public string? OldValues { get; set; }
     public string? NewValues { get; set; }
     public string? AffectedColumns { get; set; }
@@ -56,7 +56,7 @@ public sealed class AuditEntryBuilder
             EntityId = EntityId,
             Action = Action,
             ChangedBy = ChangedBy,
-            Timestamp = DateTimeOffset.UtcNow,
+            Timestamp = DateTime.UtcNow,
             OldValues = OldValues.Count > 0 ? JsonSerializer.Serialize(OldValues) : null,
             NewValues = NewValues.Count > 0 ? JsonSerializer.Serialize(NewValues) : null,
             AffectedColumns = AffectedColumns.Count > 0 ? JsonSerializer.Serialize(AffectedColumns) : null

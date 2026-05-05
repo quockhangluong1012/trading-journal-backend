@@ -26,7 +26,7 @@ public sealed class GetTiltScore
                     TodayPnl = 0,
                     CircuitBreakerTriggered = false,
                     CooldownUntil = null,
-                    RecordedAt = DateTimeOffset.UtcNow
+                    RecordedAt = DateTime.UtcNow
                 });
             }
 

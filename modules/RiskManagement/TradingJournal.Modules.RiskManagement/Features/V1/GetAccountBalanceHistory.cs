@@ -10,7 +10,7 @@ public sealed class GetAccountBalanceHistory
         decimal Amount,
         decimal BalanceAfter,
         string? Notes,
-        DateTimeOffset EntryDate);
+        DateTime EntryDate);
 
     internal sealed class Handler(IRiskDbContext context) : IQueryHandler<Request, Result<List<AccountBalanceViewModel>>>
     {

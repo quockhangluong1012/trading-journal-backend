@@ -4,7 +4,7 @@ public class PsychologyJournalViewModel
 {
     public int Id { get; set; }
     
-    public DateTimeOffset Date { get; set; }
+    public DateTime Date { get; set; }
 
     public string TodayTradingReview { get; set; } = string.Empty;
 

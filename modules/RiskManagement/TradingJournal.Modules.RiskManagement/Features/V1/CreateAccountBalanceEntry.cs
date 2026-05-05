@@ -6,7 +6,7 @@ public sealed class CreateAccountBalanceEntry
         BalanceEntryType EntryType,
         decimal Amount,
         string? Notes,
-        DateTimeOffset EntryDate,
+        DateTime EntryDate,
         int UserId = 0) : ICommand<Result<int>>;
 
     internal sealed class Validator : AbstractValidator<Command>

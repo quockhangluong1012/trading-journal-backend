@@ -55,11 +55,11 @@ internal sealed class PsychologyDbContext(DbContextOptions<PsychologyDbContext> 
             switch (entry.State)
             {
                 case EntityState.Added:
-                    entry.Entity.CreatedDate = DateTimeOffset.UtcNow;
+                    entry.Entity.CreatedDate = DateTime.UtcNow;
                     entry.Entity.CreatedBy = userId;
                     break;
                 case EntityState.Modified:
-                    entry.Entity.UpdatedDate = DateTimeOffset.UtcNow;
+                    entry.Entity.UpdatedDate = DateTime.UtcNow;
                     entry.Entity.UpdatedBy = userId;
                     break;
             }

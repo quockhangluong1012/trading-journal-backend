@@ -54,8 +54,8 @@ public sealed class GetTradeEventCorrelation
             }
 
             // Get the date range of trades
-            DateOnly earliestDate = DateOnly.FromDateTime(closedTrades.Min(t => t.Date).DateTime);
-            DateOnly latestDate = DateOnly.FromDateTime(closedTrades.Max(t => t.Date).DateTime);
+            DateOnly earliestDate = DateOnly.FromDateTime(closedTrades.Min(t => t.Date));
+            DateOnly latestDate = DateOnly.FromDateTime(closedTrades.Max(t => t.Date));
 
             // Fetch economic events for the trade period
             // Note: Forex Factory feed only provides current week. For historical correlation,
@@ -166,7 +166,7 @@ public sealed class GetTradeEventCorrelation
         }
 
         private static EconomicEvent? FindNearestEvent(
-            DateTimeOffset tradeDate, List<EconomicEvent> events, TimeSpan window)
+            DateTime tradeDate, List<EconomicEvent> events, TimeSpan window)
         {
             return events
                 .Where(e => Math.Abs((tradeDate - e.EventDateUtc).TotalMinutes) <= window.TotalMinutes)

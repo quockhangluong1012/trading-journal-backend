@@ -5,7 +5,7 @@ public record WatchlistDto(
     string Name,
     bool IsActive,
     bool IsScannerRunning,
-    DateTimeOffset CreatedDate,
+    DateTime CreatedDate,
     List<WatchlistAssetDto> Assets);
 
 public record WatchlistAssetDto(

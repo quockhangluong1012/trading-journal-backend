@@ -17,5 +17,5 @@ public sealed class Achievement : EntityBase<int>
     /// <summary>
     /// Timestamp when this achievement was unlocked (UTC).
     /// </summary>
-    public DateTimeOffset UnlockedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTime UnlockedAt { get; set; } = DateTime.UtcNow;
 }

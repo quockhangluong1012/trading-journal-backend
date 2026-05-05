@@ -10,6 +10,6 @@ public sealed class IdempotencyRecord
     public int StatusCode { get; set; }
     public string? ResponseBody { get; set; }
     public string? ContentType { get; set; }
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset ExpiresAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime ExpiresAt { get; set; }
 }

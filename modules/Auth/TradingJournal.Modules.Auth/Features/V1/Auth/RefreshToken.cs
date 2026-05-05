@@ -10,7 +10,7 @@ public sealed class RefreshToken
 {
     internal sealed record Request(string AccessToken, string RefreshToken) : IQuery<Result<AuthResponse>>;
 
-    internal sealed record AuthResponse(string Token, string RefreshToken, string Email, string FullName, DateTimeOffset Expiry);
+    internal sealed record AuthResponse(string Token, string RefreshToken, string Email, string FullName, DateTime Expiry);
 
     internal sealed class Validator : AbstractValidator<Request>
     {
@@ -56,7 +56,7 @@ public sealed class RefreshToken
 
             if (user.RefreshToken != request.RefreshToken || 
                 user.RefreshTokenExpiry == null || 
-                user.RefreshTokenExpiry <= DateTimeOffset.UtcNow)
+                user.RefreshTokenExpiry <= DateTime.UtcNow)
             {
                 return Result<AuthResponse>.Failure(Error.Create("Invalid or expired refresh token."));
             }
@@ -65,11 +65,11 @@ public sealed class RefreshToken
             string newAccessToken = GenerateJwtToken(user, configuration);
             string newRefreshToken = GenerateRefreshToken();
             int expiryMinutes = configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
-            DateTimeOffset expiry = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes);
+            DateTime expiry = DateTime.UtcNow.AddMinutes(expiryMinutes);
 
             // Rotate refresh token (invalidates the old one)
             user.RefreshToken = newRefreshToken;
-            user.RefreshTokenExpiry = DateTimeOffset.UtcNow.AddDays(7);
+            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
 
             await context.SaveChangesAsync(cancellationToken);
 
@@ -133,7 +133,7 @@ public sealed class RefreshToken
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTimeOffset.UtcNow.AddMinutes(expiryMinutes).UtcDateTime,
+                expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);

@@ -20,7 +20,7 @@ internal sealed class DisciplineEvaluator(ITradeDbContext dbContext) : IDiscipli
         // Max Trades Per Day
         if (profile.MaxTradesPerDay.HasValue && profile.MaxTradesPerDay > 0)
         {
-            var today = DateTimeOffset.UtcNow.Date;
+            var today = DateTime.UtcNow.Date;
             var tradesToday = await dbContext.TradeHistories
                 .AsNoTracking()
                 .CountAsync(x => x.CreatedBy == userId && x.CreatedDate >= today, cancellationToken);

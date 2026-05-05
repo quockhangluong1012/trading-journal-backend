@@ -26,7 +26,7 @@ internal sealed class EconomicCalendarProvider(
     /// <summary>
     /// Cached weekly events with expiration.
     /// </summary>
-    private static (List<EconomicEvent> Events, DateTimeOffset ExpiresAt, DateOnly FetchDate)? _weeklyCache;
+    private static (List<EconomicEvent> Events, DateTime ExpiresAt, DateOnly FetchDate)? _weeklyCache;
 
     /// <summary>
     /// Lock for thread-safe cache access.
@@ -51,7 +51,7 @@ internal sealed class EconomicCalendarProvider(
         return allEvents
             .Where(e =>
             {
-                DateOnly eventDate = DateOnly.FromDateTime(e.EventDateUtc.DateTime);
+                DateOnly eventDate = DateOnly.FromDateTime(e.EventDateUtc);
                 return eventDate >= from && eventDate <= to;
             })
             .OrderBy(e => e.EventDateUtc)
@@ -60,7 +60,7 @@ internal sealed class EconomicCalendarProvider(
 
     public async Task<List<EconomicEvent>> GetTodayEventsAsync(CancellationToken ct = default)
     {
-        DateOnly today = DateOnly.FromDateTime(DateTimeOffset.UtcNow.DateTime);
+        DateOnly today = DateOnly.FromDateTime(DateTime.UtcNow);
         return await GetEventsAsync(today, today, ct);
     }
 
@@ -70,8 +70,8 @@ internal sealed class EconomicCalendarProvider(
     {
         List<EconomicEvent> todayEvents = await GetTodayEventsAsync(ct);
 
-        DateTimeOffset now = DateTimeOffset.UtcNow;
-        DateTimeOffset windowEnd = now + lookAheadWindow;
+        DateTime now = DateTime.UtcNow;
+        DateTime windowEnd = now + lookAheadWindow;
 
         return todayEvents
             .Where(e => e.Impact == EconomicImpact.High &&
@@ -104,7 +104,7 @@ internal sealed class EconomicCalendarProvider(
     {
         // Fast path: check cache without locking
         var snapshot = _weeklyCache;
-        if (snapshot.HasValue && snapshot.Value.ExpiresAt > DateTimeOffset.UtcNow)
+        if (snapshot.HasValue && snapshot.Value.ExpiresAt > DateTime.UtcNow)
         {
             return snapshot.Value.Events;
         }
@@ -114,7 +114,7 @@ internal sealed class EconomicCalendarProvider(
         {
             // Double-check after acquiring lock
             snapshot = _weeklyCache;
-            if (snapshot.HasValue && snapshot.Value.ExpiresAt > DateTimeOffset.UtcNow)
+            if (snapshot.HasValue && snapshot.Value.ExpiresAt > DateTime.UtcNow)
             {
                 return snapshot.Value.Events;
             }
@@ -124,7 +124,7 @@ internal sealed class EconomicCalendarProvider(
             {
                 List<EconomicEvent> events = await FetchFromApiAsync(ct);
 
-                _weeklyCache = (events, DateTimeOffset.UtcNow + CacheTtl, DateOnly.FromDateTime(DateTimeOffset.UtcNow.DateTime));
+                _weeklyCache = (events, DateTime.UtcNow + CacheTtl, DateOnly.FromDateTime(DateTime.UtcNow));
 
                 logger.LogInformation(
                     "Economic calendar: Fetched {Count} events from Forex Factory feed, cached for {Ttl}",
@@ -205,13 +205,11 @@ internal sealed class EconomicCalendarProvider(
                     : "";
 
                 if (string.IsNullOrWhiteSpace(dateStr) ||
-                    !DateTimeOffset.TryParse(dateStr, CultureInfo.InvariantCulture,
-                        DateTimeStyles.None, out DateTimeOffset eventDateOffset))
+                    !DateTime.TryParse(dateStr, CultureInfo.InvariantCulture,
+                        DateTimeStyles.AdjustToUniversal, out DateTime eventDateUtc))
                 {
                     continue;
                 }
-
-                DateTimeOffset eventDateUtc = eventDateOffset.UtcDateTime;
 
                 // "country" in Forex Factory feed is actually the currency code (e.g., "USD", "EUR")
                 string currency = item.TryGetProperty("country", out JsonElement countryEl)

@@ -20,8 +20,8 @@ public static class AuditLogEndpointExtensions
             IAuditLogStore store,
             string? entityName,
             string? entityId,
-            DateTimeOffset? from,
-            DateTimeOffset? to,
+            DateTime? from,
+            DateTime? to,
             int? maxResults) =>
         {
             IReadOnlyList<AuditEntry> entries = await store.QueryAsync(

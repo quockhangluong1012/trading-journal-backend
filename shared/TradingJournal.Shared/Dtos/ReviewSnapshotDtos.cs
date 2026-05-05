@@ -2,12 +2,12 @@ using TradingJournal.Shared.Common.Enum;
 
 namespace TradingJournal.Shared.Dtos;
 
-public sealed record ReviewPeriodBounds(DateTimeOffset Start, DateTimeOffset End);
+public sealed record ReviewPeriodBounds(DateTime Start, DateTime End);
 
 public sealed record ReviewSnapshot(
     ReviewPeriodType PeriodType,
-    DateTimeOffset PeriodStart,
-    DateTimeOffset PeriodEnd,
+    DateTime PeriodStart,
+    DateTime PeriodEnd,
     ReviewSnapshotMetrics Metrics,
     IReadOnlyList<ReviewTradeInsight> Trades,
     IReadOnlyList<string> PsychologyNotes);
@@ -17,8 +17,8 @@ public sealed record ReviewTradeInsight(
     string Asset,
     PositionType Position,
     decimal Pnl,
-    DateTimeOffset OpenDate,
-    DateTimeOffset ClosedDate,
+    DateTime OpenDate,
+    DateTime ClosedDate,
     decimal EntryPrice,
     decimal? ExitPrice,
     bool IsRuleBroken,

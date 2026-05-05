@@ -48,7 +48,7 @@ internal sealed class StreakTrackingService(
 
     public async Task<StreakRecord> RecalculateStreakAsync(int userId, CancellationToken ct = default)
     {
-        DateTimeOffset now = DateTimeOffset.UtcNow;
+        DateTime now = DateTime.UtcNow;
 
         // Fetch all closed trades ordered by close date descending
         var closedTrades = await tradeProvider.GetClosedTradesDescendingAsync(userId, MaxTradesToAnalyze, ct);
@@ -208,7 +208,7 @@ internal sealed class StreakTrackingService(
                 .AsNoTracking()
                 .Where(s => s.CreatedBy == userId
                     && s.Id != record.Id
-                    && s.RecordedAt >= DateTimeOffset.UtcNow.AddMinutes(-5))
+                    && s.RecordedAt >= DateTime.UtcNow.AddMinutes(-5))
                 .AnyAsync(ct);
 
             if (!recentlyFired)

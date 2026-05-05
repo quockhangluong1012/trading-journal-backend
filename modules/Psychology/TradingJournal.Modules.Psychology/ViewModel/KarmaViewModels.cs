@@ -19,7 +19,7 @@ public sealed class KarmaEventViewModel
     public string ActionType { get; set; } = string.Empty;
     public int Points { get; set; }
     public string Description { get; set; } = string.Empty;
-    public DateTimeOffset RecordedAt { get; set; }
+    public DateTime RecordedAt { get; set; }
 }
 
 public sealed class AchievementViewModel
@@ -29,6 +29,6 @@ public sealed class AchievementViewModel
     public string Description { get; set; } = string.Empty;
     public string Emoji { get; set; } = string.Empty;
     public bool IsUnlocked { get; set; }
-    public DateTimeOffset? UnlockedAt { get; set; }
+    public DateTime? UnlockedAt { get; set; }
     public string Category { get; set; } = string.Empty;
 }

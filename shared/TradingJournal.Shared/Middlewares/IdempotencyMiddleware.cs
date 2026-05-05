@@ -108,7 +108,7 @@ public sealed class IdempotencyMiddleware
         string responseBody = await new StreamReader(memoryStream).ReadToEndAsync();
 
         // Store the response for future duplicate requests
-        DateTimeOffset now = DateTimeOffset.UtcNow;
+        DateTime now = DateTime.UtcNow;
         var record = new IdempotencyRecord
         {
             IdempotencyKey = idempotencyKey,

@@ -72,11 +72,11 @@ internal sealed class ScannerBackgroundService(
 
             try
             {
-                DateTimeOffset cycleStart = DateTimeOffset.UtcNow;
+                DateTime cycleStart = DateTime.UtcNow;
 
                 int alertsFound = await engine.ScanForWatchlistAsync(watchlist.Id, watchlist.UserId, ct);
 
-                TimeSpan duration = DateTimeOffset.UtcNow - cycleStart;
+                TimeSpan duration = DateTime.UtcNow - cycleStart;
 
                 // Notify the user via SignalR that a watchlist scan cycle completed
                 await hubContext.Clients.Group($"user-{watchlist.UserId}")
@@ -86,7 +86,7 @@ internal sealed class ScannerBackgroundService(
                         WatchlistName = watchlist.Name,
                         AlertsFound = alertsFound,
                         Duration = duration.TotalMilliseconds,
-                        Timestamp = DateTimeOffset.UtcNow
+                        Timestamp = DateTime.UtcNow
                     }, ct);
 
                 logger.LogDebug(

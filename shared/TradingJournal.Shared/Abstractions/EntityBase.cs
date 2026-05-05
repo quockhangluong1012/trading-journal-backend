@@ -11,13 +11,13 @@ public abstract class EntityBase<T>
 
     #region Tracking
 
-    public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.UtcNow;
+    public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
     public int CreatedBy { get; set; }
 
     public bool IsDisabled { get; set; }
 
-    public DateTimeOffset? UpdatedDate { get; set; }
+    public DateTime? UpdatedDate { get; set; }
 
     public int? UpdatedBy { get; set; }
 

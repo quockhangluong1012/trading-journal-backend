@@ -18,5 +18,5 @@ public class LessonLearnedViewModel
 
     public int LinkedTradesCount { get; set; }
 
-    public DateTimeOffset CreatedDate { get; set; }
+    public DateTime CreatedDate { get; set; }
 }

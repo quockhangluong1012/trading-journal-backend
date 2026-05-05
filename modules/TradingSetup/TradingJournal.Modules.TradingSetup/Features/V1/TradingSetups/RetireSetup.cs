@@ -47,7 +47,7 @@ public sealed class RetireSetup
 
             setup.Status = SetupStatus.Retired;
             setup.RetiredReason = request.Reason.Trim();
-            setup.RetiredDate = DateTimeOffset.UtcNow;
+            setup.RetiredDate = DateTime.UtcNow;
 
             await context.SaveChangesAsync(cancellationToken);
 

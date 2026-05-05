@@ -9,8 +9,8 @@ public sealed class GenerateReviewSummary
 {
     public sealed record Request(
         ReviewPeriodType PeriodType,
-        DateTimeOffset PeriodStart,
-        DateTimeOffset PeriodEnd,
+        DateTime PeriodStart,
+        DateTime PeriodEnd,
         int UserId = 0) : ICommand<Result<bool>>;
 
     public sealed class Validator : AbstractValidator<Request>
@@ -94,7 +94,7 @@ public sealed class GenerateReviewSummary
             await eventBus.PublishAsync(
                 new GenerateReviewSummaryEvent(
                     Guid.NewGuid(),
-                    DateTimeOffset.UtcNow,
+                    DateTime.UtcNow,
                     request.PeriodType,
                     snapshot.PeriodStart,
                     snapshot.PeriodEnd,

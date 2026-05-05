@@ -6,6 +6,6 @@ public record ScannerStatusDto(
     List<string> EnabledPatterns,
     List<string> EnabledTimeframes,
     int MinConfluenceScore,
-    DateTimeOffset? LastScanTime,
+    DateTime? LastScanTime,
     int ActiveWatchlistCount,
     int TotalAssetsMonitored);

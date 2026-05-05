@@ -13,7 +13,7 @@ public interface IAuditLogStore
 {
     Task SaveAsync(IReadOnlyList<AuditEntry> entries, CancellationToken ct = default);
     Task<IReadOnlyList<AuditEntry>> QueryAsync(string? entityName, string? entityId,
-        DateTimeOffset? from, DateTimeOffset? to, int maxResults = 100, CancellationToken ct = default);
+        DateTime? from, DateTime? to, int maxResults = 100, CancellationToken ct = default);
 }
 
 internal sealed class SqlAuditLogStore(
@@ -33,7 +33,7 @@ internal sealed class SqlAuditLogStore(
                 EntityId NVARCHAR(128) NOT NULL,
                 Action NVARCHAR(16) NOT NULL,
                 ChangedBy INT NOT NULL,
-                [Timestamp] DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+                [Timestamp] DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
                 OldValues NVARCHAR(MAX) NULL,
                 NewValues NVARCHAR(MAX) NULL,
                 AffectedColumns NVARCHAR(MAX) NULL
@@ -87,7 +87,7 @@ internal sealed class SqlAuditLogStore(
     }
 
     public async Task<IReadOnlyList<AuditEntry>> QueryAsync(string? entityName, string? entityId,
-        DateTimeOffset? from, DateTimeOffset? to, int maxResults = 100, CancellationToken ct = default)
+        DateTime? from, DateTime? to, int maxResults = 100, CancellationToken ct = default)
     {
         await EnsureTableAsync(ct);
 
@@ -147,7 +147,7 @@ internal sealed class SqlAuditLogStore(
                 EntityId = reader.GetString(2),
                 Action = reader.GetString(3),
                 ChangedBy = reader.GetInt32(4),
-                Timestamp = reader.GetDateTimeOffset(5),
+                Timestamp = reader.GetDateTime(5),
                 OldValues = reader.IsDBNull(6) ? null : reader.GetString(6),
                 NewValues = reader.IsDBNull(7) ? null : reader.GetString(7),
                 AffectedColumns = reader.IsDBNull(8) ? null : reader.GetString(8)

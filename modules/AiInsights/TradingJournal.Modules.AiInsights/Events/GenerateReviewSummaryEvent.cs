@@ -4,8 +4,8 @@ namespace TradingJournal.Modules.AiInsights.Events;
 
 public record GenerateReviewSummaryEvent(
     Guid EventId,
-    DateTimeOffset EventTime,
+    DateTime EventTime,
     ReviewPeriodType PeriodType,
-    DateTimeOffset PeriodStart,
-    DateTimeOffset PeriodEnd,
+    DateTime PeriodStart,
+    DateTime PeriodEnd,
     int UserId) : IntegrationEvent(EventId);

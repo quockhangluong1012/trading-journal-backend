@@ -7,7 +7,7 @@ public sealed class GetProfitTrajectory
 {
     public sealed record Request(DashboardFilter Filter, int UserId = 0) : IQuery<Result<IReadOnlyCollection<ProfitTrajectoryViewModel>>>;
 
-    public sealed record ProfitTrajectoryViewModel(DateTimeOffset Date, decimal? PnL = 0);
+    public sealed record ProfitTrajectoryViewModel(DateTime Date, decimal? PnL = 0);
 
     public sealed class Validator : AbstractValidator<Request>
     {
@@ -25,7 +25,7 @@ public sealed class GetProfitTrajectory
     {
         public async Task<Result<IReadOnlyCollection<ProfitTrajectoryViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            DateTimeOffset fromDate = DashboardFilterHelper.GetFromDate(request.Filter);
+            DateTime fromDate = DashboardFilterHelper.GetFromDate(request.Filter);
 
             List<ProfitTrajectoryViewModel> trajectory = await context.TradeHistories
                 .AsNoTracking()

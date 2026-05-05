@@ -20,7 +20,7 @@ public interface IAiTradeDataProvider
     /// </summary>
     Task<ReviewSnapshot> BuildReviewSnapshotAsync(
         ReviewPeriodType periodType,
-        DateTimeOffset referenceDate,
+        DateTime referenceDate,
         int userId,
         CancellationToken cancellationToken);
 

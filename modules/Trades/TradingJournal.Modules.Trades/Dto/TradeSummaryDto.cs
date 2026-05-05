@@ -15,5 +15,5 @@ public sealed record TradeSummaryDto(string Asset,
         string ConfidenceLevel,
         List<string> TradeHistoryChecklists,
         string TradingZone,
-        DateTimeOffset OpenDate,
-        DateTimeOffset ClosedDate);
+        DateTime OpenDate,
+        DateTime ClosedDate);

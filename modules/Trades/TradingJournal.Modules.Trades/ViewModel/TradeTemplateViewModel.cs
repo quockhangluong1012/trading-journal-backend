@@ -44,5 +44,5 @@ public sealed class TradeTemplateViewModel
 
     public int SortOrder { get; set; }
 
-    public DateTimeOffset CreatedDate { get; set; }
+    public DateTime CreatedDate { get; set; }
 }

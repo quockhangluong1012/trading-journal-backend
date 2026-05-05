@@ -2,7 +2,7 @@ namespace TradingJournal.Modules.Psychology.Features.V1.Psychology;
 
 public sealed class UpdatePsychologyJournal
 {
-    public record Request(int Id, DateTimeOffset Date, string TodayTradingReview, List<int> EmotionTags, int UserId = 0,
+    public record Request(int Id, DateTime Date, string TodayTradingReview, List<int> EmotionTags, int UserId = 0,
         OverallMood OverallMood = OverallMood.Neutral,
         ConfidentLevel ConfidentLevel = ConfidentLevel.None) : ICommand<Result<bool>>;
 

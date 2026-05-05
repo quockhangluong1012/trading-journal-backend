@@ -6,12 +6,12 @@ namespace TradingJournal.Shared.Common;
 public interface IDateTimeProvider
 {
     /// <summary>
-    /// Gets the current UTC date and time as DateTimeOffset.
+    /// Gets the current UTC date and time as DateTime.
     /// </summary>
-    DateTimeOffset UtcNow { get; }
+    DateTime UtcNow { get; }
 
     /// <summary>
     /// Gets the current date and time in the configured timezone (Vietnam, UTC+7).
     /// </summary>
-    DateTimeOffset Now { get; }
+    DateTime Now { get; }
 }

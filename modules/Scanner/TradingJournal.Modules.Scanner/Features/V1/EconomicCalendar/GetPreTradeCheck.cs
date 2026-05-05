@@ -20,7 +20,7 @@ public sealed class GetPreTradeCheck
 
         public async Task<Result<PreTradeCheckDto>> Handle(Query request, CancellationToken ct)
         {
-            DateTimeOffset now = DateTimeOffset.UtcNow;
+            DateTime now = DateTime.UtcNow;
             List<EconomicEvent> today = await calendarProvider.GetTodayEventsAsync(ct);
             List<EconomicEvent> high = today.Where(e => e.Impact == EconomicImpact.High).ToList();
 
@@ -90,7 +90,7 @@ public sealed class GetPreTradeCheck
             return s.Length >= 6 ? [s[..3], s[3..6]] : [];
         }
 
-        private static List<EconomicEventDto> MapDtos(List<EconomicEvent> events, DateTimeOffset now) =>
+        private static List<EconomicEventDto> MapDtos(List<EconomicEvent> events, DateTime now) =>
             events.Select(e => new EconomicEventDto(e.Id, e.Country, e.Currency, e.EventName,
                 e.EventDateUtc, e.Impact.ToString(), e.Actual, e.Forecast, e.Previous, e.Unit,
                 e.EventDateUtc > now,

@@ -12,6 +12,6 @@ public sealed class DailyNoteViewModel
     public string RiskAppetite { get; set; } = string.Empty;
     public string MentalState { get; set; } = string.Empty;
     public string KeyRulesAndReminders { get; set; } = string.Empty;
-    public DateTimeOffset CreatedDate { get; set; }
-    public DateTimeOffset? UpdatedDate { get; set; }
+    public DateTime CreatedDate { get; set; }
+    public DateTime? UpdatedDate { get; set; }
 }

@@ -24,7 +24,7 @@ internal sealed class YahooFinanceLiveProvider(
     /// <summary>
     /// In-memory cache: keyed by (Symbol, Timeframe) → (Candles, ExpiresAtUtc).
     /// </summary>
-    private static readonly ConcurrentDictionary<(string, ScannerTimeframe), (List<CandleData> Candles, DateTimeOffset ExpiresAt)>
+    private static readonly ConcurrentDictionary<(string, ScannerTimeframe), (List<CandleData> Candles, DateTime ExpiresAt)>
         Cache = new();
 
     public async Task<List<CandleData>> GetRecentCandlesAsync(
@@ -37,7 +37,7 @@ internal sealed class YahooFinanceLiveProvider(
 
         // Check cache first
         if (Cache.TryGetValue((cacheKey, timeframe), out var cached) &&
-            cached.ExpiresAt > DateTimeOffset.UtcNow &&
+            cached.ExpiresAt > DateTime.UtcNow &&
             cached.Candles.Count >= count)
         {
             logger.LogDebug("Cache hit for {Symbol} {Timeframe} ({Count} candles)",
@@ -53,7 +53,7 @@ internal sealed class YahooFinanceLiveProvider(
             if (candles.Count > 0)
             {
                 TimeSpan ttl = GetCacheTtl(timeframe);
-                Cache[(cacheKey, timeframe)] = (candles, DateTimeOffset.UtcNow + ttl);
+                Cache[(cacheKey, timeframe)] = (candles, DateTime.UtcNow + ttl);
 
                 logger.LogInformation(
                     "Fetched {Count} live candles for {Symbol} {Timeframe}, cached for {Ttl}",
@@ -70,7 +70,7 @@ internal sealed class YahooFinanceLiveProvider(
             if (Cache.TryGetValue((cacheKey, timeframe), out var stale) && stale.Candles.Count > 0)
             {
                 logger.LogWarning("Using stale cache for {Symbol} {Timeframe} (expired {Ago} ago)",
-                    symbol, timeframe, DateTimeOffset.UtcNow - stale.ExpiresAt);
+                    symbol, timeframe, DateTime.UtcNow - stale.ExpiresAt);
                 return stale.Candles.TakeLast(count).ToList();
             }
 
@@ -169,7 +169,7 @@ internal sealed class YahooFinanceLiveProvider(
             }
 
             long unixTimestamp = timestampArr[i].GetInt64();
-            DateTimeOffset timestamp = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).UtcDateTime;
+            DateTime timestamp = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).UtcDateTime;
 
             decimal open = GetDecimal(opens[i]);
             decimal high = GetDecimal(highs[i]);

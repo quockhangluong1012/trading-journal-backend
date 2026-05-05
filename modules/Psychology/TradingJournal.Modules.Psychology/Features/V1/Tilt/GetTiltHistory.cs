@@ -10,7 +10,7 @@ public sealed class GetTiltHistory
     {
         public async Task<Result<List<TiltScoreViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            DateTimeOffset since = DateTimeOffset.UtcNow.AddDays(-request.Days);
+            DateTime since = DateTime.UtcNow.AddDays(-request.Days);
 
             var snapshots = await context.TiltSnapshots
                 .AsNoTracking()

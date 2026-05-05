@@ -114,7 +114,7 @@ public sealed record PreTradeCheckDto(
 /// A single equity curve point enriched with economic event overlay data.
 /// </summary>
 public sealed record EquityEventOverlayPointDto(
-    DateTimeOffset Date,
+    DateTime Date,
     decimal Profit,
     /// <summary>High-impact events that occurred on this date (may be empty).</summary>
     List<EventMarkerDto> EventMarkers
@@ -127,7 +127,7 @@ public sealed record EventMarkerDto(
     string EventName,
     string Currency,
     string Impact,
-    DateTimeOffset EventDateUtc,
+    DateTime EventDateUtc,
     decimal? Actual,
     decimal? Forecast,
     decimal? Previous

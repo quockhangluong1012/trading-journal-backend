@@ -8,7 +8,7 @@ public sealed class GetTradingStatistic
     {
         public async Task<Result<TradingStatisticViewModel>> Handle(Request request, CancellationToken cancellationToken)
         {
-            DateTimeOffset fromDate = DashboardFilterHelper.GetFromDate(request.Filter);
+            DateTime fromDate = DashboardFilterHelper.GetFromDate(request.Filter);
 
             List<TradeHistory> trades = await context.TradeHistories
                 .AsNoTracking()

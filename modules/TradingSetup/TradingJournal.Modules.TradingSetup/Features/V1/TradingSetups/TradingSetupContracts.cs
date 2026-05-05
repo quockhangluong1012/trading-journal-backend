@@ -4,15 +4,15 @@ public sealed record TradingSetupNodeDto(string Id, string Kind, double X, doubl
 
 public sealed record TradingSetupEdgeDto(string Id, string Source, string Target, string? Label);
 
-public sealed record TradingSetupViewModel(int Id, string Name, string? Description, int StepCount, DateTimeOffset CreatedAt, DateTimeOffset LastUpdatedAt);
+public sealed record TradingSetupViewModel(int Id, string Name, string? Description, int StepCount, DateTime CreatedAt, DateTime LastUpdatedAt);
 
 public sealed record TradingSetupDetailViewModel(
     int Id,
     string Name,
     string? Description,
     int StepCount,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset LastUpdatedAt,
+    DateTime CreatedAt,
+    DateTime LastUpdatedAt,
     IReadOnlyCollection<TradingSetupNodeDto> Nodes,
     IReadOnlyCollection<TradingSetupEdgeDto> Edges);
 

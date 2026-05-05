@@ -8,7 +8,7 @@ public sealed class DailyRiskSnapshot : EntityBase<int>
     /// <summary>
     /// The date this snapshot represents.
     /// </summary>
-    public DateTimeOffset SnapshotDate { get; set; }
+    public DateTime SnapshotDate { get; set; }
 
     /// <summary>
     /// Total PnL for this day.

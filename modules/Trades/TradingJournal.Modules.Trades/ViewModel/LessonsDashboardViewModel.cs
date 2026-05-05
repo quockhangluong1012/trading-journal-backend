@@ -41,7 +41,7 @@ public class CategoryBreakdownItem
 
 public class DisciplineTimePoint
 {
-    public DateTimeOffset Date { get; set; }
+    public DateTime Date { get; set; }
     public decimal Score { get; set; }
     public int TotalChecks { get; set; }
     public int Followed { get; set; }

@@ -9,7 +9,7 @@ public sealed class StaffLogin
 {
     internal sealed record Request(string Email, string Password, bool RememberMe = false) : IQuery<Result<AuthResponse>>;
 
-    internal sealed record AuthResponse(string Token, string Email, string FullName, DateTimeOffset Expiry, bool IsAdmin);
+    internal sealed record AuthResponse(string Token, string Email, string FullName, DateTime Expiry, bool IsAdmin);
 
     internal sealed class Validator : AbstractValidator<Request>
     {
@@ -46,7 +46,7 @@ public sealed class StaffLogin
 
             string token = GenerateJwtToken(staff, configuration, request.RememberMe);
             int expiryMinutes = request.RememberMe ? 30 * 24 * 60 : configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
-            DateTimeOffset expiry = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes);
+            DateTime expiry = DateTime.UtcNow.AddMinutes(expiryMinutes);
 
             return Result<AuthResponse>.Success(new AuthResponse(token, staff.Email, staff.FullName, expiry, true));
         }
@@ -74,7 +74,7 @@ public sealed class StaffLogin
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTimeOffset.UtcNow.AddMinutes(expiryMinutes).UtcDateTime,
+                expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);

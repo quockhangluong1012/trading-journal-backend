@@ -35,7 +35,7 @@ public sealed class GetUpcomingHighImpactEvents
             List<EconomicEvent> upcomingEvents =
                 await calendarProvider.GetUpcomingHighImpactEventsAsync(window, cancellationToken);
 
-            DateTimeOffset now = DateTimeOffset.UtcNow;
+            DateTime now = DateTime.UtcNow;
 
             var eventDtos = upcomingEvents.Select(e =>
             {

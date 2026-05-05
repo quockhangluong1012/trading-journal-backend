@@ -15,9 +15,9 @@ public sealed class GetTrades
 
         public TradeStatus? Status { get; set; }
 
-        public DateTimeOffset? FromDate { get; set; }
+        public DateTime? FromDate { get; set; }
 
-        public DateTimeOffset? ToDate { get; set; }
+        public DateTime? ToDate { get; set; }
 
         public int Page { get; set; } = 1;
 
@@ -153,8 +153,8 @@ public sealed class GetTrades
                 [FromQuery] string? asset,
                 [FromQuery] PositionType? position,
                 [FromQuery] TradeStatus? status,
-                [FromQuery] DateTimeOffset? fromDate,
-                [FromQuery] DateTimeOffset? toDate,
+                [FromQuery] DateTime? fromDate,
+                [FromQuery] DateTime? toDate,
                 [FromQuery] int page = 1,
                 [FromQuery] int pageSize = 10) =>
             {

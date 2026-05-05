@@ -15,4 +15,4 @@ public sealed record TiltCircuitBreakerEvent(
     int TradesLastHour,
     int RuleBreaksToday,
     decimal TodayPnl,
-    DateTimeOffset CooldownUntil) : IntegrationEvent(EventId);
+    DateTime CooldownUntil) : IntegrationEvent(EventId);

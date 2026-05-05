@@ -82,7 +82,7 @@ internal sealed class JudasSwingDetector : IIctDetector
     /// Checks if the given timestamp falls within an ICT kill zone.
     /// London: 07:00–10:00 UTC  |  New York: 12:00–15:00 UTC
     /// </summary>
-    private static bool IsKillZone(DateTimeOffset timestamp)
+    private static bool IsKillZone(DateTime timestamp)
     {
         int hour = timestamp.Hour;
 

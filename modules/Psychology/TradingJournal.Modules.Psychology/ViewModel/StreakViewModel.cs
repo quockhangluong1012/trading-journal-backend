@@ -8,5 +8,5 @@ public sealed class StreakViewModel
     public int BestWinStreak { get; set; }
     public int WorstLossStreak { get; set; }
     public int TotalClosedTrades { get; set; }
-    public DateTimeOffset RecordedAt { get; set; }
+    public DateTime RecordedAt { get; set; }
 }

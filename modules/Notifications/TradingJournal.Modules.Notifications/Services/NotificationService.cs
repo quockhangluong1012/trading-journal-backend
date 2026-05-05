@@ -31,7 +31,7 @@ internal sealed class NotificationService(
             Priority = priority,
             Metadata = metadata,
             ActionUrl = actionUrl,
-            CreatedDate = DateTimeOffset.UtcNow,
+            CreatedDate = DateTime.UtcNow,
             CreatedBy = userId
         };
 

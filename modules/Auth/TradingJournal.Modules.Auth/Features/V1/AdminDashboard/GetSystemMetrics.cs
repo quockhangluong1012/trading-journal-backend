@@ -24,7 +24,7 @@ public sealed class GetSystemMetrics
             var totalStaff = await context.Staffs.CountAsync(cancellationToken);
             var activeStaff = await context.Staffs.CountAsync(s => s.IsActive, cancellationToken);
 
-            var thirtyDaysAgo = DateTimeOffset.UtcNow.AddDays(-30);
+            var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
 
             var userRegistrations = await context.Users
                 .Where(u => u.CreatedDate >= thirtyDaysAgo)
@@ -41,7 +41,7 @@ public sealed class GetSystemMetrics
             var chartData = new List<RegistrationData>();
             for (int i = 29; i >= 0; i--)
             {
-                var dt = DateTimeOffset.UtcNow.Date.AddDays(-i);
+                var dt = DateTime.UtcNow.Date.AddDays(-i);
                 var existing = userRegistrations.FirstOrDefault(x => x.Date == dt);
                 chartData.Add(new RegistrationData(dt.ToString("MMM dd"), existing?.Count ?? 0));
             }

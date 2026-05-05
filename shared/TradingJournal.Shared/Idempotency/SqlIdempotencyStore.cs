@@ -15,8 +15,8 @@ namespace TradingJournal.Shared.Idempotency;
 ///     StatusCode INT NOT NULL,
 ///     ResponseBody NVARCHAR(MAX) NULL,
 ///     ContentType NVARCHAR(256) NULL,
-///     CreatedAt DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
-///     ExpiresAt DATETIMEOFFSET NOT NULL
+///     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+///     ExpiresAt DATETIME2 NOT NULL
 /// );
 /// CREATE INDEX IX_IdempotencyKeys_ExpiresAt ON [dbo].[IdempotencyKeys] (ExpiresAt);
 /// </code>
@@ -37,8 +37,8 @@ internal sealed class SqlIdempotencyStore(
                 StatusCode INT NOT NULL,
                 ResponseBody NVARCHAR(MAX) NULL,
                 ContentType NVARCHAR(256) NULL,
-                CreatedAt DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
-                ExpiresAt DATETIMEOFFSET NOT NULL
+                CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+                ExpiresAt DATETIME2 NOT NULL
             );
             CREATE INDEX IX_IdempotencyKeys_ExpiresAt ON [dbo].[IdempotencyKeys] (ExpiresAt);
         END
@@ -47,7 +47,7 @@ internal sealed class SqlIdempotencyStore(
     private const string GetSql = """
         SELECT StatusCode, ResponseBody, ContentType, CreatedAt, ExpiresAt
         FROM [dbo].[IdempotencyKeys]
-        WHERE IdempotencyKey = @Key AND ExpiresAt > SYSDATETIMEOFFSET()
+        WHERE IdempotencyKey = @Key AND ExpiresAt > SYSUTCDATETIME()
         """;
 
     private const string InsertSql = """
@@ -62,7 +62,7 @@ internal sealed class SqlIdempotencyStore(
         """;
 
     private const string CleanupSql = """
-        DELETE FROM [dbo].[IdempotencyKeys] WHERE ExpiresAt <= SYSDATETIMEOFFSET()
+        DELETE FROM [dbo].[IdempotencyKeys] WHERE ExpiresAt <= SYSUTCDATETIME()
         """;
 
     private bool _tableEnsured;
@@ -87,8 +87,8 @@ internal sealed class SqlIdempotencyStore(
             StatusCode = reader.GetInt32(0),
             ResponseBody = reader.IsDBNull(1) ? null : reader.GetString(1),
             ContentType = reader.IsDBNull(2) ? null : reader.GetString(2),
-            CreatedAt = reader.GetDateTimeOffset(3),
-            ExpiresAt = reader.GetDateTimeOffset(4)
+            CreatedAt = reader.GetDateTime(3),
+            ExpiresAt = reader.GetDateTime(4)
         };
     }
 

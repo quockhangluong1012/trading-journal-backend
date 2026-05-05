@@ -22,7 +22,7 @@ public sealed class MarkAllAsRead
                 .Where(n => n.UserId == request.UserId && !n.IsRead && !n.IsDisabled)
                 .ExecuteUpdateAsync(setter => setter
                     .SetProperty(n => n.IsRead, true)
-                    .SetProperty(n => n.ReadAt, DateTimeOffset.UtcNow),
+                    .SetProperty(n => n.ReadAt, DateTime.UtcNow),
                     cancellationToken);
 
             // Push zero unread count to all user connections

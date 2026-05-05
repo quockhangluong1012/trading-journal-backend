@@ -54,10 +54,10 @@ public sealed class TiltSnapshot : EntityBase<int>
     /// <summary>
     /// Optional suggested cooldown end time (UTC) when circuit breaker fires.
     /// </summary>
-    public DateTimeOffset? CooldownUntil { get; set; }
+    public DateTime? CooldownUntil { get; set; }
 
     /// <summary>
     /// Timestamp when this snapshot was taken (UTC).
     /// </summary>
-    public DateTimeOffset RecordedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
 }

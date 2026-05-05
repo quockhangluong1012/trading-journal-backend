@@ -32,5 +32,5 @@ public sealed class KarmaRecord : EntityBase<int>
     /// <summary>
     /// Timestamp when this karma event occurred (UTC).
     /// </summary>
-    public DateTimeOffset RecordedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
 }

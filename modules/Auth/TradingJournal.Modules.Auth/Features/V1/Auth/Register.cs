@@ -45,7 +45,7 @@ public sealed class Register
                 Email = request.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 FullName = request.FullName,
-                CreatedDate = DateTimeOffset.UtcNow,
+                CreatedDate = DateTime.UtcNow,
                 IsActive = true,
             };
 

@@ -40,7 +40,7 @@ internal sealed class BalancedPriceRangeDetector : IIctDetector
                 if (overlapHigh > overlapLow)
                 {
                     int latestIndex = Math.Max(bull.Index, bear.Index);
-                    DateTimeOffset detectedAt = candles[Math.Min(latestIndex + 1, candles.Count - 1)].Timestamp;
+                    DateTime detectedAt = candles[Math.Min(latestIndex + 1, candles.Count - 1)].Timestamp;
 
                     patterns.Add(new DetectedPattern(
                         IctPatternType.BalancedPriceRange,

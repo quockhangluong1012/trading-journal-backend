@@ -62,9 +62,9 @@ internal sealed class TiltDetectionService(
 
     public async Task<TiltSnapshot> RecalculateTiltAsync(int userId, CancellationToken ct = default)
     {
-        DateTimeOffset now = DateTimeOffset.UtcNow;
-        DateTimeOffset todayStart = now.Date;
-        DateTimeOffset oneHourAgo = now.AddHours(-1);
+        DateTime now = DateTime.UtcNow;
+        DateTime todayStart = now.Date;
+        DateTime oneHourAgo = now.AddHours(-1);
 
         // Fetch recent trades for this user (today's trades for most metrics)
         var recentTrades = await tradeProvider.GetRecentTradesAsync(userId, todayStart, ct);
@@ -136,7 +136,7 @@ internal sealed class TiltDetectionService(
         };
 
         bool circuitBreakerTriggered = totalScore >= CircuitBreakerThreshold;
-        DateTimeOffset? cooldownUntil = circuitBreakerTriggered ? now.AddMinutes(CooldownMinutes) : null;
+        DateTime? cooldownUntil = circuitBreakerTriggered ? now.AddMinutes(CooldownMinutes) : null;
 
         // Persist snapshot
         var snapshot = new TiltSnapshot

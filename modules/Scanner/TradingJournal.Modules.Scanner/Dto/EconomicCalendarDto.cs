@@ -10,7 +10,7 @@ public sealed record EconomicEventDto(
     string Country,
     string Currency,
     string EventName,
-    DateTimeOffset EventDateUtc,
+    DateTime EventDateUtc,
     string Impact,
     decimal? Actual,
     decimal? Forecast,

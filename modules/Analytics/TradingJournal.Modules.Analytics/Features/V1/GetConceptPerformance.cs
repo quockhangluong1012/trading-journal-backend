@@ -44,13 +44,13 @@ public sealed class GetConceptPerformance
         {
             List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
             List<TechnicalAnalysisTagDto> tags = await tagProvider.GetTagsAsync(cancellationToken);
-            DateTimeOffset fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
+            DateTime fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
 
             // Filter to closed trades that have at least one tag
             List<TradeCacheDto> closed = [.. trades
                 .Where(t => t.Status == TradeStatus.Closed && t.Pnl.HasValue)
                 .Where(t => t.TechnicalAnalysisTagIds is { Count: > 0 })
-                .Where(t => fromDate == DateTimeOffset.MinValue || (t.ClosedDate.HasValue && t.ClosedDate.Value >= fromDate))];
+                .Where(t => fromDate == DateTime.MinValue || (t.ClosedDate.HasValue && t.ClosedDate.Value >= fromDate))];
 
             // Build tag name lookup
             Dictionary<int, TechnicalAnalysisTagDto> tagLookup = tags.ToDictionary(t => t.Id);

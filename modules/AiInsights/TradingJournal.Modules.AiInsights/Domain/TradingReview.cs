@@ -7,9 +7,9 @@ public sealed class TradingReview : EntityBase<int>
 {
     public ReviewPeriodType PeriodType { get; set; }
 
-    public DateTimeOffset PeriodStart { get; set; }
+    public DateTime PeriodStart { get; set; }
 
-    public DateTimeOffset PeriodEnd { get; set; }
+    public DateTime PeriodEnd { get; set; }
 
     public string? UserNotes { get; set; }
 
