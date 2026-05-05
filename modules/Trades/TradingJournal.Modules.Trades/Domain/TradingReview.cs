@@ -88,5 +88,31 @@ public sealed class TradingReview : EntityBase<int>
 
     #endregion
 
+    #region AI Insights (populated by AiInsights module)
+
+    public string? UserNotes { get; set; }
+
+    public string? AiSummary { get; set; }
+
+    public string? AiStrengths { get; set; }
+
+    public string? AiWeaknesses { get; set; }
+
+    public string? AiActionItems { get; set; }
+
+    public string? AiTechnicalInsights { get; set; }
+
+    public string? AiPsychologyAnalysis { get; set; }
+
+    public string? AiCriticalMistakesTechnical { get; set; }
+
+    public string? AiCriticalMistakesPsychological { get; set; }
+
+    public string? AiWhatToImprove { get; set; }
+
+    public bool AiSummaryGenerating { get; set; }
+
+    #endregion
+
     public ICollection<ReviewActionItem> ActionItems { get; set; } = [];
 }

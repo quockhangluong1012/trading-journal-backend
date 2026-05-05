@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using TradingJournal.Messaging.Shared.Abstractions;
@@ -6,7 +7,7 @@ using TradingJournal.Messaging.Shared.Abstractions;
 namespace TradingJournal.Messaging.Shared.Events;
 
 internal sealed class IntegrationEventProcessorJob(InMemoryMessageQueue queue,
-    IPublisher publisher,
+    IServiceScopeFactory scopeFactory,
     ILogger<IntegrationEventProcessorJob> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -22,6 +23,11 @@ internal sealed class IntegrationEventProcessorJob(InMemoryMessageQueue queue,
 
                 try
                 {
+                    // Create a scope per event so scoped services (DbContext, NotificationService, etc.)
+                    // can be resolved by MediatR notification handlers.
+                    await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
+                    IPublisher publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
+
                     await publisher.Publish(integrationEvent, stoppingToken);
                     logger.LogInformation("Successfully published {IntegrationEventType} with EventId: {IntegrationEventId}.",
                         integrationEvent.GetType().Name, integrationEvent.EventId);

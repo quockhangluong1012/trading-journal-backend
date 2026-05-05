@@ -11,6 +11,8 @@ public sealed class TradingReview : EntityBase<int>
 
     public DateTime PeriodEnd { get; set; }
 
+    public ReviewWizardStatus Status { get; set; } = ReviewWizardStatus.Draft;
+
     public string? UserNotes { get; set; }
 
     public string? AiSummary { get; set; }
