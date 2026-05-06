@@ -67,4 +67,89 @@ public sealed class GetTradesHandlerTests
         Assert.Equal(1, result.Value!.Values.Count);
         Assert.Equal(1, result.Value.TotalItems);
     }
+
+    [Fact]
+    public async Task Handle_Applies_CombinedFilters_And_UserIsolation()
+    {
+        DateTime now = DateTime.UtcNow;
+        var trades = new List<TradeHistory>
+        {
+            new()
+            {
+                Id = 1,
+                Asset = "EURUSD",
+                Position = SharedEnums.PositionType.Long,
+                EntryPrice = 1.08m,
+                Date = now.AddDays(-2),
+                Status = SharedEnums.TradeStatus.Closed,
+                TargetTier1 = 1.09m,
+                StopLoss = 1.07m,
+                CreatedBy = 1,
+                Pnl = 120m,
+                ClosedDate = now.AddDays(-1)
+            },
+            new()
+            {
+                Id = 2,
+                Asset = "EURUSD",
+                Position = SharedEnums.PositionType.Long,
+                EntryPrice = 1.08m,
+                Date = now.AddDays(-20),
+                Status = SharedEnums.TradeStatus.Closed,
+                TargetTier1 = 1.09m,
+                StopLoss = 1.07m,
+                CreatedBy = 1,
+                Pnl = 75m,
+                ClosedDate = now.AddDays(-19)
+            },
+            new()
+            {
+                Id = 3,
+                Asset = "GBPUSD",
+                Position = SharedEnums.PositionType.Long,
+                EntryPrice = 1.25m,
+                Date = now.AddDays(-2),
+                Status = SharedEnums.TradeStatus.Closed,
+                TargetTier1 = 1.26m,
+                StopLoss = 1.24m,
+                CreatedBy = 1,
+                Pnl = 80m,
+                ClosedDate = now.AddDays(-1)
+            },
+            new()
+            {
+                Id = 4,
+                Asset = "EURUSD",
+                Position = SharedEnums.PositionType.Long,
+                EntryPrice = 1.08m,
+                Date = now.AddDays(-2),
+                Status = SharedEnums.TradeStatus.Closed,
+                TargetTier1 = 1.09m,
+                StopLoss = 1.07m,
+                CreatedBy = 2,
+                Pnl = 150m,
+                ClosedDate = now.AddDays(-1)
+            }
+        };
+
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(trades.AsQueryable()).Object);
+        _ctx.Setup(x => x.TradeEmotionTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeEmotionTag>().AsQueryable()).Object);
+        _emoProvider.Setup(x => x.GetEmotionTagsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<EmotionTagCacheDto>());
+
+        var result = await _handler.Handle(new GetTrades.Request
+        {
+            UserId = 1,
+            Asset = "EUR",
+            Status = SharedEnums.TradeStatus.Closed,
+            FromDate = now.AddDays(-7),
+            ToDate = now,
+            Page = 1,
+            PageSize = 10
+        }, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Single(result.Value!.Values);
+        Assert.Equal(1, result.Value.TotalItems);
+        Assert.Equal(1, result.Value.Values.First().Id);
+    }
 }

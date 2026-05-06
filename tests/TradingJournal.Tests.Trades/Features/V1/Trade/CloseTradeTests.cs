@@ -3,6 +3,8 @@ using Moq;
 using TradingJournal.Modules.Trades.Features.V1.Trade;
 using TradingJournal.Modules.Trades.Infrastructure;
 using TradingJournal.Modules.Trades.Domain;
+using TradingJournal.Messaging.Shared.Abstractions;
+using TradingJournal.Messaging.Shared.Contracts;
 using TradingJournal.Shared.Interfaces;
 using SharedEnums = TradingJournal.Shared.Common.Enum;
 
@@ -35,11 +37,13 @@ public sealed class CloseTradeValidatorTests
 public sealed class CloseTradeHandlerTests
 {
     private Mock<ITradeDbContext> _ctx = null!;
+    private Mock<IEventBus> _eventBus = null!;
     private CloseTrade.Handler _handler = null!;
     public CloseTradeHandlerTests()
     {
         _ctx = new Mock<ITradeDbContext>();
-        _handler = new CloseTrade.Handler(_ctx.Object, new Mock<ICacheRepository>().Object);
+        _eventBus = new Mock<IEventBus>();
+        _handler = new CloseTrade.Handler(_ctx.Object, new Mock<ICacheRepository>().Object, _eventBus.Object);
     }
 
     [Fact]
@@ -61,5 +65,21 @@ public sealed class CloseTradeHandlerTests
         Assert.Equal(1.1m, trade.ExitPrice);
         Assert.Equal(SharedEnums.TradeStatus.Closed, trade.Status);
         Assert.NotNull(trade.ClosedDate);
+    }
+
+    [Fact]
+    public async Task Handle_TradeFound_PublishesTradeClosedEvent()
+    {
+        var trade = new TradeHistory { Id = 9, CreatedBy = 42, Status = SharedEnums.TradeStatus.Open };
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory> { trade }.AsQueryable()).Object);
+        _ctx.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await _handler.Handle(new CloseTrade.Request(9, 1.1m, -125.5m, "loss", true, null, 42), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _eventBus.Verify(bus => bus.PublishAsync(
+            It.Is<TradeClosedEvent>(evt => evt.UserId == 42 && evt.TradeId == 9 && evt.Pnl == -125.5m),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }

@@ -25,8 +25,14 @@
     <EmbeddedResource Include="Prompts\ReviewSummary.md" />
     <EmbeddedResource Include="Prompts\AiCoach.md" />
     <EmbeddedResource Include="Prompts\PreTradeValidation.md" />
+    <EmbeddedResource Include="Prompts\ChartScreenshotAnalysis.md" />
     <EmbeddedResource Include="Prompts\EmotionDetection.md" />
     <EmbeddedResource Include="Prompts\MorningBriefing.md" />
+    <EmbeddedResource Include="Prompts\NaturalLanguageTradeSearch.md" />
+    <EmbeddedResource Include="Prompts\TradePatternDiscovery.md" />
+    <EmbeddedResource Include="Prompts\SuggestedLessons.md" />
+    <EmbeddedResource Include="Prompts\PlaybookOptimization.md" />
+    <EmbeddedResource Include="Prompts\TiltIntervention.md" />
   </ItemGroup>
 
   <ItemGroup>

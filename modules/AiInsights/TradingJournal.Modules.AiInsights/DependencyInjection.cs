@@ -30,7 +30,12 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
         services.AddScoped<IPromptService, PromptService>();
-        services.AddScoped<IImageHelper, ImageHelper>();
+        services.AddHttpClient<IImageHelper, ImageHelper>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(15);
+        })
+        .AddStandardResilienceHandler();
+        services.AddScoped<ITradeAiContextService, TradeAiContextService>();
 
         services.AddHttpClient<IOpenRouterAIService, OpenRouterAiService>((sp, client) =>
         {

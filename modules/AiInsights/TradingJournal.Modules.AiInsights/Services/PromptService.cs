@@ -12,9 +12,21 @@ namespace TradingJournal.Modules.AiInsights.Services
 
         public Task<string> GetPreTradeValidation() => GetPrompt("PreTradeValidation");
 
+        public Task<string> GetChartScreenshotAnalysis() => GetPrompt("ChartScreenshotAnalysis");
+
         public Task<string> GetEmotionDetection() => GetPrompt("EmotionDetection");
 
         public Task<string> GetMorningBriefing() => GetPrompt("MorningBriefing");
+
+        public Task<string> GetNaturalLanguageTradeSearch() => GetPrompt("NaturalLanguageTradeSearch");
+
+        public Task<string> GetTradePatternDiscovery() => GetPrompt("TradePatternDiscovery");
+
+        public Task<string> GetSuggestedLessons() => GetPrompt("SuggestedLessons");
+
+        public Task<string> GetPlaybookOptimization() => GetPrompt("PlaybookOptimization");
+
+        public Task<string> GetTiltIntervention() => GetPrompt("TiltIntervention");
 
         private async Task<string> GetPrompt(string promptName)
         {

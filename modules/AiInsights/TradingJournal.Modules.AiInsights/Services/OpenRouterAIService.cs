@@ -13,11 +13,24 @@ namespace TradingJournal.Modules.AiInsights.Services;
 internal sealed class OpenRouterAiService(
     IPromptService promptService,
     IAiTradeDataProvider tradeDataProvider,
+    ITradeAiContextService tradeAiContextService,
+    ITradeProvider tradeProvider,
+    ISetupProvider setupProvider,
     HttpClient httpClient,
     IImageHelper imageHelper,
     IOptions<OpenRouterOptions> options,
     IHttpContextAccessor httpContextAccessor) : IOpenRouterAIService
 {
+    private const int MaxChartAnalysisImages = 3;
+    private const int MaxInlineImageBytes = 5 * 1024 * 1024;
+    private static readonly string[] SupportedInlineImagePrefixes =
+    [
+        "data:image/png;base64,",
+        "data:image/jpeg;base64,",
+        "data:image/jpg;base64,",
+        "data:image/webp;base64,"
+    ];
+
     public async Task<TradeAnalysisResultDto?> GenerateTradingOrderSummary(int tradeHistoryId, CancellationToken cancellationToken)
     {
         string promptTemplate = await promptService.GetTradingOrderSummary();
@@ -482,6 +495,53 @@ internal sealed class OpenRouterAiService(
         return ParseJsonResponse<PreTradeValidationResultDto>(responseText);
     }
 
+    public async Task<ChartScreenshotAnalysisResultDto?> AnalyzeChartScreenshotAsync(
+        ChartScreenshotAnalysisRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        string promptTemplate = await promptService.GetChartScreenshotAnalysis();
+
+        if (string.IsNullOrEmpty(promptTemplate))
+        {
+            throw new InvalidOperationException("Chart screenshot analysis prompt template not found.");
+        }
+
+        List<byte[]> imageContents = await LoadImageSourcesAsync(request.Screenshots, cancellationToken);
+
+        if (imageContents.Count == 0)
+        {
+            throw new InvalidOperationException("No valid screenshots were provided for AI chart analysis.");
+        }
+
+        Dictionary<string, string> replacements = new()
+        {
+            { "{{Asset}}", request.Asset },
+            { "{{Position}}", string.IsNullOrWhiteSpace(request.Position) ? "Unspecified" : request.Position },
+            { "{{EntryPrice}}", request.EntryPrice.HasValue ? FormatPromptNumber(request.EntryPrice.Value, 5) : "Not specified" },
+            { "{{StopLoss}}", request.StopLoss.HasValue ? FormatPromptNumber(request.StopLoss.Value, 5) : "Not specified" },
+            { "{{TargetTier1}}", request.TargetTier1.HasValue ? FormatPromptNumber(request.TargetTier1.Value, 5) : "Not specified" },
+            { "{{TradingZone}}", request.TradingZone ?? "Not specified" },
+            { "{{Notes}}", string.IsNullOrWhiteSpace(request.Notes) ? "No notes provided." : request.Notes },
+        };
+
+        string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
+        string responseText = await SendOpenRouterRequest(finalPrompt, imageContents, cancellationToken);
+        ChartScreenshotAnalysisResultDto? response = ParseJsonResponse<ChartScreenshotAnalysisResultDto>(responseText);
+
+        if (response is null)
+        {
+            return null;
+        }
+
+        response.ConfidenceScore = Math.Clamp(response.ConfidenceScore, 0m, 1m);
+        response.KeyLevels = SanitizeStringList(response.KeyLevels);
+        response.DetectedConfluences = SanitizeStringList(response.DetectedConfluences);
+        response.Warnings = SanitizeStringList(response.Warnings);
+        response.SuggestedActions = SanitizeStringList(response.SuggestedActions);
+
+        return response;
+    }
+
     public async Task<EmotionDetectionResultDto?> DetectEmotionsAsync(
         EmotionDetectionRequestDto request, CancellationToken cancellationToken)
     {
@@ -589,6 +649,234 @@ internal sealed class OpenRouterAiService(
         return ParseJsonResponse<MorningBriefingResultDto>(responseText);
     }
 
+    public async Task<NaturalLanguageTradeSearchResultDto?> SearchTradesNaturalLanguageAsync(
+        NaturalLanguageTradeSearchRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        string promptTemplate = await promptService.GetNaturalLanguageTradeSearch();
+
+        if (string.IsNullOrEmpty(promptTemplate))
+        {
+            throw new InvalidOperationException("Natural language trade search prompt template not found.");
+        }
+
+        Dictionary<string, string> replacements = new()
+        {
+            { "{{CurrentDateUtc}}", DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
+            { "{{UserQuery}}", request.Query.Trim() },
+        };
+
+        string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
+        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+
+        return ParseJsonResponse<NaturalLanguageTradeSearchResultDto>(responseText);
+    }
+
+    public async Task<TradePatternDiscoveryResultDto?> DiscoverTradePatternsAsync(
+        TradePatternDiscoveryRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        TradeAiContextSnapshot context = await tradeAiContextService.BuildPatternContextAsync(
+            request.UserId,
+            request.FromDate,
+            request.ToDate,
+            maxTrades: 60,
+            cancellationToken);
+
+        if (context.SampleSize == 0)
+        {
+            return new TradePatternDiscoveryResultDto
+            {
+                Summary = "No closed trades matched the selected range yet.",
+                SampleSize = 0,
+                ActionItems = ["Close and journal a few trades in this range to unlock AI pattern mining."],
+            };
+        }
+
+        string promptTemplate = await promptService.GetTradePatternDiscovery();
+
+        if (string.IsNullOrEmpty(promptTemplate))
+        {
+            throw new InvalidOperationException("Trade pattern discovery prompt template not found.");
+        }
+
+        Dictionary<string, string> replacements = new()
+        {
+            { "{{RangeSummary}}", context.RangeSummary },
+            { "{{SampleSize}}", context.SampleSize.ToString(CultureInfo.InvariantCulture) },
+            { "{{TradeDigest}}", context.TradeDigest },
+        };
+
+        string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
+        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+
+        TradePatternDiscoveryResultDto? response = ParseJsonResponse<TradePatternDiscoveryResultDto>(responseText);
+
+        if (response is not null && response.SampleSize == 0)
+        {
+            response.SampleSize = context.SampleSize;
+        }
+
+        return response;
+    }
+
+    public async Task<SuggestedLessonsResultDto?> SuggestLessonsAsync(
+        SuggestLessonsRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        LessonSuggestionContextDto context = await tradeDataProvider.GetLessonSuggestionContextAsync(
+            request.FromDate,
+            request.ToDate,
+            request.UserId,
+            maxTrades: 40,
+            cancellationToken);
+
+        if (context.SampleSize == 0)
+        {
+            return new SuggestedLessonsResultDto
+            {
+                Summary = "No closed trades matched the selected range yet.",
+                SampleSize = 0,
+                Suggestions = [],
+            };
+        }
+
+        string promptTemplate = await promptService.GetSuggestedLessons();
+
+        if (string.IsNullOrEmpty(promptTemplate))
+        {
+            throw new InvalidOperationException("Suggested lessons prompt template not found.");
+        }
+
+        Dictionary<string, string> replacements = new()
+        {
+            { "{{RangeSummary}}", context.RangeSummary },
+            { "{{SampleSize}}", context.SampleSize.ToString(CultureInfo.InvariantCulture) },
+            { "{{ExistingLessons}}", BuildExistingLessonDigest(context.ExistingLessons) },
+            { "{{TradeDigest}}", BuildLessonSuggestionTradeDigest(context.Trades) },
+        };
+
+        string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
+        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+
+        SuggestedLessonsResultDto? response = ParseJsonResponse<SuggestedLessonsResultDto>(responseText);
+
+        if (response is null)
+        {
+            return null;
+        }
+
+        response.SampleSize = context.SampleSize;
+        response.Suggestions = SanitizeSuggestedLessons(response.Suggestions, context);
+
+        return response;
+    }
+
+    public async Task<PlaybookOptimizationResultDto?> OptimizePlaybookAsync(
+        PlaybookOptimizationRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        DateTime? start = request.FromDate?.Date;
+        DateTime? end = request.ToDate?.Date.AddDays(1).AddTicks(-1);
+
+        List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
+        List<SetupSummaryDto> setups = await setupProvider.GetSetupsAsync(request.UserId, cancellationToken);
+
+        List<TradeCacheDto> closedTrades = [.. trades
+            .Where(trade => trade.Status == Shared.Common.Enum.TradeStatus.Closed && trade.Pnl.HasValue && trade.TradingSetupId.HasValue)
+            .Where(trade => !start.HasValue || (trade.ClosedDate.HasValue && trade.ClosedDate.Value >= start.Value))
+            .Where(trade => !end.HasValue || (trade.ClosedDate.HasValue && trade.ClosedDate.Value <= end.Value))];
+
+        if (closedTrades.Count == 0 || setups.Count == 0)
+        {
+            return new PlaybookOptimizationResultDto
+            {
+                Summary = "No playbook setup data matched the selected range yet.",
+                SampleSize = 0,
+                Recommendations = [],
+            };
+        }
+
+        List<PlaybookSetupSnapshot> playbookSnapshots = [.. setups
+            .Where(setup => setup.Status != 4)
+            .Select(setup => BuildPlaybookSetupSnapshot(setup, closedTrades))
+            .OrderByDescending(snapshot => snapshot.TotalTrades)
+            .ThenByDescending(snapshot => snapshot.TotalPnl)];
+
+        if (playbookSnapshots.Count == 0)
+        {
+            return new PlaybookOptimizationResultDto
+            {
+                Summary = "No active playbook setups are available to optimize.",
+                SampleSize = 0,
+                Recommendations = [],
+            };
+        }
+
+        string promptTemplate = await promptService.GetPlaybookOptimization();
+
+        if (string.IsNullOrEmpty(promptTemplate))
+        {
+            throw new InvalidOperationException("Playbook optimization prompt template not found.");
+        }
+
+        Dictionary<string, string> replacements = new()
+        {
+            { "{{RangeSummary}}", BuildDateRangeSummary(start, end) },
+            { "{{SampleSize}}", playbookSnapshots.Count.ToString(CultureInfo.InvariantCulture) },
+            { "{{SetupDigest}}", BuildPlaybookSetupDigest(playbookSnapshots) },
+        };
+
+        string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
+        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+
+        PlaybookOptimizationResultDto? response = ParseJsonResponse<PlaybookOptimizationResultDto>(responseText);
+
+        if (response is null)
+        {
+            return null;
+        }
+
+        response.SampleSize = playbookSnapshots.Count;
+        response.Recommendations = EnrichPlaybookRecommendations(response.Recommendations, playbookSnapshots);
+
+        return response;
+    }
+
+    public async Task<AiTiltInterventionResultDto?> AnalyzeTiltInterventionAsync(
+        AiTiltInterventionRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        string promptTemplate = await promptService.GetTiltIntervention();
+
+        if (string.IsNullOrEmpty(promptTemplate))
+        {
+            throw new InvalidOperationException("Tilt intervention prompt template not found.");
+        }
+
+        TradeAiContextSnapshot context = await tradeAiContextService.BuildRecentClosedTradesContextAsync(
+            request.UserId,
+            maxTrades: 10,
+            cancellationToken);
+
+        Dictionary<string, string> replacements = new()
+        {
+            { "{{TiltScore}}", request.TiltScore.ToString(CultureInfo.InvariantCulture) },
+            { "{{TiltLevel}}", request.TiltLevel },
+            { "{{ConsecutiveLosses}}", request.ConsecutiveLosses.ToString(CultureInfo.InvariantCulture) },
+            { "{{TradesLastHour}}", request.TradesLastHour.ToString(CultureInfo.InvariantCulture) },
+            { "{{RuleBreaksToday}}", request.RuleBreaksToday.ToString(CultureInfo.InvariantCulture) },
+            { "{{TodayPnl}}", request.TodayPnl.ToString("F2", CultureInfo.InvariantCulture) },
+            { "{{CooldownUntil}}", request.CooldownUntil?.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) ?? "No cooldown active" },
+            { "{{RecentTrades}}", context.TradeDigest },
+        };
+
+        string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
+        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+
+        return ParseJsonResponse<AiTiltInterventionResultDto>(responseText);
+    }
+
     private static T? ParseJsonResponse<T>(string responseText)
     {
         try
@@ -608,6 +896,345 @@ internal sealed class OpenRouterAiService(
                 $"Failed to parse AI response into {typeof(T).Name}. Raw response: {responseText}", ex);
         }
     }
+
+    private static string BuildLessonSuggestionTradeDigest(IReadOnlyList<LessonSuggestionTradeDto> trades)
+    {
+        if (trades.Count == 0)
+        {
+            return "No closed trades matched the requested range.";
+        }
+
+        return string.Join("\n", trades.Select(trade =>
+            $"- {FormatPromptDate(trade.ClosedDate)} | TradeId: {trade.TradeId} | {trade.Asset} | {trade.Position} | PnL: {FormatPromptNumber(trade.Pnl, 2)} | Zone: {trade.TradingZone} | RuleBroken: {(trade.IsRuleBroken ? "Yes" : "No")} | Technical: {JoinOrFallback(trade.TechnicalThemes)} | Emotions: {JoinOrFallback(trade.EmotionTags)} | Notes: {(string.IsNullOrWhiteSpace(trade.Notes) ? "No note" : trade.Notes)}"));
+    }
+
+    private static string BuildExistingLessonDigest(IReadOnlyList<ExistingLessonContextDto> lessons)
+    {
+        if (lessons.Count == 0)
+        {
+            return "No existing lessons yet.";
+        }
+
+        return string.Join("\n", lessons.Select(lesson =>
+            $"- {lesson.Title} | Category: {lesson.Category} | Linked trades: {(lesson.LinkedTradeIds.Count > 0 ? string.Join(", ", lesson.LinkedTradeIds) : "None")} | Takeaway: {lesson.KeyTakeaway ?? "None"}"));
+    }
+
+    private static string BuildPlaybookSetupDigest(IReadOnlyList<PlaybookSetupSnapshot> playbookSnapshots)
+    {
+        return string.Join("\n", playbookSnapshots.Select(snapshot =>
+            $"- SetupId: {snapshot.SetupId} | Name: {snapshot.SetupName} | Description: {snapshot.Description ?? "None"} | Status: {snapshot.Status} | Trades: {snapshot.TotalTrades} | Wins: {snapshot.Wins} | Losses: {snapshot.Losses} | WinRate: {FormatPromptNumber(snapshot.WinRate, 1)} | TotalPnL: {FormatPromptNumber(snapshot.TotalPnl, 2)} | ProfitFactor: {FormatPromptMetric(snapshot.ProfitFactor)} | Expectancy: {FormatPromptNumber(snapshot.Expectancy, 2)} | AvgRR: {FormatPromptNumber(snapshot.AvgRiskReward, 2)} | Grade: {snapshot.Grade}"));
+    }
+
+    private async Task<List<byte[]>> LoadImageSourcesAsync(
+        IReadOnlyList<string> imageSources,
+        CancellationToken cancellationToken)
+    {
+        List<byte[]> images = [];
+
+        foreach (string imageSource in imageSources.Where(source => !string.IsNullOrWhiteSpace(source)).Take(MaxChartAnalysisImages))
+        {
+            byte[]? imageBytes = TryDecodeImageDataUrl(imageSource);
+
+            if (imageBytes is null)
+            {
+                imageBytes = await imageHelper.GetImagePartFromUrl(imageSource, cancellationToken);
+            }
+
+            if (imageBytes is { Length: > 0 })
+            {
+                images.Add(imageBytes);
+            }
+        }
+
+        return images;
+    }
+
+    private static byte[]? TryDecodeImageDataUrl(string imageSource)
+    {
+        if (!SupportedInlineImagePrefixes.Any(prefix => imageSource.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
+        {
+            return null;
+        }
+
+        int commaIndex = imageSource.IndexOf(',');
+
+        if (commaIndex < 0 || commaIndex >= imageSource.Length - 1)
+        {
+            return null;
+        }
+
+        try
+        {
+            string base64Content = imageSource[(commaIndex + 1)..];
+            int estimatedSize = (base64Content.Length * 3) / 4;
+
+            if (estimatedSize <= 0 || estimatedSize > MaxInlineImageBytes)
+            {
+                return null;
+            }
+
+            byte[] imageBytes = Convert.FromBase64String(base64Content);
+
+            return imageBytes.Length > MaxInlineImageBytes || !HasSupportedImageSignature(imageBytes)
+                ? null
+                : imageBytes;
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
+    }
+
+    private static bool HasSupportedImageSignature(byte[] imageBytes)
+    {
+        if (imageBytes.Length < 4)
+        {
+            return false;
+        }
+
+        bool isPng = imageBytes[0] == 0x89 && imageBytes[1] == 0x50 && imageBytes[2] == 0x4E && imageBytes[3] == 0x47;
+        bool isJpeg = imageBytes.Length >= 3 && imageBytes[0] == 0xFF && imageBytes[1] == 0xD8 && imageBytes[2] == 0xFF;
+        bool isWebp = imageBytes.Length >= 12
+            && imageBytes[0] == 0x52
+            && imageBytes[1] == 0x49
+            && imageBytes[2] == 0x46
+            && imageBytes[3] == 0x46
+            && imageBytes[8] == 0x57
+            && imageBytes[9] == 0x45
+            && imageBytes[10] == 0x42
+            && imageBytes[11] == 0x50;
+
+        return isPng || isJpeg || isWebp;
+    }
+
+    private static List<SuggestedLessonDto> SanitizeSuggestedLessons(
+        IReadOnlyList<SuggestedLessonDto>? suggestions,
+        LessonSuggestionContextDto context)
+    {
+        if (suggestions is null || suggestions.Count == 0)
+        {
+            return [];
+        }
+
+        HashSet<string> existingTitles = new(
+            context.ExistingLessons
+                .Select(lesson => NormalizeLessonTitle(lesson.Title))
+                .Where(title => !string.IsNullOrWhiteSpace(title)),
+            StringComparer.OrdinalIgnoreCase);
+
+        HashSet<int> allowedTradeIds = [.. context.Trades.Select(trade => trade.TradeId)];
+        HashSet<string> returnedTitles = new(StringComparer.OrdinalIgnoreCase);
+        List<SuggestedLessonDto> sanitized = [];
+
+        foreach (SuggestedLessonDto suggestion in suggestions)
+        {
+            suggestion.Title = suggestion.Title.Trim();
+            suggestion.Content = suggestion.Content.Trim();
+            suggestion.KeyTakeaway = suggestion.KeyTakeaway?.Trim();
+            suggestion.ActionItems = suggestion.ActionItems?.Trim();
+
+            string normalizedTitle = NormalizeLessonTitle(suggestion.Title);
+
+            if (string.IsNullOrWhiteSpace(normalizedTitle) || string.IsNullOrWhiteSpace(suggestion.Content))
+            {
+                continue;
+            }
+
+            if (existingTitles.Contains(normalizedTitle) || !returnedTitles.Add(normalizedTitle))
+            {
+                continue;
+            }
+
+            suggestion.Category = SanitizeLessonCategory(suggestion.Category);
+            suggestion.Severity = SanitizeLessonSeverity(suggestion.Severity);
+            suggestion.ImpactScore = Math.Clamp(suggestion.ImpactScore, 1, 10);
+            suggestion.LinkedTradeIds = [.. suggestion.LinkedTradeIds
+                .Where(allowedTradeIds.Contains)
+                .Distinct()];
+
+            sanitized.Add(suggestion);
+        }
+
+        return sanitized;
+    }
+
+    private static string NormalizeLessonTitle(string title)
+    {
+        return title.Trim().ToUpperInvariant();
+    }
+
+    private static int SanitizeLessonCategory(int category)
+    {
+        return category is 0 or 1 or 2 or 3 or 4 or 5 or 6 or 7 or 99
+            ? category
+            : 99;
+    }
+
+    private static int SanitizeLessonSeverity(int severity)
+    {
+        return severity is 0 or 1 or 2
+            ? severity
+            : 1;
+    }
+
+    private static List<PlaybookOptimizationRecommendationDto> EnrichPlaybookRecommendations(
+        IReadOnlyList<PlaybookOptimizationRecommendationDto>? recommendations,
+        IReadOnlyList<PlaybookSetupSnapshot> playbookSnapshots)
+    {
+        if (recommendations is null || recommendations.Count == 0)
+        {
+            return [];
+        }
+
+        Dictionary<int, PlaybookSetupSnapshot> snapshotsById = playbookSnapshots.ToDictionary(snapshot => snapshot.SetupId);
+        HashSet<int> seenSetupIds = [];
+        List<PlaybookOptimizationRecommendationDto> enriched = [];
+
+        foreach (PlaybookOptimizationRecommendationDto recommendation in recommendations)
+        {
+            if (!snapshotsById.TryGetValue(recommendation.SetupId, out PlaybookSetupSnapshot? snapshot) || !seenSetupIds.Add(recommendation.SetupId))
+            {
+                continue;
+            }
+
+            recommendation.Action = SanitizePlaybookAction(recommendation.Action);
+            recommendation.Rationale = recommendation.Rationale.Trim();
+            recommendation.Recommendation = recommendation.Recommendation.Trim();
+            recommendation.Confidence = Math.Clamp(recommendation.Confidence, 0m, 1m);
+
+            if (string.IsNullOrWhiteSpace(recommendation.Rationale) || string.IsNullOrWhiteSpace(recommendation.Recommendation))
+            {
+                continue;
+            }
+
+            recommendation.SetupName = snapshot.SetupName;
+            recommendation.TotalTrades = snapshot.TotalTrades;
+            recommendation.WinRate = snapshot.WinRate;
+            recommendation.TotalPnl = snapshot.TotalPnl;
+            recommendation.Expectancy = snapshot.Expectancy;
+            recommendation.AvgRiskReward = snapshot.AvgRiskReward;
+            recommendation.Grade = snapshot.Grade;
+
+            enriched.Add(recommendation);
+        }
+
+        return enriched;
+    }
+
+    private static string SanitizePlaybookAction(string action)
+    {
+        string normalizedAction = action.Trim().ToLowerInvariant();
+
+        return normalizedAction is "prioritize" or "refine" or "retire" or "observe"
+            ? normalizedAction
+            : "observe";
+    }
+
+    private static PlaybookSetupSnapshot BuildPlaybookSetupSnapshot(SetupSummaryDto setup, IReadOnlyList<TradeCacheDto> closedTrades)
+    {
+        List<TradeCacheDto> setupTrades = [.. closedTrades.Where(trade => trade.TradingSetupId == setup.Id)];
+        List<TradeCacheDto> wins = [.. setupTrades.Where(trade => trade.Pnl > 0)];
+        List<TradeCacheDto> losses = [.. setupTrades.Where(trade => trade.Pnl <= 0)];
+
+        decimal totalPnl = setupTrades.Count > 0 ? setupTrades.Sum(trade => trade.Pnl!.Value) : 0;
+        decimal winRate = setupTrades.Count > 0 ? (decimal)wins.Count / setupTrades.Count * 100 : 0;
+        decimal avgWin = wins.Count > 0 ? wins.Average(trade => trade.Pnl!.Value) : 0;
+        decimal avgLoss = losses.Count > 0 ? Math.Abs(losses.Average(trade => trade.Pnl!.Value)) : 0;
+        decimal grossProfit = wins.Sum(trade => trade.Pnl!.Value);
+        decimal grossLoss = Math.Abs(losses.Sum(trade => trade.Pnl!.Value));
+        decimal profitFactor = grossLoss > 0
+            ? grossProfit / grossLoss
+            : (grossProfit > 0 ? decimal.MaxValue : 0);
+        decimal expectancy = (winRate / 100 * avgWin) - ((1 - winRate / 100) * avgLoss);
+        decimal avgRiskReward = CalculateAverageRiskReward(setupTrades);
+        string grade = CalculatePlaybookGrade(winRate, profitFactor, setupTrades.Count);
+
+        return new PlaybookSetupSnapshot(
+            setup.Id,
+            setup.Name,
+            setup.Description,
+            setup.Status,
+            setupTrades.Count,
+            wins.Count,
+            losses.Count,
+            Math.Round(winRate, 1),
+            Math.Round(totalPnl, 2),
+            Math.Round(profitFactor, 2),
+            Math.Round(expectancy, 2),
+            Math.Round(avgRiskReward, 2),
+            grade);
+    }
+
+    private static decimal CalculateAverageRiskReward(IEnumerable<TradeCacheDto> setupTrades)
+    {
+        double[] riskRewardValues = [.. setupTrades
+            .Where(trade => trade.StopLoss > 0 && trade.TargetTier1 > 0 && trade.EntryPrice > 0)
+            .Select(trade =>
+            {
+                decimal risk = Math.Abs(trade.EntryPrice - trade.StopLoss);
+                decimal reward = Math.Abs(trade.TargetTier1 - trade.EntryPrice);
+
+                return risk > 0 ? (double)(reward / risk) : 0;
+            })
+            .Where(value => value > 0)];
+
+        return riskRewardValues.Length > 0 ? (decimal)riskRewardValues.Average() : 0;
+    }
+
+    private static string CalculatePlaybookGrade(decimal winRate, decimal profitFactor, int totalTrades)
+    {
+        if (totalTrades < 5) return "N/A";
+        if (winRate >= 65 && profitFactor >= 2) return "A";
+        if (winRate >= 55 && profitFactor >= 1.5m) return "B";
+        if (winRate >= 45 && profitFactor >= 1) return "C";
+        if (winRate >= 35) return "D";
+        return "F";
+    }
+
+    private static string BuildDateRangeSummary(DateTime? start, DateTime? end)
+    {
+        if (!start.HasValue && !end.HasValue)
+        {
+            return "All available setup-linked closed trades.";
+        }
+
+        return $"Closed setup-linked trades from {(start?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "the beginning")} to {(end?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "now")}.";
+    }
+
+    private static string FormatPromptMetric(decimal value)
+    {
+        return value == decimal.MaxValue
+            ? "Infinity"
+            : FormatPromptNumber(value, 2);
+    }
+
+    private static List<string> SanitizeStringList(IReadOnlyList<string>? values)
+    {
+        if (values is null || values.Count == 0)
+        {
+            return [];
+        }
+
+        return [.. values
+            .Select(value => value.Trim())
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)];
+    }
+
+    private sealed record PlaybookSetupSnapshot(
+        int SetupId,
+        string SetupName,
+        string? Description,
+        int Status,
+        int TotalTrades,
+        int Wins,
+        int Losses,
+        decimal WinRate,
+        decimal TotalPnl,
+        decimal ProfitFactor,
+        decimal Expectancy,
+        decimal AvgRiskReward,
+        string Grade);
 
     private static string CleanJsonResponse(string responseText)
     {

@@ -25,6 +25,16 @@ public interface IAiTradeDataProvider
         CancellationToken cancellationToken);
 
     /// <summary>
+    /// Builds the trade and lesson context needed for AI lesson suggestion generation.
+    /// </summary>
+    Task<LessonSuggestionContextDto> GetLessonSuggestionContextAsync(
+        DateTime? fromDate,
+        DateTime? toDate,
+        int userId,
+        int maxTrades,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// Retrieves paginated trades within a date range for review display.
     /// </summary>
     Task<ReviewTradesPageDto> GetReviewTradesAsync(

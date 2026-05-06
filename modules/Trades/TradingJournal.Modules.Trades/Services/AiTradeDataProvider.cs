@@ -3,6 +3,7 @@ using TradingJournal.Shared.Common.Enum;
 using TradingJournal.Shared.Dtos;
 using TradingJournal.Shared.Interfaces;
 using TradingJournal.Modules.Trades.Infrastructure;
+using System.Globalization;
 
 namespace TradingJournal.Modules.Trades.Services;
 
@@ -95,6 +96,83 @@ internal sealed class AiTradeDataProvider(
         return snapshotBuilder.BuildAsync(periodType, referenceDate, userId, cancellationToken);
     }
 
+    public async Task<LessonSuggestionContextDto> GetLessonSuggestionContextAsync(
+        DateTime? fromDate,
+        DateTime? toDate,
+        int userId,
+        int maxTrades,
+        CancellationToken cancellationToken)
+    {
+        DateTime? start = fromDate?.Date;
+        DateTime? end = toDate?.Date.AddDays(1).AddTicks(-1);
+        int safeMaxTrades = Math.Clamp(maxTrades, 1, 100);
+
+        List<TradeHistory> trades = await context.TradeHistories
+            .AsNoTracking()
+            .Where(trade => trade.CreatedBy == userId)
+            .Where(trade => trade.Status == TradeStatus.Closed && trade.Pnl.HasValue && trade.ClosedDate.HasValue)
+            .Where(trade => !start.HasValue || trade.ClosedDate!.Value >= start.Value)
+            .Where(trade => !end.HasValue || trade.ClosedDate!.Value <= end.Value)
+            .Include(trade => trade.TradeEmotionTags)
+            .Include(trade => trade.TradeTechnicalAnalysisTags)
+                .ThenInclude(tag => tag.TechnicalAnalysis)
+            .Include(trade => trade.TradingZone)
+            .OrderByDescending(trade => trade.ClosedDate)
+            .Take(safeMaxTrades)
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
+
+        Dictionary<int, string> emotionNamesById = (await emotionTagProvider.GetEmotionTagsAsync(cancellationToken))
+            .GroupBy(tag => tag.Id)
+            .ToDictionary(group => group.Key, group => group.First().Name);
+
+        List<LessonSuggestionTradeDto> tradeContext = [.. trades.Select(trade => new LessonSuggestionTradeDto
+        {
+            TradeId = trade.Id,
+            Asset = trade.Asset,
+            Position = trade.Position.ToString(),
+            Pnl = trade.Pnl ?? 0,
+            ClosedDate = trade.ClosedDate ?? trade.Date,
+            IsRuleBroken = trade.IsRuleBroken,
+            Notes = trade.Notes ?? string.Empty,
+            TradingZone = trade.TradingZone?.Name ?? "Unknown zone",
+            EmotionTags = [.. (trade.TradeEmotionTags ?? [])
+                .Select(tag => emotionNamesById.TryGetValue(tag.EmotionTagId, out string? name) ? name : string.Empty)
+                .Where(name => !string.IsNullOrWhiteSpace(name))],
+            TechnicalThemes = [.. (trade.TradeTechnicalAnalysisTags ?? [])
+                .Select(tag => tag.TechnicalAnalysis?.Name ?? string.Empty)
+                .Where(name => !string.IsNullOrWhiteSpace(name))],
+        })];
+
+        List<LessonLearned> lessons = await context.LessonsLearned
+            .AsNoTracking()
+            .Where(lesson => lesson.CreatedBy == userId)
+            .Include(lesson => lesson.LessonTradeLinks)
+            .OrderByDescending(lesson => lesson.CreatedDate)
+            .Take(50)
+            .ToListAsync(cancellationToken);
+
+        List<ExistingLessonContextDto> existingLessons = [.. lessons.Select(lesson => new ExistingLessonContextDto
+        {
+            LessonId = lesson.Id,
+            Title = lesson.Title,
+            Category = (int)lesson.Category,
+            KeyTakeaway = lesson.KeyTakeaway,
+            LinkedTradeIds = [.. lesson.LessonTradeLinks
+                .Where(link => !link.IsDisabled)
+                .Select(link => link.TradeHistoryId)
+                .Distinct()],
+        })];
+
+        return new LessonSuggestionContextDto
+        {
+            SampleSize = tradeContext.Count,
+            RangeSummary = BuildRangeSummary(start, end),
+            Trades = tradeContext,
+            ExistingLessons = existingLessons,
+        };
+    }
+
     public async Task<ReviewTradesPageDto> GetReviewTradesAsync(
         DateTime fromDate, DateTime toDate, int userId,
         int page, int pageSize, CancellationToken cancellationToken)
@@ -155,5 +233,15 @@ internal sealed class AiTradeDataProvider(
             [.. checklistsByTrade[t.Id]]))];
 
         return new ReviewTradesPageDto(items, totalItems, (page * pageSize) < totalItems);
+    }
+
+    private static string BuildRangeSummary(DateTime? start, DateTime? end)
+    {
+        if (!start.HasValue && !end.HasValue)
+        {
+            return "All available closed trades.";
+        }
+
+        return $"Closed trades from {(start?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "the beginning")} to {(end?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "now")}.";
     }
 }

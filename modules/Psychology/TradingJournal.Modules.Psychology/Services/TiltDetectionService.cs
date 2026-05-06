@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using TradingJournal.Messaging.Shared.Abstractions;
+using TradingJournal.Messaging.Shared.Contracts;
 using TradingJournal.Modules.Psychology.Events;
 using TradingJournal.Shared.Contracts;
 
@@ -160,6 +161,18 @@ internal sealed class TiltDetectionService(
         logger.LogInformation(
             "Tilt score for user {UserId}: {Score}/100 (Level: {Level}, Losses: {Losses}, Freq: {Freq}, Rules: {Rules}, PnL: {PnL})",
             userId, totalScore, level, consecutiveLosses, tradesLastHour, ruleBreaksToday, todayPnl);
+
+        await eventBus.PublishAsync(new TiltSnapshotUpdatedEvent(
+            Guid.NewGuid(),
+            userId,
+            totalScore,
+            level.ToString(),
+            consecutiveLosses,
+            tradesLastHour,
+            ruleBreaksToday,
+            todayPnl,
+            cooldownUntil,
+            now), ct);
 
         // Fire circuit breaker event if threshold exceeded
         if (circuitBreakerTriggered)
