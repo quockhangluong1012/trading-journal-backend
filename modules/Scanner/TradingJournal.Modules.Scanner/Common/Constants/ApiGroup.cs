@@ -6,6 +6,7 @@ public static class Tags
     public const string Alerts = "Scanner - Alerts";
     public const string Scanner = "Scanner - Control";
     public const string EconomicCalendar = "Scanner - Economic Calendar";
+    public const string SmartConfluence = "Scanner - Smart Confluence";
 }
 
 public static class ApiGroup
@@ -16,5 +17,6 @@ public static class ApiGroup
         internal const string Alerts = "api/v1/scanner/alerts";
         internal const string Scanner = "api/v1/scanner";
         internal const string EconomicCalendar = "api/v1/scanner/economic-calendar";
+        internal const string SmartConfluence = "api/v1/scanner/smart-confluence";
     }
 }

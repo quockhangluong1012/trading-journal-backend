@@ -2,6 +2,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using TradingJournal.Modules.Psychology.Helpers;
+using TradingJournal.Modules.Psychology.Services;
+using TradingJournal.Shared.Interfaces;
 using TradingJournal.Shared.Extensions;
 
 namespace TradingJournal.Modules.Psychology;
@@ -19,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<IPsychologyDbContext, PsychologyDbContext>();
         services.AddScoped<IEmotionTagProvider, EmotionTagProvider>();
         services.AddScoped<IPsychologyProvider, PsychologyProvider>();
+        services.AddScoped<IDisciplineContextProvider, DisciplineContextProvider>();
         services.AddScoped<ITiltDetectionService, TiltDetectionService>();
         services.AddScoped<IStreakTrackingService, StreakTrackingService>();
         services.AddScoped<IKarmaService, KarmaService>();

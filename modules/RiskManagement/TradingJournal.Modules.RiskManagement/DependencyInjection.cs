@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
+using TradingJournal.Modules.RiskManagement.Services;
+using TradingJournal.Shared.Interfaces;
 using TradingJournal.Shared.Extensions;
 
 namespace TradingJournal.Modules.RiskManagement;
@@ -16,6 +18,7 @@ public static class DependencyInjection
         services.AddModuleDbContext<RiskDbContext>(connectionString);
 
         services.AddScoped<IRiskDbContext, RiskDbContext>();
+        services.AddScoped<IRiskContextProvider, RiskContextProvider>();
 
         return services;
     }

@@ -27,6 +27,9 @@
     <EmbeddedResource Include="Prompts\PreTradeValidation.md" />
     <EmbeddedResource Include="Prompts\ChartScreenshotAnalysis.md" />
     <EmbeddedResource Include="Prompts\EmotionDetection.md" />
+    <EmbeddedResource Include="Prompts\RiskAdvisor.md" />
+    <EmbeddedResource Include="Prompts\WeeklyDigest.md" />
+    <EmbeddedResource Include="Prompts\EconomicImpactPredictor.md" />
     <EmbeddedResource Include="Prompts\MorningBriefing.md" />
     <EmbeddedResource Include="Prompts\NaturalLanguageTradeSearch.md" />
     <EmbeddedResource Include="Prompts\TradePatternDiscovery.md" />

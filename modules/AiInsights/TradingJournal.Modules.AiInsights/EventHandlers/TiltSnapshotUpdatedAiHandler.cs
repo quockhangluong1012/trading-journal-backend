@@ -35,6 +35,11 @@ internal sealed class TiltSnapshotUpdatedAiHandler(
                 return;
             }
 
+            if (result.RiskLevel is not ("high" or "critical"))
+            {
+                return;
+            }
+
             logger.LogInformation(
                 "AI tilt intervention detected for user {UserId} with risk level {RiskLevel}.",
                 notification.UserId,

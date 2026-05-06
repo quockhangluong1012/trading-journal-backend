@@ -31,11 +31,11 @@ internal sealed class AiTiltInterventionNotificationHandler(
 
         await notificationService.CreateAndPushAsync(
             notification.UserId,
-            notification.Title,
-            message,
+            Truncate(notification.Title, 200),
+            Truncate(message, 1000),
             NotificationType.TiltWarning,
             MapPriority(notification.RiskLevel),
-            metadata,
+            Truncate(metadata, 4000),
             "/psychology",
             cancellationToken);
     }
@@ -49,5 +49,10 @@ internal sealed class AiTiltInterventionNotificationHandler(
             "medium" => NotificationPriority.Normal,
             _ => NotificationPriority.Low,
         };
+    }
+
+    private static string Truncate(string value, int maxLength)
+    {
+        return value.Length <= maxLength ? value : value[..maxLength];
     }
 }

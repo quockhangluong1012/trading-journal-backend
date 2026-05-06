@@ -7,6 +7,7 @@ using TradingJournal.Modules.AiInsights.Dto;
 using TradingJournal.Modules.AiInsights.Extensions;
 using TradingJournal.Modules.AiInsights.Options;
 using TradingJournal.Shared.Dtos;
+using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Modules.AiInsights.Services;
 
@@ -14,6 +15,8 @@ internal sealed class OpenRouterAiService(
     IPromptService promptService,
     IAiTradeDataProvider tradeDataProvider,
     ITradeAiContextService tradeAiContextService,
+    IEconomicImpactContextProvider economicImpactContextProvider,
+    IRiskContextProvider riskContextProvider,
     ITradeProvider tradeProvider,
     ISetupProvider setupProvider,
     HttpClient httpClient,
@@ -578,6 +581,179 @@ internal sealed class OpenRouterAiService(
         return ParseJsonResponse<EmotionDetectionResultDto>(responseText);
     }
 
+    public async Task<AiRiskAdvisorResultDto?> GenerateRiskAdvisorAsync(
+        AiRiskAdvisorRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        string promptTemplate = await promptService.GetRiskAdvisor();
+
+        if (string.IsNullOrEmpty(promptTemplate))
+        {
+            throw new InvalidOperationException("Risk advisor prompt template not found.");
+        }
+
+        RiskAdvisorContextDto riskContext = await riskContextProvider.GetRiskContextAsync(
+            request.UserId,
+            cancellationToken);
+        TradeAiContextSnapshot recentTrades = await tradeAiContextService.BuildRecentClosedTradesContextAsync(
+            request.UserId,
+            maxTrades: 8,
+            cancellationToken);
+
+        Dictionary<string, string> replacements = new()
+        {
+            { "{{AccountBalance}}", FormatPromptNumber(riskContext.AccountBalance, 2) },
+            { "{{DailyLossLimitPercent}}", FormatPromptNumber(riskContext.DailyLossLimitPercent, 2) },
+            { "{{WeeklyDrawdownCapPercent}}", FormatPromptNumber(riskContext.WeeklyDrawdownCapPercent, 2) },
+            { "{{MaxOpenPositions}}", riskContext.MaxOpenPositions.ToString(CultureInfo.InvariantCulture) },
+            { "{{DailyPnl}}", FormatPromptNumber(riskContext.DailyPnl, 2) },
+            { "{{DailyPnlPercent}}", FormatPromptNumber(riskContext.DailyPnlPercent, 2) },
+            { "{{WeeklyPnl}}", FormatPromptNumber(riskContext.WeeklyPnl, 2) },
+            { "{{WeeklyPnlPercent}}", FormatPromptNumber(riskContext.WeeklyPnlPercent, 2) },
+            { "{{TodayTradeCount}}", riskContext.TodayTradeCount.ToString(CultureInfo.InvariantCulture) },
+            { "{{OpenPositionCount}}", riskContext.OpenPositionCount.ToString(CultureInfo.InvariantCulture) },
+            { "{{WeekTradeCount}}", riskContext.WeekTradeCount.ToString(CultureInfo.InvariantCulture) },
+            { "{{TodayWins}}", riskContext.TodayWins.ToString(CultureInfo.InvariantCulture) },
+            { "{{TodayLosses}}", riskContext.TodayLosses.ToString(CultureInfo.InvariantCulture) },
+            { "{{DailyLimitUsedPercent}}", FormatPromptNumber(riskContext.DailyLimitUsedPercent, 2) },
+            { "{{WeeklyCapUsedPercent}}", FormatPromptNumber(riskContext.WeeklyCapUsedPercent, 2) },
+            { "{{IsDailyLimitBreached}}", riskContext.IsDailyLimitBreached ? "Yes" : "No" },
+            { "{{IsWeeklyCapBreached}}", riskContext.IsWeeklyCapBreached ? "Yes" : "No" },
+            { "{{RiskAlerts}}", BuildRiskAlertDigest(riskContext.Alerts) },
+            { "{{RecentTrades}}", recentTrades.TradeDigest },
+        };
+
+        string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
+        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        AiRiskAdvisorResultDto? response = ParseJsonResponse<AiRiskAdvisorResultDto>(responseText);
+
+        if (response is null)
+        {
+            return null;
+        }
+
+        response.RiskLevel = SanitizeRiskLevel(response.RiskLevel ?? string.Empty);
+        response.Summary = response.Summary?.Trim() ?? string.Empty;
+        response.PositionSizingAdvice = response.PositionSizingAdvice?.Trim() ?? string.Empty;
+        response.KeyRisks = SanitizeStringList(response.KeyRisks);
+        response.ActionItems = SanitizeStringList(response.ActionItems);
+        response.Confidence = Math.Clamp(response.Confidence, 0m, 1m);
+
+        return response;
+    }
+
+    public async Task<AiWeeklyDigestResultDto?> GenerateWeeklyDigestAsync(
+        AiWeeklyDigestRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        string promptTemplate = await promptService.GetWeeklyDigest();
+
+        if (string.IsNullOrEmpty(promptTemplate))
+        {
+            throw new InvalidOperationException("Weekly digest prompt template not found.");
+        }
+
+        ReviewSnapshot snapshot = await tradeDataProvider.BuildReviewSnapshotAsync(
+            ReviewPeriodType.Weekly,
+            request.ReferenceDate,
+            request.UserId,
+            cancellationToken);
+        ReviewSnapshotMetrics metrics = snapshot.Metrics;
+
+        Dictionary<string, string> replacements = new()
+        {
+            { "{{PeriodStart}}", FormatPromptDate(snapshot.PeriodStart) },
+            { "{{PeriodEnd}}", FormatPromptDate(snapshot.PeriodEnd) },
+            { "{{TotalPnl}}", FormatPromptNumber(metrics.TotalPnl, 2) },
+            { "{{WinRate}}", FormatPromptNumber(metrics.WinRate, 1) },
+            { "{{TotalTrades}}", metrics.TotalTrades.ToString(CultureInfo.InvariantCulture) },
+            { "{{Wins}}", metrics.Wins.ToString(CultureInfo.InvariantCulture) },
+            { "{{Losses}}", metrics.Losses.ToString(CultureInfo.InvariantCulture) },
+            { "{{AverageWin}}", FormatPromptNumber(metrics.AverageWin, 2) },
+            { "{{AverageLoss}}", FormatPromptNumber(metrics.AverageLoss, 2) },
+            { "{{RuleBreakTrades}}", metrics.RuleBreakTrades.ToString(CultureInfo.InvariantCulture) },
+            { "{{HighConfidenceTrades}}", metrics.HighConfidenceTrades.ToString(CultureInfo.InvariantCulture) },
+            { "{{TopAsset}}", metrics.TopAsset ?? "No data available" },
+            { "{{PrimaryTradingZone}}", metrics.PrimaryTradingZone ?? "No data available" },
+            { "{{DominantEmotion}}", metrics.DominantEmotion ?? "No data available" },
+            { "{{TopTechnicalTheme}}", metrics.TopTechnicalTheme ?? "No data available" },
+            { "{{TradeCaseStudies}}", BuildReviewTradeCaseStudies(snapshot.Trades) },
+            { "{{TradesList}}", BuildReviewTradeList(snapshot.Trades) },
+            { "{{PsychologyNotes}}", BuildPsychologyDigest(snapshot.PsychologyNotes) },
+        };
+
+        string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
+        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        AiWeeklyDigestResultDto? response = ParseJsonResponse<AiWeeklyDigestResultDto>(responseText);
+
+        if (response is null)
+        {
+            return null;
+        }
+
+        response.Headline = response.Headline?.Trim() ?? string.Empty;
+        response.Summary = response.Summary?.Trim() ?? string.Empty;
+        response.FocusForNextWeek = response.FocusForNextWeek?.Trim() ?? string.Empty;
+        response.KeyWins = SanitizeStringList(response.KeyWins);
+        response.KeyRisks = SanitizeStringList(response.KeyRisks);
+        response.ActionItems = SanitizeStringList(response.ActionItems);
+
+        return response;
+    }
+
+    public async Task<AiEconomicImpactPredictorResultDto?> GenerateEconomicImpactPredictionAsync(
+        AiEconomicImpactPredictorRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        string promptTemplate = await promptService.GetEconomicImpactPredictor();
+
+        if (string.IsNullOrEmpty(promptTemplate))
+        {
+            throw new InvalidOperationException("Economic impact predictor prompt template not found.");
+        }
+
+        EconomicImpactContextDto context = await economicImpactContextProvider.GetEconomicImpactContextAsync(
+            request.UserId,
+            request.Symbol,
+            request.ProximityMinutes,
+            cancellationToken);
+
+        Dictionary<string, string> replacements = new()
+        {
+            { "{{Symbol}}", context.Symbol },
+            { "{{SafetyLevel}}", context.SafetyLevel },
+            { "{{SafetyMessage}}", context.SafetyMessage },
+            { "{{MinutesUntilNextHighImpactEvent}}", context.MinutesUntilNextHighImpactEvent?.ToString(CultureInfo.InvariantCulture) ?? "None" },
+            { "{{RecommendedWaitMinutes}}", context.RecommendedWaitMinutes.ToString(CultureInfo.InvariantCulture) },
+            { "{{TradesNearEvents}}", context.TradesNearEvents.ToString(CultureInfo.InvariantCulture) },
+            { "{{TradesAwayFromEvents}}", context.TradesAwayFromEvents.ToString(CultureInfo.InvariantCulture) },
+            { "{{WinRateNear}}", FormatPromptNumber(context.WinRateNear, 1) },
+            { "{{WinRateAway}}", FormatPromptNumber(context.WinRateAway, 1) },
+            { "{{AvgPnlNear}}", FormatPromptNumber(context.AvgPnlNear, 2) },
+            { "{{AvgPnlAway}}", FormatPromptNumber(context.AvgPnlAway, 2) },
+            { "{{CorrelationSummary}}", context.CorrelationSummary },
+            { "{{UpcomingEvents}}", BuildEconomicEventDigest(context.UpcomingEvents) },
+        };
+
+        string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
+        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        AiEconomicImpactPredictorResultDto? response = ParseJsonResponse<AiEconomicImpactPredictorResultDto>(responseText);
+
+        if (response is null)
+        {
+            return null;
+        }
+
+        response.RiskLevel = SanitizeRiskLevel(response.RiskLevel ?? string.Empty);
+        response.Summary = response.Summary?.Trim() ?? string.Empty;
+        response.TradeStance = response.TradeStance?.Trim() ?? string.Empty;
+        response.KeyDrivers = SanitizeStringList(response.KeyDrivers);
+        response.ActionItems = SanitizeStringList(response.ActionItems);
+        response.Confidence = Math.Clamp(response.Confidence, 0m, 1m);
+
+        return response;
+    }
+
     public async Task<MorningBriefingResultDto?> GenerateMorningBriefingAsync(
         MorningBriefingRequestDto request, CancellationToken cancellationToken)
     {
@@ -874,7 +1050,23 @@ internal sealed class OpenRouterAiService(
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
         string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
 
-        return ParseJsonResponse<AiTiltInterventionResultDto>(responseText);
+        AiTiltInterventionResultDto? response = ParseJsonResponse<AiTiltInterventionResultDto>(responseText);
+
+        if (response is null)
+        {
+            return null;
+        }
+
+        response.RiskLevel = SanitizeRiskLevel(response.RiskLevel ?? string.Empty);
+        response.TiltType = response.TiltType?.Trim() ?? "discipline";
+        response.Title = response.Title?.Trim() ?? string.Empty;
+        response.Message = response.Message?.Trim() ?? string.Empty;
+        response.ActionItems = SanitizeStringList(response.ActionItems);
+        response.ShouldNotify = response.ShouldNotify
+            && !string.IsNullOrWhiteSpace(response.Title)
+            && !string.IsNullOrWhiteSpace(response.Message);
+
+        return response;
     }
 
     private static T? ParseJsonResponse<T>(string responseText)
@@ -1219,6 +1411,37 @@ internal sealed class OpenRouterAiService(
             .Select(value => value.Trim())
             .Where(value => !string.IsNullOrWhiteSpace(value))
             .Distinct(StringComparer.OrdinalIgnoreCase)];
+    }
+
+    private static string BuildRiskAlertDigest(IReadOnlyList<RiskAdvisorAlertDto> alerts)
+    {
+        if (alerts.Count == 0)
+        {
+            return "No active risk alerts.";
+        }
+
+        return string.Join("\n", alerts.Select(alert =>
+            $"- {alert.Severity.ToUpperInvariant()} | {alert.Title}: {alert.Message}"));
+    }
+
+    private static string BuildEconomicEventDigest(IReadOnlyList<EconomicImpactEventDto> events)
+    {
+        if (events.Count == 0)
+        {
+            return "No relevant upcoming high-impact events.";
+        }
+
+        return string.Join("\n", events.Select(e =>
+            $"- {e.EventName} | {e.Currency} | {e.Impact} | Time: {e.EventDateUtc:yyyy-MM-dd HH:mm} UTC | MinutesUntil: {(e.MinutesUntilRelease?.ToString(CultureInfo.InvariantCulture) ?? "Released")} | Forecast: {(e.Forecast?.ToString(CultureInfo.InvariantCulture) ?? "N/A")} | Previous: {(e.Previous?.ToString(CultureInfo.InvariantCulture) ?? "N/A")}"));
+    }
+
+    private static string SanitizeRiskLevel(string riskLevel)
+    {
+        string normalized = riskLevel.Trim().ToLowerInvariant();
+
+        return normalized is "low" or "moderate" or "high" or "critical"
+            ? normalized
+            : "moderate";
     }
 
     private sealed record PlaybookSetupSnapshot(

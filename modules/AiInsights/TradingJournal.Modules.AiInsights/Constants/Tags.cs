@@ -10,6 +10,14 @@ public static class Tags
 
     public const string AiEmotions = "AI Emotions";
 
+    public const string AiDiscipline = "AI Discipline";
+
+    public const string AiRisk = "AI Risk";
+
+    public const string AiDigest = "AI Digest";
+
+    public const string AiEconomic = "AI Economic";
+
     public const string AiBriefing = "AI Briefing";
 
     public const string AiSearch = "AI Search";
@@ -32,6 +40,14 @@ public static class ApiGroup
         internal const string AiValidation = "api/v1/ai-validation";
 
         internal const string AiEmotions = "api/v1/ai-emotions";
+
+        internal const string AiDiscipline = "api/v1/ai-discipline";
+
+        internal const string AiRisk = "api/v1/ai-risk";
+
+        internal const string AiDigest = "api/v1/ai-digest";
+
+        internal const string AiEconomic = "api/v1/ai-economic";
 
         internal const string AiBriefing = "api/v1/ai-briefing";
 

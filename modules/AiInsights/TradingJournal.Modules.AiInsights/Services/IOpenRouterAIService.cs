@@ -16,6 +16,12 @@ public interface IOpenRouterAIService
 
     Task<EmotionDetectionResultDto?> DetectEmotionsAsync(EmotionDetectionRequestDto request, CancellationToken cancellationToken);
 
+    Task<AiRiskAdvisorResultDto?> GenerateRiskAdvisorAsync(AiRiskAdvisorRequestDto request, CancellationToken cancellationToken);
+
+    Task<AiWeeklyDigestResultDto?> GenerateWeeklyDigestAsync(AiWeeklyDigestRequestDto request, CancellationToken cancellationToken);
+
+    Task<AiEconomicImpactPredictorResultDto?> GenerateEconomicImpactPredictionAsync(AiEconomicImpactPredictorRequestDto request, CancellationToken cancellationToken);
+
     Task<MorningBriefingResultDto?> GenerateMorningBriefingAsync(MorningBriefingRequestDto request, CancellationToken cancellationToken);
 
     Task<NaturalLanguageTradeSearchResultDto?> SearchTradesNaturalLanguageAsync(NaturalLanguageTradeSearchRequestDto request, CancellationToken cancellationToken);

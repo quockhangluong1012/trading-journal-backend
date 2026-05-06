@@ -6,6 +6,7 @@ using TradingJournal.Modules.Scanner.Services.EconomicCalendar;
 using TradingJournal.Modules.Scanner.Services.ICTAnalysis;
 using TradingJournal.Modules.Scanner.Services.LiveData;
 using TradingJournal.Shared.Extensions;
+using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Modules.Scanner;
 
@@ -56,6 +57,7 @@ public static class DependencyInjection
         // Economic Calendar (Forex Factory feed — free, no API key needed)
         services.AddHttpClient<IEconomicCalendarProvider, EconomicCalendarProvider>()
             .AddStandardResilienceHandler();
+        services.AddScoped<IEconomicImpactContextProvider, EconomicImpactContextProvider>();
         services.AddHostedService<EconomicCalendarBackgroundService>();
 
         // SignalR (idempotent)

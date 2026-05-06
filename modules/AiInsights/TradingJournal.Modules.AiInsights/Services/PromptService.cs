@@ -16,6 +16,12 @@ namespace TradingJournal.Modules.AiInsights.Services
 
         public Task<string> GetEmotionDetection() => GetPrompt("EmotionDetection");
 
+        public Task<string> GetRiskAdvisor() => GetPrompt("RiskAdvisor");
+
+        public Task<string> GetWeeklyDigest() => GetPrompt("WeeklyDigest");
+
+        public Task<string> GetEconomicImpactPredictor() => GetPrompt("EconomicImpactPredictor");
+
         public Task<string> GetMorningBriefing() => GetPrompt("MorningBriefing");
 
         public Task<string> GetNaturalLanguageTradeSearch() => GetPrompt("NaturalLanguageTradeSearch");

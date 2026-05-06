@@ -14,6 +14,12 @@ public interface IPromptService
 
     public Task<string> GetEmotionDetection();
 
+    public Task<string> GetRiskAdvisor();
+
+    public Task<string> GetWeeklyDigest();
+
+    public Task<string> GetEconomicImpactPredictor();
+
     public Task<string> GetMorningBriefing();
 
     public Task<string> GetNaturalLanguageTradeSearch();
