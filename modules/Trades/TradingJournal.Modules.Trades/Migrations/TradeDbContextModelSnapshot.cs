@@ -515,9 +515,6 @@ namespace TradingJournal.Modules.Trades.Migrations
                     b.Property<int?>("TradingSetupId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TradingSummaryId")
-                        .HasColumnType("int");
-
                     b.Property<int?>("TradingZoneId")
                         .HasColumnType("int");
 

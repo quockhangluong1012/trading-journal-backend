@@ -24,6 +24,9 @@
     <EmbeddedResource Include="Prompts\TradingOrderSummary.md" />
     <EmbeddedResource Include="Prompts\ReviewSummary.md" />
     <EmbeddedResource Include="Prompts\AiCoach.md" />
+    <EmbeddedResource Include="Prompts\PreTradeValidation.md" />
+    <EmbeddedResource Include="Prompts\EmotionDetection.md" />
+    <EmbeddedResource Include="Prompts\MorningBriefing.md" />
   </ItemGroup>
 
   <ItemGroup>

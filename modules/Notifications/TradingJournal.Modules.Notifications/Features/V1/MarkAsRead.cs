@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.SignalR;
 using TradingJournal.Modules.Notifications.Dto;
 using TradingJournal.Modules.Notifications.Hubs;
+using TradingJournal.Shared.Interfaces;
+using TradingJournal.Shared.Contracts;
 
 namespace TradingJournal.Modules.Notifications.Features.V1;
 
@@ -13,7 +15,8 @@ public sealed class MarkAsRead
 
     internal sealed class Handler(
         INotificationDbContext context,
-        IHubContext<NotificationHub> hubContext)
+        IHubContext<NotificationHub> hubContext,
+        ICacheRepository cacheRepository)
         : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
@@ -37,6 +40,7 @@ public sealed class MarkAsRead
             notification.IsRead = true;
             notification.ReadAt = DateTime.UtcNow;
             await context.SaveChangesAsync(cancellationToken);
+            await cacheRepository.RemoveCache(CacheKeys.UnreadCountForUser(request.UserId), cancellationToken);
 
             // Push updated unread count to user
             int unreadCount = await context.Notifications

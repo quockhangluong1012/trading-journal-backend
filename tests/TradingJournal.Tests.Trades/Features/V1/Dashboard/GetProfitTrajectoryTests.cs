@@ -1,9 +1,8 @@
-using TradingJournal.Tests.Trades.Helpers;
 using Moq;
 using TradingJournal.Modules.Trades.Features.V1.Dashboard;
-using TradingJournal.Modules.Trades.Infrastructure;
-using TradingJournal.Modules.Trades.Domain;
 using TradingJournal.Modules.Trades.Common.Enum;
+using TradingJournal.Shared.Interfaces;
+using TradingJournal.Shared.Dtos;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Dashboard;
 
@@ -27,17 +26,17 @@ public sealed class GetProfitTrajectoryValidatorTests
 
 public sealed class GetProfitTrajectoryHandlerTests
 {
-    private Mock<ITradeDbContext> _ctx = null!;
+    private Mock<ITradeProvider> _tradeProvider = null!;
     private GetProfitTrajectory.Handler _handler = null!;
     public GetProfitTrajectoryHandlerTests()
     {
-        _ctx = new Mock<ITradeDbContext>();
-        _handler = new GetProfitTrajectory.Handler(_ctx.Object);
+        _tradeProvider = new Mock<ITradeProvider>();
+        _handler = new GetProfitTrajectory.Handler(_tradeProvider.Object);
     }
     [Fact]
     public async Task Handle_NoTrades_ReturnsEmptyList()
     {
-        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
+        _tradeProvider.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeCacheDto>());
 
         var result = await _handler.Handle(new GetProfitTrajectory.Request(DashboardFilter.OneMonth, 1), CancellationToken.None);
         Assert.True(result.IsSuccess);
@@ -47,11 +46,11 @@ public sealed class GetProfitTrajectoryHandlerTests
     public async Task Handle_HasTrades_ReturnsTrajectoryData()
     {
         var closedDate = DateTime.UtcNow.AddDays(-1);
-        var trades = new List<TradeHistory>
+        var trades = new List<TradeCacheDto>
         {
-            new() { Id = 1, CreatedBy = 1, Status = TradingJournal.Shared.Common.Enum.TradeStatus.Closed, Pnl = 100, ClosedDate = closedDate }
+            new() { Id = 1, Status = TradingJournal.Shared.Common.Enum.TradeStatus.Closed, Pnl = 100, ClosedDate = closedDate }
         };
-        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(trades.AsQueryable()).Object);
+        _tradeProvider.Setup(x => x.GetTradesAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(trades);
 
         var result = await _handler.Handle(new GetProfitTrajectory.Request(DashboardFilter.OneMonth, 1), CancellationToken.None);
         Assert.True(result.IsSuccess);

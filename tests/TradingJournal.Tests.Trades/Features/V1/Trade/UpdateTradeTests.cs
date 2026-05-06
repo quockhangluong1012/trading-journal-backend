@@ -4,6 +4,7 @@ using TradingJournal.Modules.Trades.Features.V1.Trade;
 using TradingJournal.Modules.Trades.Infrastructure;
 using TradingJournal.Modules.Trades.Domain;
 using TradingJournal.Modules.Trades.Services;
+using TradingJournal.Shared.Interfaces;
 using SharedEnums = TradingJournal.Shared.Common.Enum;
 using TradingJournal.Shared.Common.Enum;
 
@@ -75,7 +76,7 @@ public sealed class UpdateTradeHandlerTests
     {
         _ctx = new Mock<ITradeDbContext>();
         _screenshotMock = new Mock<IScreenshotService>();
-        _handler = new UpdateTrade.Handler(_ctx.Object, _screenshotMock.Object);
+        _handler = new UpdateTrade.Handler(_ctx.Object, _screenshotMock.Object, new Mock<ICacheRepository>().Object);
     }
 
     [Fact]

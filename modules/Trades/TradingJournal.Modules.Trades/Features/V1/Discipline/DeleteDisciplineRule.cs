@@ -4,7 +4,7 @@ public sealed class DeleteDisciplineRule
 {
     public sealed record Request(int Id, int UserId = 0) : ICommand<Result>;
 
-    public sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result>
+    public sealed class Handler(ITradeDbContext context, ICacheRepository cacheRepository) : ICommandHandler<Request, Result>
     {
         public async Task<Result> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -16,6 +16,7 @@ public sealed class DeleteDisciplineRule
 
             rule.IsDisabled = true;
             await context.SaveChangesAsync(cancellationToken);
+            await cacheRepository.RemoveCache(CacheKeys.DisciplineRulesForUser(request.UserId), cancellationToken);
             return Result.Success();
         }
     }

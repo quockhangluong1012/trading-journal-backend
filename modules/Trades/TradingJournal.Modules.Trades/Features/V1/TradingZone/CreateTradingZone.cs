@@ -39,7 +39,7 @@ public sealed class CreateTradingZone
         }
     }
 
-    public sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<int>>
+    public sealed class Handler(ITradeDbContext context, ICacheRepository cacheRepository) : ICommandHandler<Request, Result<int>>
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -55,8 +55,13 @@ public sealed class CreateTradingZone
 
             int insertedRow = await context.SaveChangesAsync(cancellationToken);
 
-            return insertedRow > 0 ? Result<int>.Success(tradingZone.Id)
-                : Result<int>.Failure(Error.Create("Failed to create Trading Zone."));
+            if (insertedRow > 0)
+            {
+                await cacheRepository.RemoveCache(CacheKeys.TradingZones, cancellationToken);
+                return Result<int>.Success(tradingZone.Id);
+            }
+
+            return Result<int>.Failure(Error.Create("Failed to create Trading Zone."));
         }
     }
 

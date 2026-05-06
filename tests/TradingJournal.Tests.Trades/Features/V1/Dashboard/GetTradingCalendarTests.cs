@@ -1,21 +1,20 @@
-using TradingJournal.Tests.Trades.Helpers;
 using Moq;
 using TradingJournal.Modules.Trades.Features.V1.Dashboard;
-using TradingJournal.Modules.Trades.Infrastructure;
-using TradingJournal.Modules.Trades.Domain;
 using TradingJournal.Modules.Trades.Common.Enum;
+using TradingJournal.Shared.Interfaces;
+using TradingJournal.Shared.Dtos;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Dashboard;
 
 public sealed class GetTradingCalendarHandlerTests
 {
-    private Mock<ITradeDbContext> _ctx = null!;
+    private Mock<ITradeProvider> _tradeProvider = null!;
     private GetTradingCalendar.Handler _handler = null!;
-    public GetTradingCalendarHandlerTests() { _ctx = new Mock<ITradeDbContext>(); _handler = new GetTradingCalendar.Handler(_ctx.Object); }
+    public GetTradingCalendarHandlerTests() { _tradeProvider = new Mock<ITradeProvider>(); _handler = new GetTradingCalendar.Handler(_tradeProvider.Object); }
 
     [Fact] public async Task Handle_ReturnsCalendarResponse()
     {
-        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
+        _tradeProvider.Setup(x => x.GetTradesAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<TradeCacheDto>());
 
         var result = await _handler.Handle(new GetTradingCalendar.Request(1, 2024, null, DashboardFilter.OneMonth, 1), CancellationToken.None);
         Assert.True(result.IsSuccess);

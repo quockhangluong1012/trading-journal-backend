@@ -1,3 +1,4 @@
+using TradingJournal.Shared.Dtos;
 
 
 namespace TradingJournal.Modules.Trades.Features.V1.Dashboard;
@@ -6,18 +7,18 @@ public sealed class GetWinLossRatio
 {
     public sealed record Request(DashboardFilter Filter, int UserId = 0) : IQuery<Result<IReadOnlyCollection<WinLossRatioViewModel>>>;
 
-    public sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<IReadOnlyCollection<WinLossRatioViewModel>>>
+    public sealed class Handler(ITradeProvider tradeProvider) : IQueryHandler<Request, Result<IReadOnlyCollection<WinLossRatioViewModel>>>
     {
         public async Task<Result<IReadOnlyCollection<WinLossRatioViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
             DateTime fromDate = DashboardFilterHelper.GetFromDate(request.Filter);
 
-            List<TradeHistory>? trades = await context.TradeHistories
-                .AsNoTracking()
-                .Where(t => t.CreatedBy == request.UserId && t.Status == TradeStatus.Closed && t.Pnl.HasValue && t.ClosedDate != null && t.ClosedDate.Value >= fromDate)
-                .ToListAsync(cancellationToken);
+            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
 
-            if (trades is null || trades.Count == 0)
+            List<TradeCacheDto> trades = [.. allTrades
+                .Where(t => t.Status == TradeStatus.Closed && t.Pnl.HasValue && t.ClosedDate != null && t.ClosedDate.Value >= fromDate)];
+
+            if (trades.Count == 0)
             {
                 return Result<IReadOnlyCollection<WinLossRatioViewModel>>.Success([]);
             }

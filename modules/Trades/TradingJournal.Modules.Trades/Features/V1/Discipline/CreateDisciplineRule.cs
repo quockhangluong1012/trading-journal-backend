@@ -31,10 +31,12 @@ public sealed class CreateDisciplineRule
         }
     }
 
-    public sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<int>>
+    public sealed class Handler(ITradeDbContext context, ICacheRepository cacheRepository, IHttpContextAccessor http) : ICommandHandler<Request, Result<int>>
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {
+            int userId = http.HttpContext?.User.GetCurrentUserId() ?? 0;
+
             DisciplineRule rule = new()
             {
                 Id = 0,
@@ -48,9 +50,13 @@ public sealed class CreateDisciplineRule
             await context.DisciplineRules.AddAsync(rule, cancellationToken);
             int rows = await context.SaveChangesAsync(cancellationToken);
 
-            return rows > 0
-                ? Result<int>.Success(rule.Id)
-                : Result<int>.Failure(Error.Create("Failed to create discipline rule."));
+            if (rows > 0)
+            {
+                await cacheRepository.RemoveCache(CacheKeys.DisciplineRulesForUser(userId), cancellationToken);
+                return Result<int>.Success(rule.Id);
+            }
+
+            return Result<int>.Failure(Error.Create("Failed to create discipline rule."));
         }
     }
 

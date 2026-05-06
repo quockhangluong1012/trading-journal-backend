@@ -4,6 +4,7 @@ using TradingJournal.Modules.Trades.Features.V1.Trade;
 using TradingJournal.Modules.Trades.Infrastructure;
 using TradingJournal.Modules.Trades.Domain;
 using TradingJournal.Modules.Trades.Services;
+using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Trade;
 
@@ -35,7 +36,7 @@ public sealed class DeleteTradeHandlerTests
     {
         _ctx = new Mock<ITradeDbContext>();
         _screenshotMock = new Mock<IScreenshotService>();
-        _handler = new DeleteTrade.Handler(_ctx.Object, _screenshotMock.Object);
+        _handler = new DeleteTrade.Handler(_ctx.Object, _screenshotMock.Object, new Mock<ICacheRepository>().Object);
     }
     [Fact]
     public async Task Handle_TradeNotFound_ReturnsFailure()

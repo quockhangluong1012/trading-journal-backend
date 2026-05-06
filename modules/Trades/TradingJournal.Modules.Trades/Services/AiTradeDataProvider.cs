@@ -3,7 +3,6 @@ using TradingJournal.Shared.Common.Enum;
 using TradingJournal.Shared.Dtos;
 using TradingJournal.Shared.Interfaces;
 using TradingJournal.Modules.Trades.Infrastructure;
-using TradingJournal.Modules.Trades.Features.V1.Review;
 
 namespace TradingJournal.Modules.Trades.Services;
 
@@ -96,15 +95,65 @@ internal sealed class AiTradeDataProvider(
         return snapshotBuilder.BuildAsync(periodType, referenceDate, userId, cancellationToken);
     }
 
-    public async Task UpdateTradeSummaryIdAsync(int tradeHistoryId, int summaryId, CancellationToken cancellationToken)
+    public async Task<ReviewTradesPageDto> GetReviewTradesAsync(
+        DateTime fromDate, DateTime toDate, int userId,
+        int page, int pageSize, CancellationToken cancellationToken)
     {
-        var trade = await context.TradeHistories
-            .FirstOrDefaultAsync(th => th.Id == tradeHistoryId, cancellationToken);
+        IQueryable<TradeHistory> query = context.TradeHistories
+            .Where(t => t.CreatedBy == userId && t.Date >= fromDate && t.Date <= toDate)
+            .AsNoTracking();
 
-        if (trade is not null)
-        {
-            trade.TradingSummaryId = summaryId;
-            await context.SaveChangesAsync(cancellationToken);
-        }
+        int totalItems = await query.CountAsync(cancellationToken);
+
+        List<TradeHistory> trades = await query
+            .OrderByDescending(t => t.Date)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Include(t => t.TradingZone)
+            .ToListAsync(cancellationToken);
+
+        List<int> tradeIds = [.. trades.Select(t => t.Id)];
+
+        // Batch-load emotion tags
+        List<TradeEmotionTag> emotionTags = await context.TradeEmotionTags
+            .AsNoTracking()
+            .Where(e => tradeIds.Contains(e.TradeHistoryId))
+            .ToListAsync(cancellationToken);
+
+        List<EmotionTagCacheDto> cachedEmotionTags = await emotionTagProvider.GetEmotionTagsAsync(cancellationToken);
+        Dictionary<int, string> emotionLookup = cachedEmotionTags.ToDictionary(e => e.Id, e => e.Name);
+        ILookup<int, int> emotionsByTrade = emotionTags.ToLookup(e => e.TradeHistoryId, e => e.EmotionTagId);
+
+        // Batch-load technical analysis tags
+        List<TradeTechnicalAnalysisTag> techTags = await context.TradeTechnicalAnalysisTags
+            .AsNoTracking()
+            .Where(t => tradeIds.Contains(t.TradeHistoryId))
+            .Include(t => t.TechnicalAnalysis)
+            .ToListAsync(cancellationToken);
+
+        ILookup<int, string> techThemesByTrade = techTags
+            .Where(t => t.TechnicalAnalysis != null)
+            .ToLookup(t => t.TradeHistoryId, t => t.TechnicalAnalysis!.Name);
+
+        // Batch-load checklist items
+        List<TradeHistoryChecklist> checklists = await context.TradeHistoryChecklist
+            .AsNoTracking()
+            .Where(c => tradeIds.Contains(c.TradeHistoryId))
+            .Include(c => c.PretradeChecklist)
+            .ToListAsync(cancellationToken);
+
+        ILookup<int, string> checklistsByTrade = checklists
+            .Where(c => c.PretradeChecklist != null)
+            .ToLookup(c => c.TradeHistoryId, c => c.PretradeChecklist!.Name);
+
+        List<ReviewTradeDto> items = [.. trades.Select(t => new ReviewTradeDto(
+            t.Id, t.Asset, t.Position.ToString(), t.Pnl, t.Date, t.ClosedDate,
+            t.EntryPrice, t.ExitPrice, (int)t.ConfidenceLevel,
+            t.TradingZone?.Name, t.IsRuleBroken, t.RuleBreakReason, t.Notes,
+            [.. emotionsByTrade[t.Id].Where(emotionLookup.ContainsKey).Select(id => emotionLookup[id])],
+            [.. techThemesByTrade[t.Id]],
+            [.. checklistsByTrade[t.Id]]))];
+
+        return new ReviewTradesPageDto(items, totalItems, (page * pageSize) < totalItems);
     }
 }

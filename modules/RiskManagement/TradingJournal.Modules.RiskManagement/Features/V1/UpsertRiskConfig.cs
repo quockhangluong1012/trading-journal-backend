@@ -1,3 +1,5 @@
+using TradingJournal.Shared.Contracts;
+
 namespace TradingJournal.Modules.RiskManagement.Features.V1;
 
 public sealed class UpsertRiskConfig
@@ -40,7 +42,7 @@ public sealed class UpsertRiskConfig
         }
     }
 
-    internal sealed class Handler(IRiskDbContext context) : ICommandHandler<Command, Result>
+    internal sealed class Handler(IRiskDbContext context, ICacheRepository cacheRepository) : ICommandHandler<Command, Result>
     {
         public async Task<Result> Handle(Command request, CancellationToken cancellationToken)
         {
@@ -72,6 +74,7 @@ public sealed class UpsertRiskConfig
             }
 
             await context.SaveChangesAsync(cancellationToken);
+            await cacheRepository.RemoveCache(CacheKeys.RiskConfigForUser(request.UserId), cancellationToken);
             return Result.Success();
         }
     }

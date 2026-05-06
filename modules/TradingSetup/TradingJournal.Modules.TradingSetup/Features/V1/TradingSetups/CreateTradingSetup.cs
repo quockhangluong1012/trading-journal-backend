@@ -31,7 +31,7 @@ public sealed class CreateTradingSetup
         }
     }
 
-    public sealed class Handler(ISetupDbContext context) : ICommandHandler<Request, Result<int>>
+    public sealed class Handler(ISetupDbContext context, ICacheRepository cacheRepository) : ICommandHandler<Request, Result<int>>
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -60,9 +60,13 @@ public sealed class CreateTradingSetup
 
             int createdRows = await context.SaveChangesAsync(cancellationToken);
 
-            return createdRows > 0
-                ? Result<int>.Success(tradingSetup.Id)
-                : Result<int>.Failure(Error.Create("Failed to create trading setup."));
+            if (createdRows > 0)
+            {
+                await cacheRepository.RemoveCache(CacheKeys.SetupsForUser(request.UserId), cancellationToken);
+                return Result<int>.Success(tradingSetup.Id);
+            }
+
+            return Result<int>.Failure(Error.Create("Failed to create trading setup."));
         }
     }
 

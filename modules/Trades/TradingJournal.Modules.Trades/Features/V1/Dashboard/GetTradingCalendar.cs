@@ -1,3 +1,5 @@
+using TradingJournal.Shared.Dtos;
+
 namespace TradingJournal.Modules.Trades.Features.V1.Dashboard;
 
 public sealed class GetTradingCalendar
@@ -13,7 +15,7 @@ public sealed class GetTradingCalendar
         IReadOnlyCollection<TradingCalendarViewModel> Data
     );
 
-    public sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<TradingCalendarResponse>>
+    public sealed class Handler(ITradeProvider tradeProvider) : IQueryHandler<Request, Result<TradingCalendarResponse>>
     {
         public async Task<Result<TradingCalendarResponse>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -29,12 +31,13 @@ public sealed class GetTradingCalendar
             DateTime startOfDay = targetDate.Date;
             DateTime endOfDay = targetDate.Date.AddDays(1).AddTicks(-1);
 
-            List<TradeHistory>? trades = await context.TradeHistories
-                .AsNoTracking()
-                .Where(t => t.CreatedBy == request.UserId && t.Status == TradeStatus.Closed && t.ClosedDate != null &&
+            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
+
+            // Filter to closed trades for the requested month
+            List<TradeCacheDto> trades = [.. allTrades
+                .Where(t => t.Status == TradeStatus.Closed && t.ClosedDate != null &&
                     t.ClosedDate.Value.Month == request.Month && t.ClosedDate.Value.Year == request.Year &&
-                    t.ClosedDate.Value >= filterFromDate)
-                .ToListAsync(cancellationToken);
+                    t.ClosedDate.Value >= filterFromDate)];
 
             List<TradingCalendarViewModel> calendars = [];
 
@@ -51,21 +54,21 @@ public sealed class GetTradingCalendar
                 });
             }
 
-            decimal monthlyPnL = await context.TradeHistories
-                .Where(t => t.CreatedBy == request.UserId && t.Status == TradeStatus.Closed && t.ClosedDate != null &&
-                            t.ClosedDate >= startOfMonth && t.ClosedDate <= endOfMonth && t.ClosedDate >= filterFromDate)
-                .SumAsync(t => t.Pnl ?? 0, cancellationToken);
+            // Compute monthly/weekly/daily PnL from the same cached data
+            List<TradeCacheDto> allClosedTrades = [.. allTrades
+                .Where(t => t.Status == TradeStatus.Closed && t.ClosedDate != null && t.ClosedDate.Value >= filterFromDate)];
 
-            decimal weeklyPnL = await context.TradeHistories
-                .Where(t => t.CreatedBy == request.UserId && t.Status == TradeStatus.Closed && t.ClosedDate != null &&
-                            t.ClosedDate >= startOfWeek && t.ClosedDate <= endOfWeek && t.ClosedDate >= filterFromDate)
+            decimal monthlyPnL = allClosedTrades
+                .Where(t => t.ClosedDate!.Value >= startOfMonth && t.ClosedDate!.Value <= endOfMonth)
+                .Sum(t => t.Pnl ?? 0);
 
-                .SumAsync(t => t.Pnl ?? 0, cancellationToken);
-                
-            decimal dailyPnL = await context.TradeHistories
-                .Where(t => t.CreatedBy == request.UserId && t.Status == TradeStatus.Closed && t.ClosedDate != null && 
-                            t.ClosedDate >= startOfDay && t.ClosedDate <= endOfDay && t.ClosedDate >= filterFromDate)
-                .SumAsync(t => t.Pnl ?? 0, cancellationToken);
+            decimal weeklyPnL = allClosedTrades
+                .Where(t => t.ClosedDate!.Value >= startOfWeek && t.ClosedDate!.Value <= endOfWeek)
+                .Sum(t => t.Pnl ?? 0);
+
+            decimal dailyPnL = allClosedTrades
+                .Where(t => t.ClosedDate!.Value >= startOfDay && t.ClosedDate!.Value <= endOfDay)
+                .Sum(t => t.Pnl ?? 0);
 
             return Result<TradingCalendarResponse>.Success(new TradingCalendarResponse(
                 monthlyPnL,

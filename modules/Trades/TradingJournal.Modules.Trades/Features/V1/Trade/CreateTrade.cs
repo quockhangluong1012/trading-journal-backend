@@ -98,7 +98,8 @@ public sealed class CreateTrade
         ITradeDbContext context,
         IScreenshotService screenshotService,
         IDisciplineEvaluator disciplineEvaluator,
-        IHttpContextAccessor httpContextAccessor) : ICommandHandler<Request, Result<int>>
+        IHttpContextAccessor httpContextAccessor,
+        ICacheRepository cacheRepository) : ICommandHandler<Request, Result<int>>
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -180,6 +181,7 @@ public sealed class CreateTrade
                 int insertedRow = await context.SaveChangesAsync(cancellationToken);
 
                 await context.CommitTransaction();
+                await cacheRepository.RemoveCache(CacheKeys.TradesForUser(userId), cancellationToken);
 
                 return insertedRow > 0 ? Result<int>.Success(tradeHistory.Id)
                     : Result<int>.Failure(Error.Create("Failed to create trade history."));

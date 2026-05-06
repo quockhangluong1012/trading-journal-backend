@@ -25,7 +25,11 @@ public interface IAiTradeDataProvider
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Updates the TradingSummaryId on a TradeHistory after AI generates a summary.
+    /// Retrieves paginated trades within a date range for review display.
     /// </summary>
-    Task UpdateTradeSummaryIdAsync(int tradeHistoryId, int summaryId, CancellationToken cancellationToken);
+    Task<ReviewTradesPageDto> GetReviewTradesAsync(
+        DateTime fromDate, DateTime toDate, int userId,
+        int page, int pageSize, CancellationToken cancellationToken);
 }
+
+

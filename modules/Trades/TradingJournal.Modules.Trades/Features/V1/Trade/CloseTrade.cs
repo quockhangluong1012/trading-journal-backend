@@ -1,6 +1,3 @@
-using TradingJournal.Messaging.Shared.Abstractions;
-using TradingJournal.Messaging.Shared.Events;
-
 namespace TradingJournal.Modules.Trades.Features.V1.Trade;
 
 public sealed class CloseTrade
@@ -21,8 +18,7 @@ public sealed class CloseTrade
         }
     }
 
-    public sealed class Handler(ITradeDbContext tradeDbContext,
-        IEventBus eventBus) : ICommandHandler<Request, Result<bool>>
+    public sealed class Handler(ITradeDbContext tradeDbContext, ICacheRepository cacheRepository) : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -42,8 +38,7 @@ public sealed class CloseTrade
             tradeHistory.Status = TradeStatus.Closed;
 
             await tradeDbContext.SaveChangesAsync(cancellationToken);
-
-            await eventBus.PublishAsync(new SummarizeTradingOrderEvent(Guid.NewGuid(), DateTime.UtcNow, tradeHistory.Id), cancellationToken);
+            await cacheRepository.RemoveCache(CacheKeys.TradesForUser(request.UserId), cancellationToken);
 
             return Result<bool>.Success(true);
         }

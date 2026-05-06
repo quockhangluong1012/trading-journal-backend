@@ -97,7 +97,8 @@ public sealed class UpdateTrade
     }
 
     public sealed class Handler(ITradeDbContext context,
-        IScreenshotService screenshotService) : ICommandHandler<Request, Result<bool>>
+        IScreenshotService screenshotService,
+        ICacheRepository cacheRepository) : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -204,6 +205,7 @@ public sealed class UpdateTrade
                 #endregion
 
             await context.SaveChangesAsync(cancellationToken);
+            await cacheRepository.RemoveCache(CacheKeys.TradesForUser(request.UserId), cancellationToken);
 
             return Result<bool>.Success(true);
         }

@@ -18,7 +18,7 @@ public sealed class GetTradingSetups
                 setup.UpdatedDate ?? setup.CreatedDate));
     }
 
-    public sealed class Handler(ISetupDbContext context) : ICommandHandler<Request, Result<IReadOnlyCollection<TradingSetupViewModel>>>
+    public sealed class Handler(ISetupDbContext context, ICacheRepository cacheRepository) : ICommandHandler<Request, Result<IReadOnlyCollection<TradingSetupViewModel>>>
     {
         public async Task<Result<IReadOnlyCollection<TradingSetupViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -27,10 +27,14 @@ public sealed class GetTradingSetups
                 return Result<IReadOnlyCollection<TradingSetupViewModel>>.Failure(Error.Create("Current user is required."));
             }
 
-            List<TradingSetupViewModel> setups = await BuildQuery(
-                    context.TradingSetups.AsNoTracking(),
-                    request.UserId)
-                .ToListAsync(cancellationToken);
+            List<TradingSetupViewModel> setups = await cacheRepository.GetOrCreateAsync<List<TradingSetupViewModel>>(
+                CacheKeys.SetupsForUser(request.UserId),
+                async ct => await BuildQuery(
+                        context.TradingSetups.AsNoTracking(),
+                        request.UserId)
+                    .ToListAsync(ct),
+                expiration: TimeSpan.FromMinutes(5),
+                cancellationToken: cancellationToken) ?? [];
 
             return Result<IReadOnlyCollection<TradingSetupViewModel>>.Success(setups);
         }

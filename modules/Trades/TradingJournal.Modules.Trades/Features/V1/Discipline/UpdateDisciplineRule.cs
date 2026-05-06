@@ -16,7 +16,7 @@ public sealed class UpdateDisciplineRule
         }
     }
 
-    public sealed class Handler(ITradeDbContext context, IHttpContextAccessor http)
+    public sealed class Handler(ITradeDbContext context, ICacheRepository cacheRepository, IHttpContextAccessor http)
         : ICommandHandler<Request, Result>
     {
         public async Task<Result> Handle(Request request, CancellationToken cancellationToken)
@@ -36,6 +36,7 @@ public sealed class UpdateDisciplineRule
             rule.SortOrder = request.SortOrder;
 
             await context.SaveChangesAsync(cancellationToken);
+            await cacheRepository.RemoveCache(CacheKeys.DisciplineRulesForUser(userId), cancellationToken);
             return Result.Success();
         }
     }

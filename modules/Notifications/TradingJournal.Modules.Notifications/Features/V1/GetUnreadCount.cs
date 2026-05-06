@@ -1,4 +1,6 @@
 using TradingJournal.Modules.Notifications.Dto;
+using TradingJournal.Shared.Interfaces;
+using TradingJournal.Shared.Contracts;
 
 namespace TradingJournal.Modules.Notifications.Features.V1;
 
@@ -9,15 +11,23 @@ public sealed class GetUnreadCount
         public int UserId { get; set; }
     }
 
-    internal sealed class Handler(INotificationDbContext context)
+    internal sealed class Handler(INotificationDbContext context, ICacheRepository cacheRepository)
         : IQueryHandler<Request, Result<UnreadCountDto>>
     {
         public async Task<Result<UnreadCountDto>> Handle(Request request, CancellationToken cancellationToken)
         {
-            int count = await context.Notifications
-                .CountAsync(n => n.UserId == request.UserId && !n.IsRead && !n.IsDisabled, cancellationToken);
+            UnreadCountDto dto = await cacheRepository.GetOrCreateAsync<UnreadCountDto>(
+                CacheKeys.UnreadCountForUser(request.UserId),
+                async ct =>
+                {
+                    int count = await context.Notifications
+                        .CountAsync(n => n.UserId == request.UserId && !n.IsRead && !n.IsDisabled, ct);
+                    return new UnreadCountDto(count);
+                },
+                expiration: TimeSpan.FromSeconds(30),
+                cancellationToken: cancellationToken) ?? new UnreadCountDto(0);
 
-            return Result<UnreadCountDto>.Success(new UnreadCountDto(count));
+            return Result<UnreadCountDto>.Success(dto);
         }
     }
 

@@ -31,8 +31,6 @@ public sealed class TradeHistory : EntityBase<int>
 
     public int? TradingSessionId { get; set; }
 
-    public int? TradingSummaryId { get; set; }
-
     // London / NY / Sydney / Tokyo
     public int? TradingZoneId { get; set; }
 

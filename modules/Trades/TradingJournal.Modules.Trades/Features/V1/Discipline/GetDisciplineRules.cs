@@ -6,27 +6,31 @@ public sealed class GetDisciplineRules
 {
     public sealed record Request(int UserId = 0) : IQuery<Result<List<DisciplineRuleViewModel>>>;
 
-    public sealed class Handler(ITradeDbContext context)
+    public sealed class Handler(ITradeDbContext context, ICacheRepository cacheRepository)
         : IQueryHandler<Request, Result<List<DisciplineRuleViewModel>>>
     {
         public async Task<Result<List<DisciplineRuleViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            List<DisciplineRuleViewModel> rules = await context.DisciplineRules
-                .AsNoTracking()
-                .Where(r => r.CreatedBy == request.UserId)
-                .OrderBy(r => r.SortOrder)
-                .ThenBy(r => r.CreatedDate)
-                .Select(r => new DisciplineRuleViewModel
-                {
-                    Id = r.Id,
-                    Name = r.Name,
-                    Description = r.Description,
-                    Category = r.Category,
-                    IsActive = r.IsActive,
-                    SortOrder = r.SortOrder,
-                    CreatedDate = r.CreatedDate
-                })
-                .ToListAsync(cancellationToken);
+            List<DisciplineRuleViewModel> rules = await cacheRepository.GetOrCreateAsync<List<DisciplineRuleViewModel>>(
+                CacheKeys.DisciplineRulesForUser(request.UserId),
+                async ct => await context.DisciplineRules
+                    .AsNoTracking()
+                    .Where(r => r.CreatedBy == request.UserId)
+                    .OrderBy(r => r.SortOrder)
+                    .ThenBy(r => r.CreatedDate)
+                    .Select(r => new DisciplineRuleViewModel
+                    {
+                        Id = r.Id,
+                        Name = r.Name,
+                        Description = r.Description,
+                        Category = r.Category,
+                        IsActive = r.IsActive,
+                        SortOrder = r.SortOrder,
+                        CreatedDate = r.CreatedDate
+                    })
+                    .ToListAsync(ct),
+                expiration: TimeSpan.FromMinutes(5),
+                cancellationToken: cancellationToken) ?? [];
 
             return Result<List<DisciplineRuleViewModel>>.Success(rules);
         }

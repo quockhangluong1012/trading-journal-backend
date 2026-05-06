@@ -2,8 +2,6 @@ namespace TradingJournal.Modules.AiInsights.Infrastructure;
 
 public interface IAiInsightsDbContext
 {
-    DbSet<TradingSummary> TradingSummaries { get; set; }
-
     DbSet<TradingReview> TradingReviews { get; set; }
 
     Task BeginTransaction();

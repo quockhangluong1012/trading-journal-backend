@@ -15,7 +15,7 @@ public sealed class DeleteTradingZone
         }
     }
 
-    public sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<bool>>
+    public sealed class Handler(ITradeDbContext context, ICacheRepository cacheRepository) : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -29,6 +29,7 @@ public sealed class DeleteTradingZone
             context.TradingZones.Remove(tradingZone);
 
             await context.SaveChangesAsync(cancellationToken);
+            await cacheRepository.RemoveCache(CacheKeys.TradingZones, cancellationToken);
 
             return Result<bool>.Success(true);
         }

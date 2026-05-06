@@ -47,8 +47,6 @@ public sealed class TradeHistoryDetailViewModel
 
     public List<int> TechnicalAnalysisTags { get; set; } = [];
 
-    public TradeSummaryViewModel? TradeSummary { get; set; } = new();
-
     public string? AiSummary { get; set; }
 
     // ICT Methodology Fields

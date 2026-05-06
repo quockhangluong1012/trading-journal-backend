@@ -1,4 +1,5 @@
 using TradingJournal.Modules.RiskManagement.Common.Helpers;
+using TradingJournal.Shared.Contracts;
 
 namespace TradingJournal.Modules.RiskManagement.Features.V1;
 
@@ -14,28 +15,36 @@ public sealed class GetRiskConfig
         int MaxCorrelatedPositions,
         decimal AccountBalance);
 
-    internal sealed class Handler(IRiskDbContext context) : IQueryHandler<Request, Result<RiskConfigViewModel>>
+    internal sealed class Handler(IRiskDbContext context, ICacheRepository cacheRepository) : IQueryHandler<Request, Result<RiskConfigViewModel>>
     {
         public async Task<Result<RiskConfigViewModel>> Handle(Request request, CancellationToken cancellationToken)
         {
-            RiskConfig? config = await context.RiskConfigs
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.CreatedBy == request.UserId, cancellationToken);
+            RiskConfigViewModel config = await cacheRepository.GetOrCreateAsync<RiskConfigViewModel>(
+                CacheKeys.RiskConfigForUser(request.UserId),
+                async ct =>
+                {
+                    RiskConfig? dbConfig = await context.RiskConfigs
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.CreatedBy == request.UserId, ct);
 
-            if (config is null)
-            {
-                // Return sensible defaults if no config exists yet
-                return Result<RiskConfigViewModel>.Success(new RiskConfigViewModel(
-                    2.0m, 5.0m, 1.0m, 5, 3, 10000m));
-            }
+                    if (dbConfig is null)
+                    {
+                        // Return sensible defaults if no config exists yet
+                        return new RiskConfigViewModel(2.0m, 5.0m, 1.0m, 5, 3, 10000m);
+                    }
 
-            return Result<RiskConfigViewModel>.Success(new RiskConfigViewModel(
-                config.DailyLossLimitPercent,
-                config.WeeklyDrawdownCapPercent,
-                config.RiskPerTradePercent,
-                config.MaxOpenPositions,
-                config.MaxCorrelatedPositions,
-                config.AccountBalance));
+                    return new RiskConfigViewModel(
+                        dbConfig.DailyLossLimitPercent,
+                        dbConfig.WeeklyDrawdownCapPercent,
+                        dbConfig.RiskPerTradePercent,
+                        dbConfig.MaxOpenPositions,
+                        dbConfig.MaxCorrelatedPositions,
+                        dbConfig.AccountBalance);
+                },
+                expiration: TimeSpan.FromMinutes(5),
+                cancellationToken: cancellationToken) ?? new RiskConfigViewModel(2.0m, 5.0m, 1.0m, 5, 3, 10000m);
+
+            return Result<RiskConfigViewModel>.Success(config);
         }
     }
 

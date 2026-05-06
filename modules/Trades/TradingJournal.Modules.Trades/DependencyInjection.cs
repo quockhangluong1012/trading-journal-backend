@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
-using TradingJournal.Modules.Trades.Features.V1.Review;
 using TradingJournal.Modules.Trades.Services;
 using TradingJournal.Shared.Extensions;
 

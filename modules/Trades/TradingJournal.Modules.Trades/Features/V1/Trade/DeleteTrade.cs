@@ -22,7 +22,7 @@ public sealed class DeleteTrade
         }
     }
 
-    public sealed class Handler(ITradeDbContext tradeDbContext, IScreenshotService screenshotService) : ICommandHandler<Request, Result<int>>
+    public sealed class Handler(ITradeDbContext tradeDbContext, IScreenshotService screenshotService, ICacheRepository cacheRepository) : ICommandHandler<Request, Result<int>>
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -46,6 +46,7 @@ public sealed class DeleteTrade
             trade.IsDisabled = true;
 
             await tradeDbContext.SaveChangesAsync(cancellationToken);
+            await cacheRepository.RemoveCache(CacheKeys.TradesForUser(request.UserId), cancellationToken);
 
             return Result<int>.Success(trade.Id);
         }

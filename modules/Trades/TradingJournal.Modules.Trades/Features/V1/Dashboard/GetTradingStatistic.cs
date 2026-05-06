@@ -1,26 +1,27 @@
+using TradingJournal.Shared.Dtos;
+
 namespace TradingJournal.Modules.Trades.Features.V1.Dashboard;
 
 public sealed class GetTradingStatistic
 {
     public sealed record Request(DashboardFilter Filter, int UserId = 0) : IQuery<Result<TradingStatisticViewModel>>;
 
-    public sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<TradingStatisticViewModel>>
+    public sealed class Handler(ITradeProvider tradeProvider) : IQueryHandler<Request, Result<TradingStatisticViewModel>>
     {
         public async Task<Result<TradingStatisticViewModel>> Handle(Request request, CancellationToken cancellationToken)
         {
             DateTime fromDate = DashboardFilterHelper.GetFromDate(request.Filter);
 
-            List<TradeHistory> trades = await context.TradeHistories
-                .AsNoTracking()
-                .Where(t => t.CreatedBy == request.UserId && t.Date >= fromDate)
-                .ToListAsync(cancellationToken);
+            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
+
+            List<TradeCacheDto> trades = [.. allTrades.Where(t => t.Date >= fromDate)];
 
             if (trades.Count == 0)
             {
                 return Result<TradingStatisticViewModel>.Success(new TradingStatisticViewModel());
             }
 
-            List<TradeHistory> closedTrades = [.. trades.Where(t => t.Status == TradeStatus.Closed)];
+            List<TradeCacheDto> closedTrades = [.. trades.Where(t => t.Status == TradeStatus.Closed)];
 
             decimal totalPnL = closedTrades.Where(t => t.Pnl.HasValue).Sum(t => t.Pnl ?? 0);
 
@@ -31,7 +32,7 @@ public sealed class GetTradingStatistic
 
             int totalTrades = trades.Count;
 
-            int openPositions = trades.Where(x => x.Status == TradeStatus.Open).Count(t => !t.Pnl.HasValue);
+            int openPositions = trades.Count(t => t.Status == TradeStatus.Open && !t.Pnl.HasValue);
 
             TradingStatisticViewModel statistic = new()
             {

@@ -1,4 +1,4 @@
-using TradingJournal.Modules.Trades.Features.V1.Review;
+using TradingJournal.Modules.Trades.Services;
 using TradingJournal.Shared.Common;
 using TradingJournal.Shared.Dtos;
 

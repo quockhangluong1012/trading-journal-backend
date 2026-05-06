@@ -1,4 +1,5 @@
 using TradingJournal.Shared.Common;
+using TradingJournal.Shared.Dtos;
 
 
 namespace TradingJournal.Modules.Trades.Features.V1.Dashboard;
@@ -21,18 +22,18 @@ public sealed class GetProfitTrajectory
         }
     }
 
-    public sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<IReadOnlyCollection<ProfitTrajectoryViewModel>>>
+    public sealed class Handler(ITradeProvider tradeProvider) : IQueryHandler<Request, Result<IReadOnlyCollection<ProfitTrajectoryViewModel>>>
     {
         public async Task<Result<IReadOnlyCollection<ProfitTrajectoryViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
             DateTime fromDate = DashboardFilterHelper.GetFromDate(request.Filter);
 
-            List<ProfitTrajectoryViewModel> trajectory = await context.TradeHistories
-                .AsNoTracking()
-                .Where(t => t.CreatedBy == request.UserId && t.Status == TradeStatus.Closed && t.ClosedDate != null && t.ClosedDate >= fromDate && t.Pnl.HasValue)
+            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
+
+            List<ProfitTrajectoryViewModel> trajectory = [.. allTrades
+                .Where(t => t.Status == TradeStatus.Closed && t.ClosedDate != null && t.ClosedDate >= fromDate && t.Pnl.HasValue)
                 .OrderBy(t => t.ClosedDate)
-                .Select(t => new ProfitTrajectoryViewModel(t.ClosedDate!.Value, t.Pnl!.Value))
-                .ToListAsync(cancellationToken);
+                .Select(t => new ProfitTrajectoryViewModel(t.ClosedDate!.Value, t.Pnl!.Value))];
 
             return Result<IReadOnlyCollection<ProfitTrajectoryViewModel>>.Success(trajectory);
         }

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.SignalR;
 using TradingJournal.Modules.Notifications.Dto;
 using TradingJournal.Modules.Notifications.Hubs;
+using TradingJournal.Shared.Interfaces;
+using TradingJournal.Shared.Contracts;
 
 namespace TradingJournal.Modules.Notifications.Features.V1;
 
@@ -13,7 +15,8 @@ public sealed class DeleteNotification
 
     internal sealed class Handler(
         INotificationDbContext context,
-        IHubContext<NotificationHub> hubContext)
+        IHubContext<NotificationHub> hubContext,
+        ICacheRepository cacheRepository)
         : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
@@ -37,6 +40,8 @@ public sealed class DeleteNotification
             // Push updated unread count if the deleted notification was unread
             if (!notification.IsRead)
             {
+                await cacheRepository.RemoveCache(CacheKeys.UnreadCountForUser(request.UserId), cancellationToken);
+
                 int unreadCount = await context.Notifications
                     .CountAsync(n => n.UserId == request.UserId && !n.IsRead && !n.IsDisabled, cancellationToken);
 

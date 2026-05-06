@@ -6,6 +6,7 @@ using TradingJournal.Modules.Trades.Domain;
 using TradingJournal.Modules.Trades.Services;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
+using TradingJournal.Shared.Interfaces;
 using SharedEnums = TradingJournal.Shared.Common.Enum;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Trade;
@@ -155,7 +156,7 @@ public sealed class CreateTradeHandlerTests
         _screenshotMock = new Mock<IScreenshotService>();
         _disciplineMock = new Mock<IDisciplineEvaluator>();
         _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
-        _handler = new CreateTrade.Handler(_contextMock.Object, _screenshotMock.Object, _disciplineMock.Object, _httpContextAccessorMock.Object);
+        _handler = new CreateTrade.Handler(_contextMock.Object, _screenshotMock.Object, _disciplineMock.Object, _httpContextAccessorMock.Object, new Mock<ICacheRepository>().Object);
     }
 
     private void SetCurrentUser(int userId)

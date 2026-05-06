@@ -22,7 +22,7 @@ public sealed class RetireSetup
         }
     }
 
-    public sealed class Handler(ISetupDbContext context) : ICommandHandler<Request, Result<bool>>
+    public sealed class Handler(ISetupDbContext context, ICacheRepository cacheRepository) : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -50,6 +50,7 @@ public sealed class RetireSetup
             setup.RetiredDate = DateTime.UtcNow;
 
             await context.SaveChangesAsync(cancellationToken);
+            await cacheRepository.RemoveCache(CacheKeys.SetupsForUser(request.UserId), cancellationToken);
 
             return Result<bool>.Success(true);
         }

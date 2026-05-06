@@ -42,7 +42,7 @@ public sealed class UpdateTradingZone
         }
     }
 
-    public sealed class Handler(ITradeDbContext context) : ICommandHandler<Request, Result<bool>>
+    public sealed class Handler(ITradeDbContext context, ICacheRepository cacheRepository) : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -59,6 +59,7 @@ public sealed class UpdateTradingZone
             tradingZone.Description = request.Description;
 
             await context.SaveChangesAsync(cancellationToken);
+            await cacheRepository.RemoveCache(CacheKeys.TradingZones, cancellationToken);
 
             return Result<bool>.Success(true);
         }

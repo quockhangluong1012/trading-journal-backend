@@ -18,3 +18,5 @@ global using Carter;
 global using TradingJournal.Shared.Interfaces;
 global using TradingJournal.Shared.Common.Enum;global using System.Security.Claims;
 global using TradingJournal.Shared.Extensions;
+global using TradingJournal.Shared.Contracts;
+global using TradingJournal.Shared.Dtos;

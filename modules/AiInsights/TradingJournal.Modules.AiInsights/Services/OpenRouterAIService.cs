@@ -425,6 +425,190 @@ internal sealed class OpenRouterAiService(
         throw new InvalidOperationException("OpenRouter returned an empty or invalid response.");
     }
 
+    public async Task<PreTradeValidationResultDto?> ValidateTradeSetupAsync(
+        PreTradeValidationRequestDto request, CancellationToken cancellationToken)
+    {
+        string promptTemplate = await promptService.GetPreTradeValidation();
+
+        if (string.IsNullOrEmpty(promptTemplate))
+        {
+            throw new InvalidOperationException("Pre-Trade Validation prompt template not found.");
+        }
+
+        // Build recent performance context
+        string recentPerformance = "No recent performance data available.";
+        try
+        {
+            ReviewSnapshot snapshot = await tradeDataProvider.BuildReviewSnapshotAsync(
+                ReviewPeriodType.Monthly,
+                DateTime.UtcNow.AddDays(-30),
+                request.UserId,
+                cancellationToken);
+            ReviewSnapshotMetrics metrics = snapshot.Metrics;
+
+            recentPerformance = $"Last 30 days: {metrics.TotalTrades} trades, " +
+                $"Win Rate: {FormatPromptNumber(metrics.WinRate, 1)}%, " +
+                $"P&L: {FormatPromptNumber(metrics.TotalPnl, 2)}, " +
+                $"Wins: {metrics.Wins}, Losses: {metrics.Losses}, " +
+                $"Avg Win: {FormatPromptNumber(metrics.AverageWin, 2)}, " +
+                $"Avg Loss: {FormatPromptNumber(metrics.AverageLoss, 2)}, " +
+                $"Rule Breaks: {metrics.RuleBreakTrades}";
+        }
+        catch
+        {
+            // Gracefully continue without performance data
+        }
+
+        Dictionary<string, string> replacements = new()
+        {
+            { "{{Asset}}", request.Asset },
+            { "{{Position}}", request.Position },
+            { "{{EntryPrice}}", FormatPromptNumber(request.EntryPrice, 5) },
+            { "{{StopLoss}}", FormatPromptNumber(request.StopLoss, 5) },
+            { "{{TargetTier1}}", FormatPromptNumber(request.TargetTier1, 5) },
+            { "{{TargetTier2}}", request.TargetTier2?.ToString(CultureInfo.InvariantCulture) ?? "Not set" },
+            { "{{TargetTier3}}", request.TargetTier3?.ToString(CultureInfo.InvariantCulture) ?? "Not set" },
+            { "{{ConfidenceLevel}}", request.ConfidenceLevel.ToString() },
+            { "{{TradingZone}}", request.TradingZone ?? "Not specified" },
+            { "{{TechnicalAnalysisTags}}", request.TechnicalAnalysisTags is { Count: > 0 } ? string.Join(", ", request.TechnicalAnalysisTags) : "None" },
+            { "{{ChecklistStatus}}", request.ChecklistStatus ?? "Not completed" },
+            { "{{EmotionTags}}", request.EmotionTags is { Count: > 0 } ? string.Join(", ", request.EmotionTags) : "None" },
+            { "{{Notes}}", request.Notes ?? "No notes provided" },
+            { "{{RecentPerformance}}", recentPerformance },
+        };
+
+        string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
+        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        return ParseJsonResponse<PreTradeValidationResultDto>(responseText);
+    }
+
+    public async Task<EmotionDetectionResultDto?> DetectEmotionsAsync(
+        EmotionDetectionRequestDto request, CancellationToken cancellationToken)
+    {
+        string promptTemplate = await promptService.GetEmotionDetection();
+
+        if (string.IsNullOrEmpty(promptTemplate))
+        {
+            throw new InvalidOperationException("Emotion Detection prompt template not found.");
+        }
+
+        // Fetch available emotions for the user
+        string availableEmotions = "No emotion tags configured in the system.";
+        try
+        {
+            // We use the httpClient's base address context — emotions come from a different module,
+            // so we pass the list as a prompt parameter instead of cross-module dependency
+            availableEmotions = "Focused, Calm, Confident, Anxious, Fearful, Greedy, " +
+                "Frustrated, Impatient, Euphoric, Hesitant, Disciplined, Revenge, " +
+                "FOMO, Overconfident, Bored, Tired, Stressed, Hopeful, Doubtful, Neutral";
+        }
+        catch
+        {
+            // Use defaults
+        }
+
+        Dictionary<string, string> replacements = new()
+        {
+            { "{{AvailableEmotions}}", availableEmotions },
+            { "{{TextContent}}", request.TextContent },
+        };
+
+        string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
+        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        return ParseJsonResponse<EmotionDetectionResultDto>(responseText);
+    }
+
+    public async Task<MorningBriefingResultDto?> GenerateMorningBriefingAsync(
+        MorningBriefingRequestDto request, CancellationToken cancellationToken)
+    {
+        string promptTemplate = await promptService.GetMorningBriefing();
+
+        if (string.IsNullOrEmpty(promptTemplate))
+        {
+            throw new InvalidOperationException("Morning Briefing prompt template not found.");
+        }
+
+        // Build context from recent performance
+        ReviewSnapshot snapshot = await tradeDataProvider.BuildReviewSnapshotAsync(
+            ReviewPeriodType.Monthly,
+            DateTime.UtcNow.AddDays(-30),
+            request.UserId,
+            cancellationToken);
+        ReviewSnapshotMetrics metrics = snapshot.Metrics;
+
+        // Build open positions summary
+        string openPositions = "No open positions.";
+        // Streak description
+        string streakDescription = "No streak data available.";
+
+        // Recent trades to detect streak
+        if (snapshot.Trades.Count > 0)
+        {
+            List<ReviewTradeInsight> recentTrades = [.. snapshot.Trades
+                .OrderByDescending(t => t.ClosedDate)
+                .Take(5)];
+
+            int winStreak = 0;
+            int lossStreak = 0;
+            foreach (ReviewTradeInsight trade in recentTrades)
+            {
+                if (trade.Pnl > 0) { winStreak++; lossStreak = 0; }
+                else { lossStreak++; winStreak = 0; }
+                if (winStreak == 0 && lossStreak == 0) break;
+            }
+
+            streakDescription = winStreak > 0
+                ? $"{winStreak}-trade win streak"
+                : lossStreak > 0
+                    ? $"{lossStreak}-trade loss streak"
+                    : "Mixed results recently";
+        }
+
+        // Psychology notes
+        string recentPsychNotes = snapshot.PsychologyNotes.Count > 0
+            ? string.Join("\n", snapshot.PsychologyNotes.Take(3))
+            : "No recent psychology notes.";
+
+        Dictionary<string, string> replacements = new()
+        {
+            { "{{TotalPnl}}", FormatPromptNumber(metrics.TotalPnl, 2) },
+            { "{{WinRate}}", FormatPromptNumber(metrics.WinRate, 1) },
+            { "{{TotalTrades}}", metrics.TotalTrades.ToString() },
+            { "{{Wins}}", metrics.Wins.ToString() },
+            { "{{Losses}}", metrics.Losses.ToString() },
+            { "{{StreakDescription}}", streakDescription },
+            { "{{OpenPositions}}", openPositions },
+            { "{{TiltScore}}", "Not available" },
+            { "{{YesterdayNote}}", "No daily note from yesterday." },
+            { "{{EconomicEvents}}", "No economic event data available." },
+            { "{{RecentPsychologyNotes}}", recentPsychNotes },
+        };
+
+        string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
+        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        return ParseJsonResponse<MorningBriefingResultDto>(responseText);
+    }
+
+    private static T? ParseJsonResponse<T>(string responseText)
+    {
+        try
+        {
+            string cleanText = CleanJsonResponse(responseText);
+
+            JsonSerializerOptions serializeOptions = new()
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            return JsonSerializer.Deserialize<T>(cleanText, serializeOptions);
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidOperationException(
+                $"Failed to parse AI response into {typeof(T).Name}. Raw response: {responseText}", ex);
+        }
+    }
+
     private static string CleanJsonResponse(string responseText)
     {
         string cleanText = responseText.Trim();

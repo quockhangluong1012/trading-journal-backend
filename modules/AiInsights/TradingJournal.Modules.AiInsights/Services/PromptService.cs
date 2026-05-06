@@ -10,6 +10,12 @@ namespace TradingJournal.Modules.AiInsights.Services
 
         public Task<string> GetAiCoach() => GetPrompt("AiCoach");
 
+        public Task<string> GetPreTradeValidation() => GetPrompt("PreTradeValidation");
+
+        public Task<string> GetEmotionDetection() => GetPrompt("EmotionDetection");
+
+        public Task<string> GetMorningBriefing() => GetPrompt("MorningBriefing");
+
         private async Task<string> GetPrompt(string promptName)
         {
             string prompt = await cacheRepository.GetOrCreateAsync<string>(

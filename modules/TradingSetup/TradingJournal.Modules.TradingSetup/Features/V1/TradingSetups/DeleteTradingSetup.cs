@@ -15,7 +15,7 @@ public sealed class DeleteTradingSetup
         }
     }
 
-    public sealed class Handler(ISetupDbContext context) : ICommandHandler<Request, Result<bool>>
+    public sealed class Handler(ISetupDbContext context, ICacheRepository cacheRepository) : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -31,9 +31,13 @@ public sealed class DeleteTradingSetup
 
             int deletedRows = await context.SaveChangesAsync(cancellationToken);
 
-            return deletedRows > 0
-                ? Result<bool>.Success(true)
-                : Result<bool>.Failure(Error.Create("Failed to delete trading setup."));
+            if (deletedRows > 0)
+            {
+                await cacheRepository.RemoveCache(CacheKeys.SetupsForUser(request.UserId), cancellationToken);
+                return Result<bool>.Success(true);
+            }
+
+            return Result<bool>.Failure(Error.Create("Failed to delete trading setup."));
         }
     }
 

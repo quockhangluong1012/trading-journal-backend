@@ -6,6 +6,7 @@ using TradingJournal.Modules.Setups.Common.Enum;
 using TradingJournal.Modules.Setups.Domain;
 using TradingJournal.Modules.Setups.Features.V1.TradingSetups;
 using TradingJournal.Modules.Setups.Infrastructure;
+using TradingJournal.Shared.Interfaces;
 using TradingJournal.Tests.Trades.Helpers;
 
 namespace TradingJournal.Tests.Trades.Features.V1.TradingSetups;
@@ -57,7 +58,7 @@ public class CreateTradingSetupHandlerTests
     public CreateTradingSetupHandlerTests()
     {
         _dbMock = new Mock<ISetupDbContext>();
-        _handler = new CreateTradingSetup.Handler(_dbMock.Object);
+        _handler = new CreateTradingSetup.Handler(_dbMock.Object, new Mock<ICacheRepository>().Object);
     }
 
     [Fact]
@@ -104,7 +105,7 @@ public class GetTradingSetupsHandlerTests
     public GetTradingSetupsHandlerTests()
     {
         _dbMock = new Mock<ISetupDbContext>();
-        _handler = new GetTradingSetups.Handler(_dbMock.Object);
+        _handler = new GetTradingSetups.Handler(_dbMock.Object, new Mock<ICacheRepository>().Object);
     }
 
     [Fact]
@@ -269,7 +270,7 @@ public class UpdateTradingSetupHandlerTests
     public UpdateTradingSetupHandlerTests()
     {
         _dbMock = new Mock<ISetupDbContext>();
-        _handler = new UpdateTradingSetup.Handler(_dbMock.Object);
+        _handler = new UpdateTradingSetup.Handler(_dbMock.Object, new Mock<ICacheRepository>().Object);
     }
 
     [Fact]
@@ -336,7 +337,7 @@ public class DeleteTradingSetupHandlerTests
     public DeleteTradingSetupHandlerTests()
     {
         _dbMock = new Mock<ISetupDbContext>();
-        _handler = new DeleteTradingSetup.Handler(_dbMock.Object);
+        _handler = new DeleteTradingSetup.Handler(_dbMock.Object, new Mock<ICacheRepository>().Object);
     }
 
     [Fact]

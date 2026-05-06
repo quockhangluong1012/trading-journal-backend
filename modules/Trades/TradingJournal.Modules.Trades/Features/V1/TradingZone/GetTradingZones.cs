@@ -1,4 +1,4 @@
-﻿using Mapster;
+using Mapster;
 
 namespace TradingJournal.Modules.Trades.Features.V1.TradingZone;
 
@@ -6,14 +6,22 @@ public sealed class GetTradingZones
 {
     public sealed record Request() : IQuery<Result<IReadOnlyCollection<TradingZoneViewModel>>>;
 
-    public sealed class Handler(ITradeDbContext context) : IQueryHandler<Request, Result<IReadOnlyCollection<TradingZoneViewModel>>>
+    public sealed class Handler(ITradeDbContext context, ICacheRepository cacheRepository) : IQueryHandler<Request, Result<IReadOnlyCollection<TradingZoneViewModel>>>
     {
         public async Task<Result<IReadOnlyCollection<TradingZoneViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            var tradingZones = await context.TradingZones
-                .ToListAsync(cancellationToken);
+            var tradingZoneViewModels = await cacheRepository.GetOrCreateAsync<IReadOnlyCollection<TradingZoneViewModel>>(
+                CacheKeys.TradingZones,
+                async ct =>
+                {
+                    var tradingZones = await context.TradingZones
+                        .AsNoTracking()
+                        .ToListAsync(ct);
 
-            IReadOnlyCollection<TradingZoneViewModel> tradingZoneViewModels = tradingZones.Adapt<IReadOnlyCollection<TradingZoneViewModel>>();
+                    return tradingZones.Adapt<IReadOnlyCollection<TradingZoneViewModel>>();
+                },
+                expiration: TimeSpan.FromMinutes(10),
+                cancellationToken: cancellationToken) ?? [];
 
             return Result<IReadOnlyCollection<TradingZoneViewModel>>.Success(tradingZoneViewModels);
         }
