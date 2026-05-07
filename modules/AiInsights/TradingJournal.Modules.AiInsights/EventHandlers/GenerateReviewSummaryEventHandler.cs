@@ -49,6 +49,7 @@ internal sealed class GenerateReviewSummaryEventHandler(
                 existing.AiCriticalMistakesTechnical = string.Join("|||", aiResult.CriticalMistakes?.Technical ?? []);
                 existing.AiCriticalMistakesPsychological = string.Join("|||", aiResult.CriticalMistakes?.Psychological ?? []);
                 existing.AiWhatToImprove = string.Join("|||", aiResult.WhatToImprove ?? []);
+                existing.RuleBreaks = notification.RuleBreaks;
                 existing.AiSummaryGenerating = false;
 
                 context.TradingReviews.Update(existing);
@@ -70,6 +71,7 @@ internal sealed class GenerateReviewSummaryEventHandler(
                     AiCriticalMistakesTechnical = string.Join("|||", aiResult.CriticalMistakes?.Technical ?? []),
                     AiCriticalMistakesPsychological = string.Join("|||", aiResult.CriticalMistakes?.Psychological ?? []),
                     AiWhatToImprove = string.Join("|||", aiResult.WhatToImprove ?? []),
+                    RuleBreaks = notification.RuleBreaks,
                     AiSummaryGenerating = false,
                 };
 

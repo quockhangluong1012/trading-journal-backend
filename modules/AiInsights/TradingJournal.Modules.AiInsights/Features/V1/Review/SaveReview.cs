@@ -45,6 +45,7 @@ public sealed class SaveReview
                 existing.TotalTrades = metrics.TotalTrades;
                 existing.Wins = metrics.Wins;
                 existing.Losses = metrics.Losses;
+                existing.RuleBreaks = metrics.RuleBreakTrades;
                 context.TradingReviews.Update(existing);
                 await context.SaveChangesAsync(cancellationToken);
                 return Result<int>.Success(existing.Id);
@@ -57,6 +58,7 @@ public sealed class SaveReview
                 UserNotes = request.UserNotes,
                 TotalPnl = metrics.TotalPnl, WinRate = metrics.WinRate,
                 TotalTrades = metrics.TotalTrades, Wins = metrics.Wins, Losses = metrics.Losses,
+                RuleBreaks = metrics.RuleBreakTrades,
             };
             await context.TradingReviews.AddAsync(review, cancellationToken);
             await context.SaveChangesAsync(cancellationToken);

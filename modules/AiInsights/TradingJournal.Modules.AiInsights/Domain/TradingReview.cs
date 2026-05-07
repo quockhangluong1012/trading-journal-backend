@@ -44,4 +44,6 @@ public sealed class TradingReview : EntityBase<int>
     public int Wins { get; set; }
 
     public int Losses { get; set; }
+
+    public int RuleBreaks { get; set; }
 }

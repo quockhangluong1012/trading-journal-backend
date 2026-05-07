@@ -30,6 +30,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\modules\AiInsights\TradingJournal.Modules.AiInsights\TradingJournal.Modules.AiInsights.csproj" />
+    <ProjectReference Include="..\..\modules\Notifications\TradingJournal.Modules.Notifications\TradingJournal.Modules.Notifications.csproj" />
     <ProjectReference Include="..\..\modules\Trades\TradingJournal.Modules.Trades\TradingJournal.Modules.Trades.csproj" />
     <ProjectReference Include="..\..\modules\TradingSetup\TradingJournal.Modules.TradingSetup\TradingJournal.Modules.TradingSetup.csproj" />
   </ItemGroup>

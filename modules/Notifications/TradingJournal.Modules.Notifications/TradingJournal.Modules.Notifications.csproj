@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="TradingJournal.Tests.Notifications" />
+    <InternalsVisibleTo Include="TradingJournal.Tests.Trades" />
   </ItemGroup>
 
 </Project>

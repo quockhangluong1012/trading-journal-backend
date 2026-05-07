@@ -11,6 +11,11 @@ internal sealed class TiltSnapshotUpdatedAiHandler(
     IEventBus eventBus,
     ILogger<TiltSnapshotUpdatedAiHandler> logger) : INotificationHandler<TiltSnapshotUpdatedEvent>
 {
+    private const int MaxNotificationTitleLength = 200;
+    private const int MaxNotificationMessageLength = 1000;
+    private const int MaxActionItems = 10;
+    private const int MaxActionItemLength = 200;
+
     public async Task Handle(TiltSnapshotUpdatedEvent notification, CancellationToken cancellationToken)
     {
         if (notification.TiltScore < 35 && notification.ConsecutiveLosses == 0 && notification.RuleBreaksToday == 0)
@@ -35,7 +40,19 @@ internal sealed class TiltSnapshotUpdatedAiHandler(
                 return;
             }
 
-            if (result.RiskLevel is not ("high" or "critical"))
+            string riskLevel = result.RiskLevel?.Trim() ?? string.Empty;
+            if (!string.Equals(riskLevel, "high", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(riskLevel, "critical", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            string tiltType = string.IsNullOrWhiteSpace(result.TiltType) ? "discipline" : result.TiltType.Trim();
+            string title = Truncate(result.Title, MaxNotificationTitleLength);
+            string message = Truncate(result.Message, MaxNotificationMessageLength);
+            IReadOnlyList<string> actionItems = NormalizeActionItems(result.ActionItems);
+
+            if (title.Length == 0 && message.Length == 0 && actionItems.Count == 0)
             {
                 return;
             }
@@ -43,18 +60,18 @@ internal sealed class TiltSnapshotUpdatedAiHandler(
             logger.LogInformation(
                 "AI tilt intervention detected for user {UserId} with risk level {RiskLevel}.",
                 notification.UserId,
-                result.RiskLevel);
+                riskLevel);
 
             await eventBus.PublishAsync(new AiTiltInterventionDetectedEvent(
                 Guid.NewGuid(),
                 notification.UserId,
                 notification.TiltScore,
                 notification.TiltLevel,
-                result.RiskLevel,
-                result.TiltType,
-                result.Title,
-                result.Message,
-                result.ActionItems), cancellationToken);
+                riskLevel,
+                tiltType,
+                title,
+                message,
+                actionItems), cancellationToken);
         }
         catch (Exception ex)
         {
@@ -63,5 +80,29 @@ internal sealed class TiltSnapshotUpdatedAiHandler(
                 "AI tilt intervention failed for user {UserId}.",
                 notification.UserId);
         }
+    }
+
+    private static IReadOnlyList<string> NormalizeActionItems(IReadOnlyList<string>? actionItems)
+    {
+        if (actionItems is null || actionItems.Count == 0)
+        {
+            return [];
+        }
+
+        return [.. actionItems
+            .Where(actionItem => !string.IsNullOrWhiteSpace(actionItem))
+            .Select(actionItem => Truncate(actionItem, MaxActionItemLength))
+            .Take(MaxActionItems)];
+    }
+
+    private static string Truncate(string? value, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        value = value.Trim();
+        return value.Length <= maxLength ? value : value[..maxLength];
     }
 }

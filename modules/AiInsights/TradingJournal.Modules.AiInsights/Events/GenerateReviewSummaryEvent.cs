@@ -8,4 +8,5 @@ public record GenerateReviewSummaryEvent(
     ReviewPeriodType PeriodType,
     DateTime PeriodStart,
     DateTime PeriodEnd,
-    int UserId) : IntegrationEvent(EventId);
+    int UserId,
+    int RuleBreaks) : IntegrationEvent(EventId);

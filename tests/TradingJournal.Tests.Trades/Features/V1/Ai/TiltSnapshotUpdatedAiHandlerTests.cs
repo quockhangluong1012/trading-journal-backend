@@ -47,6 +47,41 @@ public sealed class TiltSnapshotUpdatedAiHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenAiRiskLevelUsesDifferentCasing_PublishesAiTiltEvent()
+    {
+        var aiService = new Mock<IOpenRouterAIService>();
+        var eventBus = new Mock<IEventBus>();
+
+        aiService
+            .Setup(service => service.AnalyzeTiltInterventionAsync(
+                It.IsAny<AiTiltInterventionRequestDto>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AiTiltInterventionResultDto
+            {
+                RiskLevel = "Critical",
+                TiltType = "revenge_trading",
+                Title = "Pause before the next trade",
+                Message = "Recent behavior looks like revenge trading.",
+                ActionItems = ["Stand down for 30 minutes."],
+                ShouldNotify = true,
+            });
+
+        var handler = new TiltSnapshotUpdatedAiHandler(
+            aiService.Object,
+            eventBus.Object,
+            NullLogger<TiltSnapshotUpdatedAiHandler>.Instance);
+
+        await handler.Handle(
+            new TiltSnapshotUpdatedEvent(Guid.NewGuid(), 7, 78, "High", 3, 4, 1, -220m, DateTime.UtcNow.AddMinutes(30), DateTime.UtcNow),
+            CancellationToken.None);
+
+        eventBus.Verify(bus => bus.PublishAsync(
+            It.Is<AiTiltInterventionDetectedEvent>(evt => evt.UserId == 7 && evt.RiskLevel == "Critical"),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task Handle_WhenAiThrows_DoesNotPublishEvent()
     {
         var aiService = new Mock<IOpenRouterAIService>();

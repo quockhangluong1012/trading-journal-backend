@@ -59,6 +59,7 @@ public sealed class GenerateReviewSummary
                 existing.TotalTrades = metrics.TotalTrades;
                 existing.Wins = metrics.Wins;
                 existing.Losses = metrics.Losses;
+                existing.RuleBreaks = metrics.RuleBreakTrades;
 
                 if (existing.AiSummaryGenerating)
                 {
@@ -83,6 +84,7 @@ public sealed class GenerateReviewSummary
                     TotalTrades = metrics.TotalTrades,
                     Wins = metrics.Wins,
                     Losses = metrics.Losses,
+                    RuleBreaks = metrics.RuleBreakTrades,
                     AiSummaryGenerating = true,
                 };
 
@@ -98,7 +100,8 @@ public sealed class GenerateReviewSummary
                     request.PeriodType,
                     snapshot.PeriodStart,
                     snapshot.PeriodEnd,
-                    request.UserId),
+                    request.UserId,
+                    metrics.RuleBreakTrades),
                 cancellationToken);
 
             return Result<bool>.Success(true);

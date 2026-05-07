@@ -1,0 +1,1 @@
+Source of truth: repo docs plus code anchors in `Program.cs`, shared module extensions, module `DependencyInjection.cs`, and `Features/V1/*` slices.

@@ -1,32 +1,38 @@
 # Trading Journal Backend — Technical Specification
 
-> **Last updated:** 2026-04-28
-> **Runtime:** .NET 10 | **Database:** SQL Server | **Architecture:** Modular Monolith
+> **Last updated:** 2026-05-07
+> **Runtime:** .NET 10 | **Database:** SQL Server | **Architecture:** Modular monolith
 
 ---
 
 ## 1. System Overview
 
-**Trading Journal** is a modular monolith backend built on **.NET 10** using **Vertical Slice Architecture** with **CQRS** (MediatR), **Carter** for minimal API routing, **Entity Framework Core 10** for data access, and **SignalR** for real-time communication. The system serves as a comprehensive trading journal platform with integrated algorithmic market scanning, AI-powered insights, and trader psychology tracking.
+**Trading Journal** is a single ASP.NET Core host that composes **9 business modules** using **Vertical Slice Architecture** with **CQRS**. The runtime uses **Carter** for minimal API routing, **MediatR** for slice dispatch, **Entity Framework Core 10** for persistence, **SignalR** for real-time delivery, and a **channel-backed in-memory event bus** for asynchronous cross-module work.
+
+### Companion Documents
+
+- [Backend Docs Index](./README.md) — orientation and module map
+- [Code Flow](./CODE_FLOW.md) — startup, request, event, and background execution flow
+- [Feature Flow](./FEATURE_FLOW.md) — end-to-end business journeys
 
 ### Technology Stack
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
-| Runtime | .NET | 10.0 |
-| Web Framework | ASP.NET Core Minimal APIs | 10.0 |
-| Routing | Carter | 10.0.0 |
-| CQRS / Mediator | MediatR | 14.1.0 |
-| Validation | FluentValidation | 12.1.1 |
-| ORM | Entity Framework Core | 10.0.6 |
-| Database | SQL Server (MSSQL) | — |
-| Real-time | ASP.NET Core SignalR | 10.0 |
-| Auth | JWT Bearer + Google OAuth | — |
-| Caching | HybridCache | 10.5.0 |
-| API Docs | Scalar + Swashbuckle | — |
-| Observability | OpenTelemetry | 1.15.2 |
-| AI Integration | OpenRouter AI (Nemotron) | — |
-| Market Data | Yahoo Finance, TwelveData | — |
+| Layer | Technology | Notes |
+|-------|-----------|-------|
+| Runtime | .NET 10 | Single host application |
+| Web Framework | ASP.NET Core Minimal APIs | Hosted in API gateway |
+| Routing | Carter | Feature slices implement `ICarterModule` |
+| CQRS / Mediator | MediatR | Commands, queries, notification handlers |
+| Validation | FluentValidation | Registered per module |
+| ORM | Entity Framework Core 10 | SQL Server provider |
+| Database | SQL Server | Shared connection string, per-module `DbContext` |
+| Real-time | ASP.NET Core SignalR | Notifications and scanner hubs |
+| Auth | JWT Bearer | SignalR tokens accepted via `access_token` query string |
+| Caching | HybridCache | Exposed through `ICacheRepository` |
+| Logging | Serilog | Bootstrap logger + HTTP logging |
+| API Docs | Swagger + OpenAPI + Scalar | Docs UI and schema endpoints |
+| AI Integration | OpenRouter AI | Used by AiInsights |
+| Market Data | Yahoo Finance + Forex Factory scraping | Scanner and economic calendar |
 
 ---
 
@@ -54,10 +60,11 @@ graph TB
         AI["AiInsights Module"]
         NOTIF["Notifications Module"]
         SCAN["Scanner Module"]
+        RISK["RiskManagement Module"]
     end
 
-    GW --> AUTH & TRADE & PSYCH & ANALYTICS & SETUP & AI & NOTIF & SCAN
-    AUTH & TRADE & PSYCH & ANALYTICS & SETUP & AI & NOTIF & SCAN --> SH
+    GW --> AUTH & TRADE & PSYCH & ANALYTICS & SETUP & AI & NOTIF & SCAN & RISK
+    AUTH & TRADE & PSYCH & ANALYTICS & SETUP & AI & NOTIF & SCAN & RISK --> SH
     SCAN & AI --> MS
     MS --> NOTIF
 ```
@@ -66,7 +73,7 @@ graph TB
 
 | Pattern | Implementation |
 |---------|---------------|
-| **Modular Monolith** | 8 independent modules under `/modules/`, each with own DbContext and schema |
+| **Modular Monolith** | 9 modules under `/modules/`, with module-owned dependencies and boundaries |
 | **Vertical Slice** | Each feature is a single file containing Request, Validator, Handler, and Endpoint |
 | **CQRS** | Commands (`ICommand<T>`) and Queries (`IQuery<T>`) via MediatR |
 | **Result Pattern** | `Result<T>` / `Result` for error handling without exceptions |
@@ -83,9 +90,9 @@ trading-journal-backend/
 ├── bootstrapper/
 │   └── TradingJournal.ApiGateWay/         # Single host / composition root
 ├── shared/
-│   ├── TradingJournal.Shared/             # Core abstractions
+│   ├── TradingJournal.Shared/             # Core abstractions and cross-cutting services
 │   └── TradingJournal.Messaging.Shared/   # Event bus infrastructure
-├── modules/                               # 8 feature modules
+├── modules/
 │   ├── Auth/
 │   ├── Trades/
 │   ├── Psychology/
@@ -93,9 +100,9 @@ trading-journal-backend/
 │   ├── TradingSetup/
 │   ├── AiInsights/
 │   ├── Notifications/
-│   └── Scanner/
-├── tests/                                 # Per-module test projects
-└── jobs/                                  # Background job projects
+│   ├── Scanner/
+│   └── RiskManagement/
+└── tests/                                 # Per-module test projects
 ```
 
 ### 2.4 Module Internal Structure (Canonical)
@@ -152,8 +159,8 @@ Result<T>.Success(value) / Result<T>.Failure(error)
 ### 3.4 MediatR Pipeline Behaviors
 
 1. **ValidationBehavior** — FluentValidation before handler
-2. **UserAwareBehavior** — Injects authenticated user ID
-3. **LoggingBehavior** — Request/response logging (dev only)
+2. **UserAwareBehavior** — Injects authenticated user ID for `IUserAwareRequest`
+3. **LoggingBehavior** — Request/response logging in all environments; log level is configuration-driven
 
 ### 3.5 AuditableDbContext
 
@@ -176,7 +183,9 @@ Base class for all module DbContexts:
 
 | Database | Modules |
 |----------|---------|
-| `Trading_Journal` | Auth, Trades, Psychology, Analytics, TradingSetup, AiInsights, Notifications, Scanner |
+| `TradeDatabase` connection string | Auth, Trades, Psychology, TradingSetup, AiInsights, Notifications, Scanner, RiskManagement |
+
+`Analytics` reads through provider interfaces and does not register its own `DbContext`.
 
 ### 4.2 Schema Isolation
 
@@ -191,17 +200,18 @@ Base class for all module DbContexts:
 
 ## 5. Authentication & Authorization
 
-- **JWT Bearer** (HS256, 60-min expiry, zero clock skew)
-- **Google OAuth** external provider
+- **JWT Bearer** (configuration-driven issuer/audience/secret, zero clock skew)
 - **SignalR auth**: JWT via `access_token` query param for `/hubs/*`
 - **Admin policy**: `RequireRole("Admin")`
-- **Rate limiting**: Global 120/min per IP; Auth 5/15min per IP+method
+- **Rate limiting**: Global 120/min per IP; Auth 5 requests / 15 minutes per IP+method by default
+
+> Note: the gateway project references the Google authentication package, but the current composition root in `Program.cs` only wires JWT bearer authentication.
 
 ---
 
 ## 6. API Gateway
 
-`Program.cs` registers all 8 modules, configures JWT + CORS + rate limiting, maps Carter endpoints and 2 SignalR hubs.
+`Program.cs` registers the shared module, all 9 business modules, the in-memory message queue, and the runtime pipeline. It also configures JWT auth, CORS, rate limiting, health checks, OpenAPI/Scalar, and 2 SignalR hubs.
 
 | Hub | Path | Purpose |
 |-----|------|---------|
@@ -246,9 +256,9 @@ Trader psychology journaling — emotion tracking, confidence assessment.
 
 ### 7.4 Analytics Module (Read-Only)
 
-No own DB — computes analytics from trade data via shared interfaces.
+No own DB — computes analytics from provider-backed read models.
 
-**Endpoints:** `GetPerformanceSummary`, `GetEquityCurve`, `GetMonthlyReturns`, `GetAssetBreakdown`, `GetDayOfWeekBreakdown`, `GetInsights`
+**Representative slices:** `GetPerformanceSummary`, `GetEquityCurve`, `GetInsights`, `GetPlaybookOverview`
 
 ---
 
@@ -264,11 +274,16 @@ Reusable trading setup templates with step-by-step entry criteria.
 
 ### 7.6 AiInsights Module
 
-AI-powered trade analysis using OpenRouter AI (Nemotron model).
+AI-powered review, coaching, validation, and search workflows using OpenRouter.
 
-**Domain Entities:** `TradingReview`, `TradingSummary`
+**Domain Entities:** `TradingReview`
 
-**Event Handling:** Consumes `SummarizeTradingOrderEvent` from Trades module.
+**Representative slices:** `ChatWithCoach`, `GenerateReviewSummary`, `SearchTradesNaturalLanguage`, `AnalyzeChartScreenshot`, `GenerateRiskAdvice`, `GenerateWeeklyDigestNotification`
+
+**Event Handling:**
+- Consumes `TiltSnapshotUpdatedEvent`
+- Processes `GenerateReviewSummaryEvent` asynchronously inside the module
+- Publishes `AiTiltInterventionDetectedEvent` and `AiWeeklyDigestGeneratedEvent`
 
 ---
 
@@ -373,27 +388,52 @@ flowchart TD
 
 ---
 
+### 7.9 RiskManagement Module
+
+Risk configuration and read models for position sizing, exposure, drawdown, and account balance tracking.
+
+**Representative slices:** `GetRiskConfig`, `UpsertRiskConfig`, `GetRiskDashboard`, `GetPositionSize`, `GetCorrelationMatrix`, `CreateAccountBalanceEntry`
+
+**Cross-module:** Consumes trade read models via shared providers to build derived risk views.
+
+---
+
 ## 8. Cross-Module Communication
 
 ```mermaid
 flowchart LR
     SCAN["Scanner"] -->|ScannerAlertEvent| EB["IEventBus"]
-    TRADE["Trades"] -->|SummarizeTradingOrderEvent| EB
+    TRADE["Trades"] -->|TradeClosedEvent| EB
+    PSYCH["Psychology"] -->|TiltSnapshotUpdatedEvent| EB
+    AI["AiInsights"] -->|AiTiltInterventionDetectedEvent / AiWeeklyDigestGeneratedEvent| EB
     EB --> NOTIF["Notifications"]
-    EB --> AI["AiInsights"]
+    EB --> PSYCH
+    EB --> AI
 ```
 
 **Shared Interfaces:**
 
 | Interface | Provider | Consumer |
 |-----------|----------|----------|
-| `ITradeProvider` | Trades | Analytics, AiInsights |
-| `IPsychologyProvider` | Psychology | Analytics |
-| `IEmotionTagProvider` | Psychology | Trades |
+| `ITradeProvider` | Trades | Analytics, Psychology, AiInsights, RiskManagement, Scanner |
+| `IPsychologyProvider` | Psychology | Trades, AiInsights |
+| `IEmotionTagProvider` | Psychology | Trades, Psychology |
 | `IAiTradeDataProvider` | Trades | AiInsights |
+| `ISetupProvider` | TradingSetup | Analytics, AiInsights |
 | `ICacheRepository` | Shared | All modules |
 | `IDateTimeProvider` | Shared | All modules |
 | `IUserContext` | Shared | All modules |
+
+**Key Event Contracts:**
+
+| Event | Publisher | Consumer |
+|-------|-----------|----------|
+| `TradeClosedEvent` | Trades | Psychology |
+| `TiltSnapshotUpdatedEvent` | Psychology | AiInsights |
+| `AiTiltInterventionDetectedEvent` | AiInsights | Notifications |
+| `AiWeeklyDigestGeneratedEvent` | AiInsights | Notifications |
+| `ScannerAlertEvent` | Scanner | Notifications |
+| `GenerateReviewSummaryEvent` | AiInsights feature slice | AiInsights async worker |
 
 ---
 
@@ -401,12 +441,13 @@ flowchart LR
 
 | Concern | Implementation |
 |---------|---------------|
-| Authentication | JWT Bearer (HS256, 60-min, zero clock skew) |
-| External Auth | Google OAuth |
+| Authentication | JWT Bearer with issuer/audience/signing-key validation |
 | Authorization | `[Authorize]` + `AdminOnly` policy |
-| CORS | Explicit origin whitelist |
+| CORS | Explicit origin whitelist from configuration |
 | Rate Limiting | Fixed-window per IP |
-| HSTS | 365 days, preload |
+| HSTS | Enabled outside development, 365 days, preload |
+| Security Headers | CSP, frame protection, referrer policy, permissions policy |
+| Idempotency | Opt-in `Idempotency-Key` support for mutating requests |
 | Soft Delete | Global query filter |
 | Audit Trail | Auto `CreatedBy`/`UpdatedBy` from JWT |
 | Input Validation | FluentValidation pipeline behavior |
@@ -415,9 +456,11 @@ flowchart LR
 
 ## 10. Observability
 
-- **OpenTelemetry** with OTLP exporter (HTTP + runtime instrumentation)
-- Structured logging via `ILogger<T>`
-- `LoggingBehavior` MediatR pipeline (dev only)
+- Serilog bootstrap logger plus configured sinks from `appsettings*.json`
+- Structured logging via `ILogger<T>` and `UseSerilogHttpLogging()`
+- `LoggingBehavior` MediatR pipeline on slice execution
+- SQL health check mapped at `/health`
+- API docs surfaced through Swagger, OpenAPI, and Scalar
 
 ---
 
