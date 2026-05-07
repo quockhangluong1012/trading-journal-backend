@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Text.Json;
 
 namespace TradingJournal.Shared.Audit;
@@ -47,13 +49,16 @@ public sealed class AuditEntryBuilder
     public Dictionary<string, object?> OldValues { get; } = [];
     public Dictionary<string, object?> NewValues { get; } = [];
     public List<string> AffectedColumns { get; } = [];
+    internal EntityEntry? TrackedEntry { get; init; }
 
     public AuditEntry ToAuditEntry()
     {
+        string entityId = TrackedEntry is null ? EntityId : GetPrimaryKeyValue(TrackedEntry, EntityId);
+
         return new AuditEntry
         {
             EntityName = EntityName,
-            EntityId = EntityId,
+            EntityId = entityId,
             Action = Action,
             ChangedBy = ChangedBy,
             Timestamp = DateTime.UtcNow,
@@ -61,5 +66,24 @@ public sealed class AuditEntryBuilder
             NewValues = NewValues.Count > 0 ? JsonSerializer.Serialize(NewValues) : null,
             AffectedColumns = AffectedColumns.Count > 0 ? JsonSerializer.Serialize(AffectedColumns) : null
         };
+    }
+
+    private static string GetPrimaryKeyValue(EntityEntry entry, string fallbackEntityId)
+    {
+        List<string> keyValues = entry.Properties
+            .Where(property => property.Metadata.IsPrimaryKey())
+            .Select(property =>
+            {
+                object? keyValue = entry.State == EntityState.Deleted
+                    ? property.OriginalValue
+                    : property.CurrentValue;
+
+                return keyValue?.ToString();
+            })
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value!)
+            .ToList();
+
+        return keyValues.Count == 0 ? fallbackEntityId : string.Join(",", keyValues);
     }
 }

@@ -6,8 +6,8 @@ namespace TradingJournal.Shared.Audit;
 
 /// <summary>
 /// Persists audit log entries to a dedicated SQL table using raw ADO.NET.
-/// Auto-creates the table on first use. Designed for fire-and-forget
-/// persistence to avoid impacting the main SaveChanges performance.
+/// Auto-creates the table on first use and tolerates persistence failures
+/// without breaking the main SaveChanges flow.
 /// </summary>
 public interface IAuditLogStore
 {
@@ -20,6 +20,8 @@ internal sealed class SqlAuditLogStore(
     IConfiguration configuration,
     ILogger<SqlAuditLogStore> logger) : IAuditLogStore
 {
+    private readonly SemaphoreSlim _ensureTableLock = new(1, 1);
+
     private string ConnectionString =>
         configuration.GetConnectionString("TradeDatabase")
         ?? throw new InvalidOperationException("TradeDatabase connection string is not configured.");
@@ -161,11 +163,21 @@ internal sealed class SqlAuditLogStore(
     {
         if (_tableEnsured) return;
 
-        await using SqlConnection conn = new(ConnectionString);
-        await conn.OpenAsync(ct);
-        await using SqlCommand cmd = new(EnsureTableSql, conn);
-        await cmd.ExecuteNonQueryAsync(ct);
+        await _ensureTableLock.WaitAsync(ct);
+        try
+        {
+            if (_tableEnsured) return;
 
-        _tableEnsured = true;
+            await using SqlConnection conn = new(ConnectionString);
+            await conn.OpenAsync(ct);
+            await using SqlCommand cmd = new(EnsureTableSql, conn);
+            await cmd.ExecuteNonQueryAsync(ct);
+
+            _tableEnsured = true;
+        }
+        finally
+        {
+            _ensureTableLock.Release();
+        }
     }
 }

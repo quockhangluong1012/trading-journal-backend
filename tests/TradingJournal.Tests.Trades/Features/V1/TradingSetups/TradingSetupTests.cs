@@ -100,12 +100,16 @@ public class CreateTradingSetupHandlerTests
 public class GetTradingSetupsHandlerTests
 {
     private readonly Mock<ISetupDbContext> _dbMock;
+    private readonly Mock<ICacheRepository> _cacheMock;
     private readonly GetTradingSetups.Handler _handler;
 
     public GetTradingSetupsHandlerTests()
     {
         _dbMock = new Mock<ISetupDbContext>();
-        _handler = new GetTradingSetups.Handler(_dbMock.Object, new Mock<ICacheRepository>().Object);
+        _cacheMock = new Mock<ICacheRepository>();
+        _cacheMock.Setup(x => x.GetOrCreateAsync<List<TradingSetupViewModel>>(It.IsAny<string>(), It.IsAny<Func<CancellationToken, Task<List<TradingSetupViewModel>>>>(), It.IsAny<TimeSpan?>(), It.IsAny<CancellationToken>()))
+            .Returns<string, Func<CancellationToken, Task<List<TradingSetupViewModel>>>, TimeSpan?, CancellationToken>(async (_, handle, _, ct) => (List<TradingSetupViewModel>?)await handle(ct));
+        _handler = new GetTradingSetups.Handler(_dbMock.Object, _cacheMock.Object);
     }
 
     [Fact]

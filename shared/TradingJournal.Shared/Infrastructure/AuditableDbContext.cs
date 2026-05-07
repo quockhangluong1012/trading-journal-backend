@@ -64,10 +64,10 @@ public abstract class AuditableDbContext(DbContextOptions options, IHttpContextA
 
         int result = await base.SaveChangesAsync(cancellationToken);
 
-        // Persist audit entries asynchronously (fire-and-forget to avoid blocking)
+        // Persist audit entries after save so generated keys are available.
         if (auditBuilders.Count > 0)
         {
-            _ = PersistAuditEntriesAsync(auditBuilders, cancellationToken);
+            await PersistAuditEntriesAsync(auditBuilders, cancellationToken);
         }
 
         return result;
@@ -98,6 +98,7 @@ public abstract class AuditableDbContext(DbContextOptions options, IHttpContextA
             {
                 EntityName = entityName,
                 EntityId = entityId,
+                TrackedEntry = entry,
                 ChangedBy = userId,
                 Action = entry.State switch
                 {
@@ -159,20 +160,13 @@ public abstract class AuditableDbContext(DbContextOptions options, IHttpContextA
 
     private async Task PersistAuditEntriesAsync(List<AuditEntryBuilder> builders, CancellationToken ct)
     {
-        try
-        {
-            IAuditLogStore? store = httpContextAccessor.HttpContext?.RequestServices
-                .GetService<IAuditLogStore>();
+        IAuditLogStore? store = httpContextAccessor.HttpContext?.RequestServices
+            .GetService<IAuditLogStore>();
 
-            if (store is null) return;
+        if (store is null) return;
 
-            List<AuditEntry> entries = builders.Select(b => b.ToAuditEntry()).ToList();
-            await store.SaveAsync(entries, ct);
-        }
-        catch
-        {
-            // Audit trail should never break the main operation
-        }
+        List<AuditEntry> entries = builders.Select(b => b.ToAuditEntry()).ToList();
+        await store.SaveAsync(entries, ct);
     }
 
     /// <summary>

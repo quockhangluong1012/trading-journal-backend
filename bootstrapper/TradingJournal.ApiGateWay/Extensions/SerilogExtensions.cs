@@ -60,7 +60,9 @@ internal static class SerilogExtensions
                     }
                 }
 
-                diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+                string requestHost = httpContext.Request.Host.ToString();
+                diagnosticContext.Set("RequestHost",
+                    string.IsNullOrWhiteSpace(requestHost) ? "unknown" : requestHost);
                 diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
                 diagnosticContext.Set("ContentType",
                     httpContext.Response.ContentType ?? "unknown");

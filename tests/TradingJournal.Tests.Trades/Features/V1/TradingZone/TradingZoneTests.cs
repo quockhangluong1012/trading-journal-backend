@@ -2,6 +2,7 @@ using FluentValidation.TestHelper;
 using Moq;
 using TradingJournal.Modules.Trades.Features.V1.TradingZone;
 using TradingJournal.Modules.Trades.Infrastructure;
+using TradingJournal.Modules.Trades.ViewModel;
 using TradingJournal.Shared.Interfaces;
 using TradingJournal.Tests.Trades.Helpers;
 using TradingZoneEntity = TradingJournal.Modules.Trades.Domain.TradingZone;
@@ -29,8 +30,9 @@ public class CreateTradingZoneHandlerTests
 public class GetTradingZonesHandlerTests
 {
     private Mock<ITradeDbContext> _dbMock = null!;
+    private Mock<ICacheRepository> _cacheMock = null!;
     private GetTradingZones.Handler _handler = null!;
-    public GetTradingZonesHandlerTests() { _dbMock = new Mock<ITradeDbContext>(); _handler = new GetTradingZones.Handler(_dbMock.Object, new Mock<ICacheRepository>().Object); }
+    public GetTradingZonesHandlerTests() { _dbMock = new Mock<ITradeDbContext>(); _cacheMock = new Mock<ICacheRepository>(); _cacheMock.Setup(x => x.GetOrCreateAsync<IReadOnlyCollection<TradingZoneViewModel>>(It.IsAny<string>(), It.IsAny<Func<CancellationToken, Task<IReadOnlyCollection<TradingZoneViewModel>>>>(), It.IsAny<TimeSpan?>(), It.IsAny<CancellationToken>())).Returns<string, Func<CancellationToken, Task<IReadOnlyCollection<TradingZoneViewModel>>>, TimeSpan?, CancellationToken>(async (_, handle, _, ct) => (IReadOnlyCollection<TradingZoneViewModel>?)await handle(ct)); _handler = new GetTradingZones.Handler(_dbMock.Object, _cacheMock.Object); }
     [Fact] public async Task Handle_Returns_Zones_When_Data_Exists() { var zones = new List<TradingZoneEntity> { new() { Id = 1, Name = "Asia", CreatedBy = 1 } }.AsQueryable(); _dbMock.Setup(x => x.TradingZones).Returns(DbSetMockHelper.CreateMockDbSet(zones).Object); var result = await _handler.Handle(new GetTradingZones.Request(), CancellationToken.None); Assert.True(result.IsSuccess); Assert.NotEmpty(result.Value); }
     [Fact] public async Task Handle_Returns_Empty_When_No_Data() { _dbMock.Setup(x => x.TradingZones).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradingZoneEntity>().AsQueryable()).Object); var result = await _handler.Handle(new GetTradingZones.Request(), CancellationToken.None); Assert.True(result.IsSuccess); Assert.Empty(result.Value); }
 }
@@ -42,8 +44,9 @@ public class GetTradingZoneDetailHandlerTests
     private Mock<ITradeDbContext> _dbMock = null!;
     private GetTradingZoneDetail.Handler _handler = null!;
     public GetTradingZoneDetailHandlerTests() { _dbMock = new Mock<ITradeDbContext>(); _handler = new GetTradingZoneDetail.Handler(_dbMock.Object); }
-    [Fact] public async Task Handle_Returns_Failure_When_Not_Found() { _dbMock.Setup(x => x.TradingZones).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradingZoneEntity>().AsQueryable()).Object); var result = await _handler.Handle(new GetTradingZoneDetail.Request(99), CancellationToken.None); Assert.True(result.IsFailure); }
-    [Fact] public async Task Handle_Returns_Success_When_Found() { var zone = new TradingZoneEntity { Id = 1, Name = "Asia", CreatedBy = 1, FromTime = "09:30", ToTime = "16:00" }; _dbMock.Setup(x => x.TradingZones).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradingZoneEntity> { zone }.AsQueryable()).Object); var result = await _handler.Handle(new GetTradingZoneDetail.Request(1), CancellationToken.None); Assert.True(result.IsSuccess); Assert.Equal("Asia", result.Value.Name); }
+    [Fact] public async Task Handle_Returns_Failure_When_Not_Found() { _dbMock.Setup(x => x.TradingZones).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradingZoneEntity>().AsQueryable()).Object); var result = await _handler.Handle(new GetTradingZoneDetail.Request(99, 1), CancellationToken.None); Assert.True(result.IsFailure); }
+    [Fact] public async Task Handle_Returns_Failure_When_Zone_Belongs_To_Another_User() { var zone = new TradingZoneEntity { Id = 1, Name = "Asia", CreatedBy = 7, FromTime = "09:30", ToTime = "16:00" }; _dbMock.Setup(x => x.TradingZones).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradingZoneEntity> { zone }.AsQueryable()).Object); var result = await _handler.Handle(new GetTradingZoneDetail.Request(1, 1), CancellationToken.None); Assert.True(result.IsFailure); }
+    [Fact] public async Task Handle_Returns_Success_When_Found() { var zone = new TradingZoneEntity { Id = 1, Name = "Asia", CreatedBy = 1, FromTime = "09:30", ToTime = "16:00" }; _dbMock.Setup(x => x.TradingZones).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradingZoneEntity> { zone }.AsQueryable()).Object); var result = await _handler.Handle(new GetTradingZoneDetail.Request(1, 1), CancellationToken.None); Assert.True(result.IsSuccess); Assert.Equal("Asia", result.Value.Name); }
 }
 
 public class UpdateTradingZoneValidatorTests

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 using TradingJournal.Modules.AiInsights.Extensions;
 using TradingJournal.Modules.AiInsights.Options;
 using TradingJournal.Modules.AiInsights.Services;
@@ -15,6 +16,8 @@ public static class DependencyInjection
         IConfiguration configuration,
         bool isDevelopment)
     {
+        services.AddModuleDefaults(Assembly.GetExecutingAssembly(), isDevelopment);
+
         // Database — uses standard connection string resolution like all other modules
         string connectionString = configuration.GetConnectionString("TradeDatabase")!;
         services.AddModuleDbContext<AiInsightsDbContext>(connectionString,
@@ -47,10 +50,6 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromMinutes(5);
         })
         .AddStandardResilienceHandler();
-
-        // MediatR for this assembly (features + event handlers)
-        services.AddMediatR(cfg =>
-            cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
 
         return services;
     }

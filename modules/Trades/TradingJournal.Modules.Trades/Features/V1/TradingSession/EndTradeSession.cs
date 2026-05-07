@@ -31,7 +31,10 @@ public sealed class EndTradeSession
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
         {
-            var tradeSession = await context.TradingSessions.FindAsync([request.Id], cancellationToken: cancellationToken);
+            var tradeSession = await context.TradingSessions
+                .FirstOrDefaultAsync(
+                    x => x.Id == request.Id && x.CreatedBy == request.UserId,
+                    cancellationToken: cancellationToken);
 
             if (tradeSession == null)
             {

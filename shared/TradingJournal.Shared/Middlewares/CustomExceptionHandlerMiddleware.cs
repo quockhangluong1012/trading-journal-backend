@@ -56,9 +56,9 @@ public class CustomExceptionHandlerMiddleware
             httpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
 
             List<Error> errors = ex.Errors.Select(x => Error.ValidationError(x.ErrorCode, x.ErrorMessage)).ToList();
-            
-            Result<IEnumerable<Error>> errorResult = Result<IEnumerable<Error>>.Failure(errors);
-            
+
+            Result errorResult = Result.Failure(errors);
+
             await httpContext.Response.WriteAsync(JsonSerializer.Serialize(errorResult, JsonOptions));
         }
         catch (BusinessRuleException ex)
