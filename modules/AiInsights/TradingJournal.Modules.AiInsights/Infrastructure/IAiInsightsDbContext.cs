@@ -2,6 +2,8 @@ namespace TradingJournal.Modules.AiInsights.Infrastructure;
 
 public interface IAiInsightsDbContext
 {
+    DbSet<MorningBriefing> MorningBriefings { get; set; }
+
     DbSet<TradingReview> TradingReviews { get; set; }
 
     [Obsolete("Manual transactions are not retry-safe with execution strategies. Wrap the full unit of work in Database.CreateExecutionStrategy().ExecuteAsync instead.")]

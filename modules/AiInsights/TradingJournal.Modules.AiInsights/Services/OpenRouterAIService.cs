@@ -12,7 +12,7 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Modules.AiInsights.Services;
 
-internal sealed class OpenRouterAiService(
+internal sealed partial class OpenRouterAiService(
     IPromptService promptService,
     IAiTradeDataProvider tradeDataProvider,
     ITradeAiContextService tradeAiContextService,
@@ -28,8 +28,8 @@ internal sealed class OpenRouterAiService(
 {
     private const int MaxChartAnalysisImages = 3;
     private const int MaxInlineImageBytes = 5 * 1024 * 1024;
-    private static readonly Regex PromptCodeFencePattern = new("```.*?```", RegexOptions.Singleline | RegexOptions.Compiled);
-    private static readonly Regex PromptRolePrefixPattern = new(@"(?im)^\s*(system|assistant|developer|user)\s*:\s*", RegexOptions.Compiled);
+    private static readonly Regex PromptCodeFencePattern = PromptCodeFencePatternRegex();
+    private static readonly Regex PromptRolePrefixPattern = PromptRolePrefixPatternRegex();
     private static readonly HashSet<string> AllowedSetupNodeKinds = new(StringComparer.OrdinalIgnoreCase)
     {
         "start",
@@ -1809,4 +1809,9 @@ internal sealed class OpenRouterAiService(
         }
         return cleanText.Trim();
     }
+
+    [GeneratedRegex("```.*?```", RegexOptions.Compiled | RegexOptions.Singleline)]
+    private static partial Regex PromptCodeFencePatternRegex();
+    [GeneratedRegex(@"(?im)^\s*(system|assistant|developer|user)\s*:\s*", RegexOptions.Compiled, "en-US")]
+    private static partial Regex PromptRolePrefixPatternRegex();
 }
