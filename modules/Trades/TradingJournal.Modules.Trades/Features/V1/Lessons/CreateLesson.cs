@@ -58,66 +58,66 @@ public sealed class CreateLesson
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {
+            int userId = httpContextAccessor.HttpContext?.User.GetCurrentUserId() ?? 0;
+            if (userId <= 0)
+            {
+                return Result<int>.Failure(Error.Create("Unauthorized."));
+            }
+
+            List<int> distinctTradeIds = request.LinkedTradeIds is { Count: > 0 }
+                ? [.. request.LinkedTradeIds.Distinct()]
+                : [];
+
+            if (distinctTradeIds.Count > 0)
+            {
+                int accessibleCount = await context.TradeHistories
+                    .AsNoTracking()
+                    .CountAsync(t => distinctTradeIds.Contains(t.Id) && t.CreatedBy == userId, cancellationToken);
+
+                if (accessibleCount != distinctTradeIds.Count)
+                {
+                    return Result<int>.Failure(Error.Create("One or more trade IDs are invalid or do not belong to the current user."));
+                }
+            }
+
             try
             {
-                await context.BeginTransaction();
-
-                int userId = httpContextAccessor.HttpContext?.User.GetCurrentUserId() ?? 0;
-                if (userId <= 0)
+                return await context.ExecuteInTransactionAsync(async ct =>
                 {
-                    await context.RollbackTransaction();
-                    return Result<int>.Failure(Error.Create("Unauthorized."));
-                }
-
-                LessonLearned lesson = new()
-                {
-                    Id = 0,
-                    Title = request.Title,
-                    Content = request.Content,
-                    Category = request.Category,
-                    Severity = request.Severity,
-                    KeyTakeaway = request.KeyTakeaway,
-                    ActionItems = request.ActionItems,
-                    ImpactScore = request.ImpactScore,
-                    Status = LessonStatus.New
-                };
-
-                await context.LessonsLearned.AddAsync(lesson, cancellationToken);
-
-                // Link trades if provided
-                if (request.LinkedTradeIds is { Count: > 0 })
-                {
-                    List<int> distinctTradeIds = [.. request.LinkedTradeIds.Distinct()];
-
-                    // Verify trades belong to the user
-                    int accessibleCount = await context.TradeHistories
-                        .AsNoTracking()
-                        .CountAsync(t => distinctTradeIds.Contains(t.Id) && t.CreatedBy == userId, cancellationToken);
-
-                    if (accessibleCount != distinctTradeIds.Count)
-                    {
-                        await context.RollbackTransaction();
-                        return Result<int>.Failure(Error.Create("One or more trade IDs are invalid or do not belong to the current user."));
-                    }
-
-                    await context.LessonTradeLinks.AddRangeAsync(distinctTradeIds.Select(tradeId => new LessonTradeLink
+                    LessonLearned lesson = new()
                     {
                         Id = 0,
-                        TradeHistoryId = tradeId,
-                        LessonLearned = lesson
-                    }), cancellationToken);
-                }
+                        Title = request.Title,
+                        Content = request.Content,
+                        Category = request.Category,
+                        Severity = request.Severity,
+                        KeyTakeaway = request.KeyTakeaway,
+                        ActionItems = request.ActionItems,
+                        ImpactScore = request.ImpactScore,
+                        Status = LessonStatus.New
+                    };
 
-                int insertedRows = await context.SaveChangesAsync(cancellationToken);
-                await context.CommitTransaction();
+                    await context.LessonsLearned.AddAsync(lesson, ct);
 
-                return insertedRows > 0
-                    ? Result<int>.Success(lesson.Id)
-                    : Result<int>.Failure(Error.Create("Failed to create lesson."));
+                    if (distinctTradeIds.Count > 0)
+                    {
+                        await context.LessonTradeLinks.AddRangeAsync(distinctTradeIds.Select(tradeId => new LessonTradeLink
+                        {
+                            Id = 0,
+                            TradeHistoryId = tradeId,
+                            LessonLearned = lesson
+                        }), ct);
+                    }
+
+                    int insertedRows = await context.SaveChangesAsync(ct);
+
+                    return insertedRows > 0
+                        ? Result<int>.Success(lesson.Id)
+                        : Result<int>.Failure(Error.Create("Failed to create lesson."));
+                }, cancellationToken);
             }
             catch (Exception ex)
             {
-                await context.RollbackTransaction();
                 return Result<int>.Failure(Error.Create(ex.Message));
             }
         }

@@ -41,10 +41,17 @@ public interface ITradeDbContext
 
     DbSet<TradeTemplate> TradeTemplates { get; set; }
 
+    Task<TResult> ExecuteInTransactionAsync<TResult>(
+        Func<CancellationToken, Task<TResult>> operation,
+        CancellationToken cancellationToken = default);
+
+    [Obsolete("Manual transactions are not retry-safe with execution strategies. Use ExecuteInTransactionAsync instead.")]
     Task BeginTransaction();
 
+    [Obsolete("Manual transactions are not retry-safe with execution strategies. Use ExecuteInTransactionAsync instead.")]
     Task CommitTransaction();
 
+    [Obsolete("Manual transactions are not retry-safe with execution strategies. Use ExecuteInTransactionAsync instead.")]
     Task RollbackTransaction();
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

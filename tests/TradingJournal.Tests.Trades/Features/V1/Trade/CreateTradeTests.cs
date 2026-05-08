@@ -6,6 +6,7 @@ using TradingJournal.Modules.Trades.Domain;
 using TradingJournal.Modules.Trades.Services;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
+using TradingJournal.Shared.Abstractions;
 using TradingJournal.Shared.Interfaces;
 using SharedEnums = TradingJournal.Shared.Common.Enum;
 
@@ -59,7 +60,7 @@ public sealed class CreateTradeValidatorTests
         var request = CreateValidRequest() with { Asset = null! };
         var result = _validator.Validate(request);
         Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("Asset")));
+        Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("Asset"));
     }
 
     [Fact]
@@ -68,7 +69,7 @@ public sealed class CreateTradeValidatorTests
         var request = CreateValidRequest() with { Position = (SharedEnums.PositionType)99 };
         var result = _validator.Validate(request);
         Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("Position")));
+        Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("Position"));
     }
 
     [Fact]
@@ -77,7 +78,7 @@ public sealed class CreateTradeValidatorTests
         var request = CreateValidRequest() with { EntryPrice = 0 };
         var result = _validator.Validate(request);
         Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("EntryPrice")));
+        Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("EntryPrice"));
     }
 
     [Fact]
@@ -94,7 +95,7 @@ public sealed class CreateTradeValidatorTests
         var request = CreateValidRequest() with { TargetTier1 = 0 };
         var result = _validator.Validate(request);
         Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("Target Tier")));
+        Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("Target Tier"));
     }
 
     [Fact]
@@ -103,7 +104,7 @@ public sealed class CreateTradeValidatorTests
         var request = CreateValidRequest() with { StopLoss = 0 };
         var result = _validator.Validate(request);
         Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("Stop Loss")));
+        Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("Stop Loss"));
     }
 
     [Fact]
@@ -112,7 +113,7 @@ public sealed class CreateTradeValidatorTests
         var request = CreateValidRequest() with { Notes = null! };
         var result = _validator.Validate(request);
         Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("notes")));
+        Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("notes"));
     }
 
     [Fact]
@@ -121,7 +122,7 @@ public sealed class CreateTradeValidatorTests
         var request = CreateValidRequest() with { TradeHistoryChecklists = [] };
         var result = _validator.Validate(request);
         Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("checklist")));
+        Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("checklist"));
     }
 
     [Fact]
@@ -130,7 +131,7 @@ public sealed class CreateTradeValidatorTests
         var request = CreateValidRequest() with { TradingZoneId = 0 };
         var result = _validator.Validate(request);
         Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("Trading Zone")));
+        Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("Trading Zone"));
     }
 
     [Fact]
@@ -139,7 +140,7 @@ public sealed class CreateTradeValidatorTests
         var request = CreateValidRequest() with { Status = (SharedEnums.TradeStatus)99 };
         var result = _validator.Validate(request);
         Assert.False(result.IsValid);
-        Assert.True(result.Errors.Any(e => e.ErrorMessage.Contains("Status")));
+        Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("Status"));
     }
 }
 
@@ -160,6 +161,15 @@ public sealed class CreateTradeHandlerTests
         _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
         _setupProviderMock = new Mock<ISetupProvider>();
         _handler = new CreateTrade.Handler(_contextMock.Object, _screenshotMock.Object, _disciplineMock.Object, _httpContextAccessorMock.Object, _setupProviderMock.Object, new Mock<ICacheRepository>().Object);
+    }
+
+    private void SetupTransactionalExecution()
+    {
+        _contextMock
+            .Setup(c => c.ExecuteInTransactionAsync(
+                It.IsAny<Func<CancellationToken, Task<Result<int>>>>(),
+                It.IsAny<CancellationToken>()))
+            .Returns((Func<CancellationToken, Task<Result<int>>> operation, CancellationToken ct) => operation(ct));
     }
 
     private void SetCurrentUser(int userId)
@@ -215,17 +225,17 @@ public sealed class CreateTradeHandlerTests
         SetupAccessibleChecklists(42, 1);
         _setupProviderMock.Setup(x => x.HasSetupAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
         SetupTradingProfiles();
-        _contextMock.Setup(c => c.BeginTransaction()).Returns(Task.CompletedTask);
+        SetupTransactionalExecution();
         _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-        _contextMock.Setup(c => c.CommitTransaction()).Returns(Task.CompletedTask);
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.True(result.Value >= 0);
-        _contextMock.Verify(c => c.BeginTransaction(), Times.Once);
+        _contextMock.Verify(c => c.ExecuteInTransactionAsync(
+            It.IsAny<Func<CancellationToken, Task<Result<int>>>>(),
+            It.IsAny<CancellationToken>()), Times.Once);
         _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _contextMock.Verify(c => c.CommitTransaction(), Times.Once);
     }
 
     [Fact]
@@ -248,9 +258,8 @@ public sealed class CreateTradeHandlerTests
         _contextMock.Setup(c => c.TradeTechnicalAnalysisTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeTechnicalAnalysisTag>().AsQueryable()).Object);
         SetupAccessibleChecklists(42, 1);
         SetupTradingProfiles();
-        _contextMock.Setup(c => c.BeginTransaction()).Returns(Task.CompletedTask);
+        SetupTransactionalExecution();
         _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(0);
-        _contextMock.Setup(c => c.RollbackTransaction()).Returns(Task.CompletedTask);
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
@@ -278,16 +287,14 @@ public sealed class CreateTradeHandlerTests
         SetupAccessibleChecklists(42, 1);
         _setupProviderMock.Setup(x => x.HasSetupAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
         SetupTradingProfiles();
-        _contextMock.Setup(c => c.BeginTransaction()).Returns(Task.CompletedTask);
+        SetupTransactionalExecution();
         _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("DB error"));
-        _contextMock.Setup(c => c.RollbackTransaction()).Returns(Task.CompletedTask);
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
-        Assert.True(result.Errors.Any(e => e.Description.Contains("DB error")));
-        _contextMock.Verify(c => c.RollbackTransaction(), Times.Once);
+        Assert.Contains(result.Errors, e => e.Description.Contains("DB error"));
     }
 
     [Fact]
@@ -304,15 +311,12 @@ public sealed class CreateTradeHandlerTests
             TradeHistoryChecklists: [1], TradingZoneId: 1, TradingSessionId: null, TradingSetupId: null);
 
         _contextMock.Setup(c => c.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
-        _contextMock.Setup(c => c.BeginTransaction()).Returns(Task.CompletedTask);
-        _contextMock.Setup(c => c.RollbackTransaction()).Returns(Task.CompletedTask);
         SetupAccessibleChecklists(7, 1);
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-        _contextMock.Verify(c => c.RollbackTransaction(), Times.Once);
     }
 
     [Fact]
@@ -336,9 +340,8 @@ public sealed class CreateTradeHandlerTests
         SetupAccessibleChecklists(42, 1);
         _setupProviderMock.Setup(x => x.HasSetupAsync(42, 99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         SetupTradingProfiles();
-        _contextMock.Setup(c => c.BeginTransaction()).Returns(Task.CompletedTask);
+        SetupTransactionalExecution();
         _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-        _contextMock.Setup(c => c.CommitTransaction()).Returns(Task.CompletedTask);
 
         TradeHistory? createdTrade = null;
         _contextMock.Setup(c => c.TradeHistories.AddAsync(It.IsAny<TradeHistory>(), It.IsAny<CancellationToken>()))

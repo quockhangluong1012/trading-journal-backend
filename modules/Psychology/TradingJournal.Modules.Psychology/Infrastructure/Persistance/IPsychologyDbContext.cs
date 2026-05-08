@@ -18,11 +18,5 @@ public interface IPsychologyDbContext
 
     public DbSet<DailyNote> DailyNotes { get; set; }
 
-    Task BeginTransaction();
-
-    Task CommitTransaction();
-
-    Task RollbackTransaction();
-
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

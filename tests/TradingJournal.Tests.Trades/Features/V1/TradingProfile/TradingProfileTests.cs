@@ -2,6 +2,7 @@ using FluentValidation.TestHelper;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using System.Security.Claims;
+using TradingJournal.Shared.Abstractions;
 using TradingJournal.Modules.Trades.Domain;
 using TradingJournal.Modules.Trades.Features.V1.TradingProfile;
 using TradingJournal.Modules.Trades.Infrastructure;
@@ -143,6 +144,14 @@ public sealed class UpdateTradingProfileHandlerTests
     private readonly Mock<ITradeDbContext> _ctx = new();
     private readonly Mock<IHttpContextAccessor> _httpContextAccessor = new();
 
+    private void SetupTransactionalExecution()
+    {
+        _ctx.Setup(x => x.ExecuteInTransactionAsync(
+                It.IsAny<Func<CancellationToken, Task<Result<int>>>>(),
+                It.IsAny<CancellationToken>()))
+            .Returns((Func<CancellationToken, Task<Result<int>>> operation, CancellationToken ct) => operation(ct));
+    }
+
     private UpdateTradingProfile.Handler CreateHandler() =>
         new(_ctx.Object, _httpContextAccessor.Object);
 
@@ -161,8 +170,7 @@ public sealed class UpdateTradingProfileHandlerTests
         SetupUserId(42);
         _ctx.Setup(x => x.TradingProfiles)
             .Returns(DbSetMockHelper.CreateMockDbSet(new List<Modules.Trades.Domain.TradingProfile>().AsQueryable()).Object);
-        _ctx.Setup(x => x.BeginTransaction()).Returns(Task.CompletedTask);
-        _ctx.Setup(x => x.CommitTransaction()).Returns(Task.CompletedTask);
+        SetupTransactionalExecution();
         _ctx.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var handler = CreateHandler();
@@ -187,8 +195,7 @@ public sealed class UpdateTradingProfileHandlerTests
         };
         _ctx.Setup(x => x.TradingProfiles)
             .Returns(DbSetMockHelper.CreateMockDbSet(new List<Modules.Trades.Domain.TradingProfile> { existingProfile }.AsQueryable()).Object);
-        _ctx.Setup(x => x.BeginTransaction()).Returns(Task.CompletedTask);
-        _ctx.Setup(x => x.CommitTransaction()).Returns(Task.CompletedTask);
+        SetupTransactionalExecution();
         _ctx.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var handler = CreateHandler();

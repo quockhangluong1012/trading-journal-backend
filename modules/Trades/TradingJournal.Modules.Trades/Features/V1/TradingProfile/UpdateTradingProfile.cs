@@ -32,45 +32,44 @@ public sealed class UpdateTradingProfile
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {
+            int userId = httpContextAccessor.HttpContext?.User.GetCurrentUserId() ?? 0;
+            if (userId == 0) return Result<int>.Failure(Error.Create("Unauthorized"));
+
             try
             {
-                int userId = httpContextAccessor.HttpContext?.User.GetCurrentUserId() ?? 0;
-                if (userId == 0) return Result<int>.Failure(Error.Create("Unauthorized"));
-
-                await context.BeginTransaction();
-
-                var profile = await context.TradingProfiles
-                    .FirstOrDefaultAsync(x => x.CreatedBy == userId, cancellationToken);
-
-                if (profile == null)
+                return await context.ExecuteInTransactionAsync(async ct =>
                 {
-                    profile = new DomainEntity
+                    var profile = await context.TradingProfiles
+                        .FirstOrDefaultAsync(x => x.CreatedBy == userId, ct);
+
+                    if (profile == null)
                     {
-                        Id = 0,
-                        MaxTradesPerDay = request.MaxTradesPerDay,
-                        MaxDailyLossPercentage = request.MaxDailyLossPercentage,
-                        MaxConsecutiveLosses = request.MaxConsecutiveLosses,
-                        IsDisciplineEnabled = request.IsDisciplineEnabled
-                    };
-                    await context.TradingProfiles.AddAsync(profile, cancellationToken);
-                }
-                else
-                {
-                    profile.MaxTradesPerDay = request.MaxTradesPerDay;
-                    profile.MaxDailyLossPercentage = request.MaxDailyLossPercentage;
-                    profile.MaxConsecutiveLosses = request.MaxConsecutiveLosses;
-                    profile.IsDisciplineEnabled = request.IsDisciplineEnabled;
-                    context.TradingProfiles.Update(profile);
-                }
+                        profile = new DomainEntity
+                        {
+                            Id = 0,
+                            MaxTradesPerDay = request.MaxTradesPerDay,
+                            MaxDailyLossPercentage = request.MaxDailyLossPercentage,
+                            MaxConsecutiveLosses = request.MaxConsecutiveLosses,
+                            IsDisciplineEnabled = request.IsDisciplineEnabled
+                        };
+                        await context.TradingProfiles.AddAsync(profile, ct);
+                    }
+                    else
+                    {
+                        profile.MaxTradesPerDay = request.MaxTradesPerDay;
+                        profile.MaxDailyLossPercentage = request.MaxDailyLossPercentage;
+                        profile.MaxConsecutiveLosses = request.MaxConsecutiveLosses;
+                        profile.IsDisciplineEnabled = request.IsDisciplineEnabled;
+                        context.TradingProfiles.Update(profile);
+                    }
 
-                await context.SaveChangesAsync(cancellationToken);
-                await context.CommitTransaction();
+                    await context.SaveChangesAsync(ct);
 
-                return Result<int>.Success(profile.Id);
+                    return Result<int>.Success(profile.Id);
+                }, cancellationToken);
             }
             catch (Exception ex)
             {
-                await context.RollbackTransaction();
                 return Result<int>.Failure(Error.Create(ex.Message));
             }
         }

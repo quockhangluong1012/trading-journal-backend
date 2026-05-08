@@ -19,11 +19,13 @@ public abstract class AuditableDbContext(DbContextOptions options, IHttpContextA
 {
     private IDbContextTransaction? _transaction;
 
+    [Obsolete("Manual transactions are not retry-safe with execution strategies. Use ExecuteInTransactionAsync or Database.CreateExecutionStrategy().ExecuteAsync instead.")]
     public async Task BeginTransaction()
     {
         _transaction = await Database.BeginTransactionAsync();
     }
 
+    [Obsolete("Manual transactions are not retry-safe with execution strategies. Use ExecuteInTransactionAsync or Database.CreateExecutionStrategy().ExecuteAsync instead.")]
     public async Task CommitTransaction()
     {
         if (_transaction == null) return;
@@ -32,12 +34,37 @@ public abstract class AuditableDbContext(DbContextOptions options, IHttpContextA
         _transaction = null;
     }
 
+    [Obsolete("Manual transactions are not retry-safe with execution strategies. Use ExecuteInTransactionAsync or Database.CreateExecutionStrategy().ExecuteAsync instead.")]
     public async Task RollbackTransaction()
     {
         if (_transaction == null) return;
         await _transaction.RollbackAsync();
         await _transaction.DisposeAsync();
         _transaction = null;
+    }
+
+    public async Task<TResult> ExecuteInTransactionAsync<TResult>(
+        Func<CancellationToken, Task<TResult>> operation,
+        CancellationToken cancellationToken = default)
+    {
+        var strategy = Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using IDbContextTransaction transaction = await Database.BeginTransactionAsync(cancellationToken);
+
+            try
+            {
+                TResult result = await operation(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                return result;
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
+        });
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

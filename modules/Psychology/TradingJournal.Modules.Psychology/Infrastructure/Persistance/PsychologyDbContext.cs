@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Storage;
 using TradingJournal.Shared.Extensions;
 
 namespace TradingJournal.Modules.Psychology.Infrastructure.Persistance;
@@ -7,8 +6,6 @@ namespace TradingJournal.Modules.Psychology.Infrastructure.Persistance;
 internal sealed class PsychologyDbContext(DbContextOptions<PsychologyDbContext> options, IHttpContextAccessor httpContextAccessor)
     : DbContext(options), IPsychologyDbContext
 {
-    private IDbContextTransaction? _transaction;
-
     public DbSet<EmotionTag> EmotionTags { get; set; } = null!;
 
     public DbSet<PsychologyJournal> PsychologyJournals { get; set; } = null!;
@@ -24,27 +21,6 @@ internal sealed class PsychologyDbContext(DbContextOptions<PsychologyDbContext> 
     public DbSet<Achievement> Achievements { get; set; } = null!;
 
     public DbSet<DailyNote> DailyNotes { get; set; } = null!;
-
-    public async Task BeginTransaction()
-    {
-        _transaction = await Database.BeginTransactionAsync();
-    }
-
-    public async Task CommitTransaction()
-    {
-        if (_transaction == null) return;
-        await _transaction.CommitAsync();
-        await _transaction.DisposeAsync();
-        _transaction = null;
-    }
-
-    public async Task RollbackTransaction()
-    {
-        if (_transaction == null) return;
-        await _transaction.RollbackAsync();
-        await _transaction.DisposeAsync();
-        _transaction = null;
-    }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

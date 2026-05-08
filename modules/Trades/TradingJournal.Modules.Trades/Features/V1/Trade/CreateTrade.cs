@@ -111,103 +111,102 @@ public sealed class CreateTrade
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {
+            int userId = httpContextAccessor.HttpContext?.User.GetCurrentUserId() ?? 0;
+            if (userId <= 0)
+            {
+                return Result<int>.Failure(Error.Create("Unauthorized."));
+            }
+
+            List<int> checklistIds = [.. request.TradeHistoryChecklists.Distinct()];
+
+            int accessibleChecklistCount = await context.PretradeChecklists
+                .AsNoTracking()
+                .CountAsync(checklist => checklistIds.Contains(checklist.Id) && checklist.ChecklistModel.CreatedBy == userId, cancellationToken);
+
+            if (accessibleChecklistCount != checklistIds.Count)
+            {
+                return Result<int>.Failure(Error.Create("One or more pretrade checklist items are invalid for the current user."));
+            }
+
+            if (request.TradingSetupId.HasValue)
+            {
+                bool hasSetup = await setupProvider.HasSetupAsync(userId, request.TradingSetupId.Value, cancellationToken);
+
+                if (!hasSetup)
+                {
+                    return Result<int>.Failure(Error.Create("The selected trading setup is invalid for the current user."));
+                }
+            }
+
             try 
             {
-                await context.BeginTransaction();
-
-                int userId = httpContextAccessor.HttpContext?.User.GetCurrentUserId() ?? 0;
-                if (userId <= 0)
+                Result<int> result = await context.ExecuteInTransactionAsync(async ct =>
                 {
-                    await context.RollbackTransaction();
-                    return Result<int>.Failure(Error.Create("Unauthorized."));
-                }
+                    TradeHistory tradeHistory = request.Adapt<TradeHistory>();
 
-                List<int> checklistIds = [.. request.TradeHistoryChecklists.Distinct()];
+                    await disciplineEvaluator.EvaluateAsync(tradeHistory, userId, ct);
 
-                int accessibleChecklistCount = await context.PretradeChecklists
-                    .AsNoTracking()
-                    .CountAsync(checklist => checklistIds.Contains(checklist.Id) && checklist.ChecklistModel.CreatedBy == userId, cancellationToken);
+                    tradeHistory.TradeTechnicalAnalysisTags = [];
+                    tradeHistory.TradeScreenShots = [];
+                    tradeHistory.TradeEmotionTags = [];
+                    tradeHistory.TradeChecklists = [];
 
-                if (accessibleChecklistCount != checklistIds.Count)
-                {
-                    await context.RollbackTransaction();
-                    return Result<int>.Failure(Error.Create("One or more pretrade checklist items are invalid for the current user."));
-                }
+                    await context.TradeHistories.AddAsync(tradeHistory, ct);
 
-                if (request.TradingSetupId.HasValue)
-                {
-                    bool hasSetup = await setupProvider.HasSetupAsync(userId, request.TradingSetupId.Value, cancellationToken);
-
-                    if (!hasSetup)
-                    {
-                        await context.RollbackTransaction();
-                        return Result<int>.Failure(Error.Create("The selected trading setup is invalid for the current user."));
-                    }
-                }
-
-                TradeHistory tradeHistory = request.Adapt<TradeHistory>();
-
-                if (userId > 0)
-                {
-                    await disciplineEvaluator.EvaluateAsync(tradeHistory, userId, cancellationToken);
-                }
-
-                tradeHistory.TradeTechnicalAnalysisTags = [];
-                tradeHistory.TradeScreenShots = [];
-                tradeHistory.TradeEmotionTags = [];
-                tradeHistory.TradeChecklists = [];
-
-                await context.TradeHistories.AddAsync(tradeHistory, cancellationToken);
-
-                await context.TradeHistoryChecklist.AddRangeAsync(checklistIds.Select(checklistId => new TradeHistoryChecklist
-                {
-                    Id = 0,
-                    PretradeChecklistId = checklistId,
-                    TradeHistory = tradeHistory
-                }), cancellationToken);
-
-                await context.TradeEmotionTags.AddRangeAsync(request.EmotionTags?.Select(tagId => new TradeEmotionTag
-                {
-                    Id = 0,
-                    EmotionTagId = tagId,
-                    TradeHistory = tradeHistory
-                }) ?? [], cancellationToken);
-
-                List<string> filteredScreenshots = request.Screenshots?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? [];
-                screenshotService.ValidateScreenshotCount(filteredScreenshots.Count);
-
-                List<TradeScreenShot> screenshotEntities = [];
-                foreach (string screenshot in filteredScreenshots)
-                {
-                    string url = await screenshotService.SaveScreenshotAsync(screenshot, cancellationToken);
-                    screenshotEntities.Add(new TradeScreenShot
+                    await context.TradeHistoryChecklist.AddRangeAsync(checklistIds.Select(checklistId => new TradeHistoryChecklist
                     {
                         Id = 0,
-                        Url = url,
+                        PretradeChecklistId = checklistId,
                         TradeHistory = tradeHistory
-                    });
-                }
-                
-                await context.TradeScreenShots.AddRangeAsync(screenshotEntities, cancellationToken);
+                    }), ct);
 
-                await context.TradeTechnicalAnalysisTags.AddRangeAsync(request.TradeTechnicalAnalysisTags?.Select(tagId => new TradeTechnicalAnalysisTag
+                    await context.TradeEmotionTags.AddRangeAsync(request.EmotionTags?.Select(tagId => new TradeEmotionTag
+                    {
+                        Id = 0,
+                        EmotionTagId = tagId,
+                        TradeHistory = tradeHistory
+                    }) ?? [], ct);
+
+                    List<string> filteredScreenshots = request.Screenshots?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? [];
+                    screenshotService.ValidateScreenshotCount(filteredScreenshots.Count);
+
+                    List<TradeScreenShot> screenshotEntities = [];
+                    foreach (string screenshot in filteredScreenshots)
+                    {
+                        string url = await screenshotService.SaveScreenshotAsync(screenshot, ct);
+                        screenshotEntities.Add(new TradeScreenShot
+                        {
+                            Id = 0,
+                            Url = url,
+                            TradeHistory = tradeHistory
+                        });
+                    }
+
+                    await context.TradeScreenShots.AddRangeAsync(screenshotEntities, ct);
+
+                    await context.TradeTechnicalAnalysisTags.AddRangeAsync(request.TradeTechnicalAnalysisTags?.Select(tagId => new TradeTechnicalAnalysisTag
+                    {
+                        Id = 0,
+                        TechnicalAnalysisId = tagId,
+                        TradeHistory = tradeHistory
+                    }) ?? [], ct);
+
+                    int insertedRow = await context.SaveChangesAsync(ct);
+
+                    return insertedRow > 0
+                        ? Result<int>.Success(tradeHistory.Id)
+                        : Result<int>.Failure(Error.Create("Failed to create trade history."));
+                }, cancellationToken);
+
+                if (result.IsSuccess)
                 {
-                    Id = 0,
-                    TechnicalAnalysisId = tagId,
-                    TradeHistory = tradeHistory
-                }) ?? [], cancellationToken);
+                    await cacheRepository.RemoveCache(CacheKeys.TradesForUser(userId), cancellationToken);
+                }
 
-                int insertedRow = await context.SaveChangesAsync(cancellationToken);
-
-                await context.CommitTransaction();
-                await cacheRepository.RemoveCache(CacheKeys.TradesForUser(userId), cancellationToken);
-
-                return insertedRow > 0 ? Result<int>.Success(tradeHistory.Id)
-                    : Result<int>.Failure(Error.Create("Failed to create trade history."));
+                return result;
             }
             catch (InvalidOperationException ex)
             {
-                await context.RollbackTransaction();
                 return Result<int>.Failure(Error.Create(ex.Message));
             }
         }
