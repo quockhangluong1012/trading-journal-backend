@@ -18,6 +18,7 @@ public static class DependencyInjection
 
         services.AddScoped<ITradeDbContext, TradeDbContext>();
         services.AddScoped<ITradeProvider, TradeProvider>();
+        services.AddScoped<IChecklistModelProvider, ChecklistModelProvider>();
         services.AddScoped<IZoneProvider, ZoneProvider>();
         services.AddScoped<ITechnicalAnalysisTagProvider, TechnicalAnalysisTagProvider>();
 

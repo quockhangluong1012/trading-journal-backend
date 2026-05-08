@@ -28,6 +28,7 @@ public sealed class UpdateTrade
         List<int> TradeHistoryChecklists,
         int TradingZoneId,
         int? TradingSessionId,
+        int? TradingSetupId,
         string? AiSummary,
         PowerOf3Phase? PowerOf3Phase = null,
         DailyBias? DailyBias = null,
@@ -93,11 +94,18 @@ public sealed class UpdateTrade
                 .Cascade(CascadeMode.Stop)
                 .GreaterThan(0).WithErrorCode(nameof(HttpStatusCode.BadRequest))
                 .WithMessage("Trading Zone must be entered and greater than 0.");
+
+            RuleFor(x => x.TradingSetupId)
+                .GreaterThan(0)
+                .When(x => x.TradingSetupId.HasValue)
+                .WithErrorCode(nameof(HttpStatusCode.BadRequest))
+                .WithMessage("Trading setup must be greater than 0 when provided.");
         }
     }
 
     public sealed class Handler(ITradeDbContext context,
         IScreenshotService screenshotService,
+        ISetupProvider setupProvider,
         ICacheRepository cacheRepository) : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
@@ -125,6 +133,16 @@ public sealed class UpdateTrade
                     return Result<bool>.Failure(Error.Create("One or more pretrade checklist items are invalid for the current user."));
                 }
 
+                if (request.TradingSetupId.HasValue)
+                {
+                    bool hasSetup = await setupProvider.HasSetupAsync(request.UserId, request.TradingSetupId.Value, cancellationToken);
+
+                    if (!hasSetup)
+                    {
+                        return Result<bool>.Failure(Error.Create("The selected trading setup is invalid for the current user."));
+                    }
+                }
+
                 tradeHistory.Asset = request.Asset;
                 tradeHistory.Position = request.Position;
                 tradeHistory.EntryPrice = request.EntryPrice;
@@ -141,6 +159,7 @@ public sealed class UpdateTrade
                 tradeHistory.ConfidenceLevel = request.ConfidenceLevel;
                 tradeHistory.TradingZoneId = request.TradingZoneId;
                 tradeHistory.TradingSessionId = request.TradingSessionId;
+                tradeHistory.TradingSetupId = request.TradingSetupId;
                 tradeHistory.AiSummary = request.AiSummary;
                 tradeHistory.PowerOf3Phase = request.PowerOf3Phase;
                 tradeHistory.DailyBias = request.DailyBias;

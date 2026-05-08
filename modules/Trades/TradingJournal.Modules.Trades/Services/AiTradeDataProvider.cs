@@ -16,7 +16,8 @@ internal sealed class AiTradeDataProvider(
     ITradeDbContext context,
     IReviewSnapshotBuilder snapshotBuilder,
     IEmotionTagProvider emotionTagProvider,
-    IPsychologyProvider psychologyProvider) : IAiTradeDataProvider
+    IPsychologyProvider psychologyProvider,
+    ISetupProvider setupProvider) : IAiTradeDataProvider
 {
     public async Task<AiTradeDetailDto> GetTradeDetailForAiAsync(int tradeHistoryId, CancellationToken cancellationToken)
     {
@@ -224,10 +225,17 @@ internal sealed class AiTradeDataProvider(
             .Where(c => c.PretradeChecklist != null)
             .ToLookup(c => c.TradeHistoryId, c => c.PretradeChecklist!.Name);
 
+        Dictionary<int, string> setupNamesById = (await setupProvider.GetSetupsAsync(userId, cancellationToken))
+            .ToDictionary(setup => setup.Id, setup => setup.Name);
+
         List<ReviewTradeDto> items = [.. trades.Select(t => new ReviewTradeDto(
             t.Id, t.Asset, t.Position.ToString(), t.Pnl, t.Date, t.ClosedDate,
             t.EntryPrice, t.ExitPrice, (int)t.ConfidenceLevel,
-            t.TradingZone?.Name, t.IsRuleBroken, t.RuleBreakReason, t.Notes,
+            t.TradingZone?.Name,
+            t.TradingSetupId.HasValue && setupNamesById.TryGetValue(t.TradingSetupId.Value, out string? setupName)
+                ? setupName
+                : null,
+            t.IsRuleBroken, t.RuleBreakReason, t.Notes,
             [.. emotionsByTrade[t.Id].Where(emotionLookup.ContainsKey).Select(id => emotionLookup[id])],
             [.. techThemesByTrade[t.Id]],
             [.. checklistsByTrade[t.Id]]))];

@@ -21,5 +21,12 @@ internal sealed class SetupProvider(ISetupDbContext context) : ISetupProvider
             })
             .ToListAsync(cancellationToken);
     }
+
+    public Task<bool> HasSetupAsync(int userId, int setupId, CancellationToken cancellationToken = default)
+    {
+        return context.TradingSetups
+            .AsNoTracking()
+            .AnyAsync(setup => setup.Id == setupId && setup.CreatedBy == userId, cancellationToken);
+    }
 }
 

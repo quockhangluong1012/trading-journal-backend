@@ -15,6 +15,7 @@ public sealed record ReviewTradeDto(
     decimal? ExitPrice,
     int ConfidenceLevel,
     string? TradingZone,
+    string? TradingSetupName,
     bool IsRuleBroken,
     string? RuleBreakReason,
     string? Notes,

@@ -42,7 +42,8 @@ public sealed class CreateTradeValidatorTests
             PsychologyNotes: null,
             TradeHistoryChecklists: [1],
             TradingZoneId: 1,
-            TradingSessionId: null);
+            TradingSessionId: null,
+            TradingSetupId: null);
 
     [Fact]
     public void Validate_ValidRequest_ReturnsValid()
@@ -148,6 +149,7 @@ public sealed class CreateTradeHandlerTests
     private Mock<IScreenshotService> _screenshotMock = null!;
     private Mock<IDisciplineEvaluator> _disciplineMock = null!;
     private Mock<IHttpContextAccessor> _httpContextAccessorMock = null!;
+    private Mock<ISetupProvider> _setupProviderMock = null!;
     private CreateTrade.Handler _handler = null!;
 
     public CreateTradeHandlerTests()
@@ -156,7 +158,8 @@ public sealed class CreateTradeHandlerTests
         _screenshotMock = new Mock<IScreenshotService>();
         _disciplineMock = new Mock<IDisciplineEvaluator>();
         _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
-        _handler = new CreateTrade.Handler(_contextMock.Object, _screenshotMock.Object, _disciplineMock.Object, _httpContextAccessorMock.Object, new Mock<ICacheRepository>().Object);
+        _setupProviderMock = new Mock<ISetupProvider>();
+        _handler = new CreateTrade.Handler(_contextMock.Object, _screenshotMock.Object, _disciplineMock.Object, _httpContextAccessorMock.Object, _setupProviderMock.Object, new Mock<ICacheRepository>().Object);
     }
 
     private void SetCurrentUser(int userId)
@@ -202,7 +205,7 @@ public sealed class CreateTradeHandlerTests
             ExitPrice: null, Pnl: null, ClosedDate: null, Screenshots: [],
             TradeTechnicalAnalysisTags: [], EmotionTags: null,
             ConfidenceLevel: TradingJournal.Shared.Common.Enum.ConfidenceLevel.Neutral, PsychologyNotes: null,
-            TradeHistoryChecklists: [1], TradingZoneId: 1, TradingSessionId: null);
+            TradeHistoryChecklists: [1], TradingZoneId: 1, TradingSessionId: null, TradingSetupId: null);
 
         _contextMock.Setup(c => c.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
         _contextMock.Setup(c => c.TradeScreenShots).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeScreenShot>().AsQueryable()).Object);
@@ -210,6 +213,7 @@ public sealed class CreateTradeHandlerTests
         _contextMock.Setup(c => c.TradeHistoryChecklist).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistoryChecklist>().AsQueryable()).Object);
         _contextMock.Setup(c => c.TradeTechnicalAnalysisTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeTechnicalAnalysisTag>().AsQueryable()).Object);
         SetupAccessibleChecklists(42, 1);
+        _setupProviderMock.Setup(x => x.HasSetupAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
         SetupTradingProfiles();
         _contextMock.Setup(c => c.BeginTransaction()).Returns(Task.CompletedTask);
         _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
@@ -235,7 +239,7 @@ public sealed class CreateTradeHandlerTests
             ExitPrice: null, Pnl: null, ClosedDate: null, Screenshots: [],
             TradeTechnicalAnalysisTags: [], EmotionTags: null,
             ConfidenceLevel: TradingJournal.Shared.Common.Enum.ConfidenceLevel.Neutral, PsychologyNotes: null,
-            TradeHistoryChecklists: [1], TradingZoneId: 1, TradingSessionId: null);
+            TradeHistoryChecklists: [1], TradingZoneId: 1, TradingSessionId: null, TradingSetupId: null);
 
         _contextMock.Setup(c => c.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
         _contextMock.Setup(c => c.TradeScreenShots).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeScreenShot>().AsQueryable()).Object);
@@ -272,6 +276,7 @@ public sealed class CreateTradeHandlerTests
         _contextMock.Setup(c => c.TradeHistoryChecklist).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistoryChecklist>().AsQueryable()).Object);
         _contextMock.Setup(c => c.TradeTechnicalAnalysisTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeTechnicalAnalysisTag>().AsQueryable()).Object);
         SetupAccessibleChecklists(42, 1);
+        _setupProviderMock.Setup(x => x.HasSetupAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
         SetupTradingProfiles();
         _contextMock.Setup(c => c.BeginTransaction()).Returns(Task.CompletedTask);
         _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -296,7 +301,7 @@ public sealed class CreateTradeHandlerTests
             ExitPrice: null, Pnl: null, ClosedDate: null, Screenshots: [],
             TradeTechnicalAnalysisTags: [], EmotionTags: null,
             ConfidenceLevel: TradingJournal.Shared.Common.Enum.ConfidenceLevel.Neutral, PsychologyNotes: null,
-            TradeHistoryChecklists: [1], TradingZoneId: 1, TradingSessionId: null);
+            TradeHistoryChecklists: [1], TradingZoneId: 1, TradingSessionId: null, TradingSetupId: null);
 
         _contextMock.Setup(c => c.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
         _contextMock.Setup(c => c.BeginTransaction()).Returns(Task.CompletedTask);
@@ -308,5 +313,42 @@ public sealed class CreateTradeHandlerTests
         Assert.False(result.IsSuccess);
         _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         _contextMock.Verify(c => c.RollbackTransaction(), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WithTradingSetupId_AssignsSetupToTrade()
+    {
+        SetCurrentUser(42);
+        var request = new CreateTrade.Request(
+            Asset: "EURUSD", Position: SharedEnums.PositionType.Long, EntryPrice: 1.0850m,
+            TargetTier1: 1.0900m, TargetTier2: null, TargetTier3: null, StopLoss: 1.0800m,
+            Notes: "Good setup", Date: DateTime.UtcNow, Status: SharedEnums.TradeStatus.Open,
+            ExitPrice: null, Pnl: null, ClosedDate: null, Screenshots: [],
+            TradeTechnicalAnalysisTags: [], EmotionTags: null,
+            ConfidenceLevel: TradingJournal.Shared.Common.Enum.ConfidenceLevel.Neutral, PsychologyNotes: null,
+            TradeHistoryChecklists: [1], TradingZoneId: 1, TradingSessionId: null, TradingSetupId: 99);
+
+        _contextMock.Setup(c => c.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
+        _contextMock.Setup(c => c.TradeScreenShots).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeScreenShot>().AsQueryable()).Object);
+        _contextMock.Setup(c => c.TradeEmotionTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeEmotionTag>().AsQueryable()).Object);
+        _contextMock.Setup(c => c.TradeHistoryChecklist).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistoryChecklist>().AsQueryable()).Object);
+        _contextMock.Setup(c => c.TradeTechnicalAnalysisTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeTechnicalAnalysisTag>().AsQueryable()).Object);
+        SetupAccessibleChecklists(42, 1);
+        _setupProviderMock.Setup(x => x.HasSetupAsync(42, 99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        SetupTradingProfiles();
+        _contextMock.Setup(c => c.BeginTransaction()).Returns(Task.CompletedTask);
+        _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        _contextMock.Setup(c => c.CommitTransaction()).Returns(Task.CompletedTask);
+
+        TradeHistory? createdTrade = null;
+        _contextMock.Setup(c => c.TradeHistories.AddAsync(It.IsAny<TradeHistory>(), It.IsAny<CancellationToken>()))
+            .Callback<TradeHistory, CancellationToken>((trade, _) => createdTrade = trade)
+            .ReturnsAsync((TradeHistory trade, CancellationToken _) => null!);
+
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(createdTrade);
+        Assert.Equal(99, createdTrade!.TradingSetupId);
     }
 }

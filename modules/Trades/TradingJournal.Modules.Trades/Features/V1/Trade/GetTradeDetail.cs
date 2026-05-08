@@ -50,6 +50,7 @@ public class GetTradeDetail
                 Notes = trade.Notes,
                 TradingSessionId = trade.TradingSessionId,
                 TradingZoneId = trade.TradingZoneId,
+                TradingSetupId = trade.TradingSetupId,
                 TargetTier1 = trade.TargetTier1,
                 TargetTier2 = trade.TargetTier2,
                 TargetTier3 = trade.TargetTier3,

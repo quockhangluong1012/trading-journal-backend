@@ -48,6 +48,7 @@ public sealed class GetTradeDetailHandlerTests
                 CreatedBy = 1,
                 Asset = "EURUSD",
                 Notes = "Test",
+                TradingSetupId = 55,
                 TradeScreenShots = [],
                 TradeEmotionTags = [],
                 TradeChecklists = [],
@@ -59,6 +60,7 @@ public sealed class GetTradeDetailHandlerTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal("EURUSD", result.Value.Asset);
+        Assert.Equal(55, result.Value.TradingSetupId);
     }
 
     [Fact]

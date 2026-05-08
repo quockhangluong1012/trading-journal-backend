@@ -34,6 +34,10 @@ namespace TradingJournal.Modules.AiInsights.Services
 
         public Task<string> GetTiltIntervention() => GetPrompt("TiltIntervention");
 
+        public Task<string> GetTradingSetupGeneration() => GetPrompt("TradingSetupGeneration");
+
+        public Task<string> GetChecklistInterpretation() => GetPrompt("ChecklistInterpretation");
+
         private async Task<string> GetPrompt(string promptName)
         {
             string prompt = await cacheRepository.GetOrCreateAsync<string>(

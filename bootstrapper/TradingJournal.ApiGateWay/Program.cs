@@ -42,6 +42,7 @@ builder.AddSerilog();
 
 const string frontendCorsPolicyName = "FrontendApp";
 const string authRateLimitPolicyName = "auth";
+const string aiRateLimitPolicyName = "ai";
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -55,6 +56,8 @@ string jwtAudience = configuration.GetRequiredConfigurationValue("Jwt:Audience")
 string[] allowedOrigins = configuration.GetAllowedOrigins();
 int authPermitLimit = configuration.GetPositiveIntConfigurationValue("RateLimiting:Auth:PermitLimit", 5);
 int authWindowMinutes = configuration.GetPositiveIntConfigurationValue("RateLimiting:Auth:WindowMinutes", 15);
+int aiPermitLimit = configuration.GetPositiveIntConfigurationValue("RateLimiting:Ai:PermitLimit", 10);
+int aiWindowMinutes = configuration.GetPositiveIntConfigurationValue("RateLimiting:Ai:WindowMinutes", 10);
 int globalPermitLimit = configuration.GetPositiveIntConfigurationValue("RateLimiting:Global:PermitLimit", 120);
 int globalWindowMinutes = configuration.GetPositiveIntConfigurationValue("RateLimiting:Global:WindowMinutes", 1);
 
@@ -107,6 +110,23 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 AutoReplenishment = true,
             }));
+
+    options.AddPolicy(aiRateLimitPolicyName, httpContext =>
+    {
+        string partitionKey = httpContext.User.Identity?.IsAuthenticated == true
+            ? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? StartupConfigurationExtensions.GetClientIpAddress(httpContext)
+            : StartupConfigurationExtensions.GetClientIpAddress(httpContext);
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            $"ai:{partitionKey}",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = aiPermitLimit,
+                Window = TimeSpan.FromMinutes(aiWindowMinutes),
+                QueueLimit = 0,
+                AutoReplenishment = true,
+            });
+    });
 });
 
 builder.Services.AddCarter();

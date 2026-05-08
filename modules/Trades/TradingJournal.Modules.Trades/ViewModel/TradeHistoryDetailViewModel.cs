@@ -29,6 +29,8 @@ public sealed class TradeHistoryDetailViewModel
     // London / NY / Sydney / Tokyo
     public int? TradingZoneId { get; set; }
 
+    public int? TradingSetupId { get; set; }
+
     public decimal TargetTier1 { get; set; }
 
     public decimal? TargetTier2 { get; set; }

@@ -33,4 +33,8 @@ public interface IOpenRouterAIService
     Task<PlaybookOptimizationResultDto?> OptimizePlaybookAsync(PlaybookOptimizationRequestDto request, CancellationToken cancellationToken);
 
     Task<AiTiltInterventionResultDto?> AnalyzeTiltInterventionAsync(AiTiltInterventionRequestDto request, CancellationToken cancellationToken);
+
+    Task<TradingSetupGenerationResultDto?> GenerateTradingSetupAsync(TradingSetupGenerationRequestDto request, CancellationToken cancellationToken);
+
+    Task<PreTradeChecklistInterpretationResultDto?> InterpretPreTradeChecklistAsync(PreTradeChecklistInterpretationRequestDto request, CancellationToken cancellationToken);
 }

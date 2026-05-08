@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Globalization;
+using System.Text.RegularExpressions;
 using TradingJournal.Modules.AiInsights.Dto;
 using TradingJournal.Modules.AiInsights.Extensions;
 using TradingJournal.Modules.AiInsights.Options;
@@ -18,6 +19,7 @@ internal sealed class OpenRouterAiService(
     IEconomicImpactContextProvider economicImpactContextProvider,
     IRiskContextProvider riskContextProvider,
     ITradeProvider tradeProvider,
+    IChecklistModelProvider checklistModelProvider,
     ISetupProvider setupProvider,
     HttpClient httpClient,
     IImageHelper imageHelper,
@@ -26,6 +28,15 @@ internal sealed class OpenRouterAiService(
 {
     private const int MaxChartAnalysisImages = 3;
     private const int MaxInlineImageBytes = 5 * 1024 * 1024;
+    private static readonly Regex PromptCodeFencePattern = new("```.*?```", RegexOptions.Singleline | RegexOptions.Compiled);
+    private static readonly Regex PromptRolePrefixPattern = new(@"(?im)^\s*(system|assistant|developer|user)\s*:\s*", RegexOptions.Compiled);
+    private static readonly HashSet<string> AllowedSetupNodeKinds = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "start",
+        "step",
+        "decision",
+        "end"
+    };
     private static readonly string[] SupportedInlineImagePrefixes =
     [
         "data:image/png;base64,",
@@ -498,6 +509,49 @@ internal sealed class OpenRouterAiService(
         return ParseJsonResponse<PreTradeValidationResultDto>(responseText);
     }
 
+    public async Task<PreTradeChecklistInterpretationResultDto?> InterpretPreTradeChecklistAsync(
+        PreTradeChecklistInterpretationRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        string promptTemplate = await promptService.GetChecklistInterpretation();
+
+        if (string.IsNullOrEmpty(promptTemplate))
+        {
+            throw new InvalidOperationException("Checklist interpretation prompt template not found.");
+        }
+
+        ChecklistModelContextDto? checklistModel = await checklistModelProvider.GetChecklistModelAsync(
+            request.UserId,
+            request.ChecklistModelId,
+            cancellationToken);
+
+        if (checklistModel is null)
+        {
+            throw new InvalidOperationException("Checklist model not found for the current user.");
+        }
+
+        Dictionary<string, string> replacements = new()
+        {
+            { "{{ChecklistModelId}}", checklistModel.Id.ToString(CultureInfo.InvariantCulture) },
+            { "{{ChecklistModelName}}", checklistModel.Name },
+            { "{{ChecklistModelDescription}}", string.IsNullOrWhiteSpace(checklistModel.Description) ? "No description provided." : checklistModel.Description },
+            { "{{ChecklistCriteria}}", BuildChecklistCriteriaDigest(checklistModel.Criteria) },
+            { "{{ChecklistInput}}", FormatPromptInputBlock("user_input", request.Input) },
+        };
+
+        string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
+        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        PreTradeChecklistInterpretationResultDto? response = ParseJsonResponse<PreTradeChecklistInterpretationResultDto>(responseText);
+
+        if (response is null)
+        {
+            return null;
+        }
+
+        response.ChecklistModelId = checklistModel.Id;
+        return SanitizeChecklistInterpretationResult(response, checklistModel);
+    }
+
     public async Task<ChartScreenshotAnalysisResultDto?> AnalyzeChartScreenshotAsync(
         ChartScreenshotAnalysisRequestDto request,
         CancellationToken cancellationToken)
@@ -821,8 +875,15 @@ internal sealed class OpenRouterAiService(
         };
 
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
-        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
-        return ParseJsonResponse<MorningBriefingResultDto>(responseText);
+        try
+        {
+            string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+            return ParseJsonResponse<MorningBriefingResultDto>(responseText);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to generate morning briefing: {ex.Message}", ex);
+        }
     }
 
     public async Task<NaturalLanguageTradeSearchResultDto?> SearchTradesNaturalLanguageAsync(
@@ -1019,6 +1080,35 @@ internal sealed class OpenRouterAiService(
         return response;
     }
 
+    public async Task<TradingSetupGenerationResultDto?> GenerateTradingSetupAsync(
+        TradingSetupGenerationRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        string promptTemplate = await promptService.GetTradingSetupGeneration();
+
+        if (string.IsNullOrEmpty(promptTemplate))
+        {
+            throw new InvalidOperationException("Trading setup generation prompt template not found.");
+        }
+
+        List<SetupSummaryDto> setups = request.DedupeAgainstExisting
+            ? await setupProvider.GetSetupsAsync(request.UserId, cancellationToken)
+            : [];
+
+        Dictionary<string, string> replacements = new()
+        {
+            { "{{UserPrompt}}", FormatPromptInputBlock("user_request", request.Prompt) },
+            { "{{MaxNodes}}", request.MaxNodes.ToString(CultureInfo.InvariantCulture) },
+            { "{{ExistingSetups}}", BuildExistingSetupsDigest(setups) },
+        };
+
+        string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
+        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        TradingSetupGenerationResultDto? response = ParseJsonResponse<TradingSetupGenerationResultDto>(responseText);
+
+        return response is null ? null : SanitizeTradingSetupGenerationResult(response, request.MaxNodes);
+    }
+
     public async Task<AiTiltInterventionResultDto?> AnalyzeTiltInterventionAsync(
         AiTiltInterventionRequestDto request,
         CancellationToken cancellationToken)
@@ -1084,9 +1174,24 @@ internal sealed class OpenRouterAiService(
         }
         catch (JsonException ex)
         {
-            throw new InvalidOperationException(
-                $"Failed to parse AI response into {typeof(T).Name}. Raw response: {responseText}", ex);
+            throw new InvalidOperationException($"Failed to parse AI response into {typeof(T).Name}.", ex);
         }
+    }
+
+    private static string FormatPromptInputBlock(string tagName, string input)
+    {
+        string sanitizedInput = SanitizePromptInput(input);
+        return $"<{tagName}>\n{sanitizedInput}\n</{tagName}>";
+    }
+
+    private static string SanitizePromptInput(string input)
+    {
+        string sanitized = PromptCodeFencePattern.Replace(input, " ");
+        sanitized = PromptRolePrefixPattern.Replace(sanitized, string.Empty);
+        sanitized = sanitized.Replace("\0", string.Empty, StringComparison.Ordinal);
+        sanitized = sanitized.Replace("\r\n", "\n", StringComparison.Ordinal).Trim();
+
+        return string.IsNullOrWhiteSpace(sanitized) ? "No additional notes provided." : sanitized;
     }
 
     private static string BuildLessonSuggestionTradeDigest(IReadOnlyList<LessonSuggestionTradeDto> trades)
@@ -1115,6 +1220,234 @@ internal sealed class OpenRouterAiService(
     {
         return string.Join("\n", playbookSnapshots.Select(snapshot =>
             $"- SetupId: {snapshot.SetupId} | Name: {snapshot.SetupName} | Description: {snapshot.Description ?? "None"} | Status: {snapshot.Status} | Trades: {snapshot.TotalTrades} | Wins: {snapshot.Wins} | Losses: {snapshot.Losses} | WinRate: {FormatPromptNumber(snapshot.WinRate, 1)} | TotalPnL: {FormatPromptNumber(snapshot.TotalPnl, 2)} | ProfitFactor: {FormatPromptMetric(snapshot.ProfitFactor)} | Expectancy: {FormatPromptNumber(snapshot.Expectancy, 2)} | AvgRR: {FormatPromptNumber(snapshot.AvgRiskReward, 2)} | Grade: {snapshot.Grade}"));
+    }
+
+    private static string BuildChecklistCriteriaDigest(IReadOnlyCollection<ChecklistCriterionContextDto> criteria)
+    {
+        if (criteria.Count == 0)
+        {
+            return "No checklist criteria found.";
+        }
+
+        return string.Join("\n", criteria.Select(criterion =>
+            $"- Id: {criterion.Id} | Category: {criterion.Category} | Type: {criterion.Type} | Name: {criterion.Name}"));
+    }
+
+    private static string BuildExistingSetupsDigest(IReadOnlyCollection<SetupSummaryDto> setups)
+    {
+        if (setups.Count == 0)
+        {
+            return "No existing setups found for this user.";
+        }
+
+        return string.Join("\n", setups.Select(setup =>
+            $"- SetupId: {setup.Id} | Name: {setup.Name} | Description: {setup.Description ?? "None"} | Status: {setup.Status}"));
+    }
+
+    private static PreTradeChecklistInterpretationResultDto SanitizeChecklistInterpretationResult(
+        PreTradeChecklistInterpretationResultDto response,
+        ChecklistModelContextDto checklistModel)
+    {
+        Dictionary<int, ChecklistCriterionContextDto> criteriaById = checklistModel.Criteria.ToDictionary(criteria => criteria.Id);
+
+        List<int> suggestedChecklistIds = [.. response.SuggestedChecklistIds
+            .Where(criteriaById.ContainsKey)
+            .Distinct()];
+
+        Dictionary<int, PreTradeChecklistInterpretationMatchDto> matchesByChecklistId = [];
+
+        foreach (PreTradeChecklistInterpretationMatchDto match in response.Matches)
+        {
+            if (!criteriaById.TryGetValue(match.ChecklistId, out ChecklistCriterionContextDto? criterion))
+            {
+                continue;
+            }
+
+            matchesByChecklistId[match.ChecklistId] = new PreTradeChecklistInterpretationMatchDto
+            {
+                ChecklistId = criterion.Id,
+                ChecklistName = criterion.Name,
+                Category = criterion.Category,
+                Rationale = string.IsNullOrWhiteSpace(match.Rationale) ? "Matched from the trader's notes." : match.Rationale.Trim(),
+                Confidence = Math.Clamp(match.Confidence, 0m, 1m)
+            };
+        }
+
+        foreach (int checklistId in suggestedChecklistIds)
+        {
+            if (matchesByChecklistId.ContainsKey(checklistId))
+            {
+                continue;
+            }
+
+            ChecklistCriterionContextDto criterion = criteriaById[checklistId];
+            matchesByChecklistId[checklistId] = new PreTradeChecklistInterpretationMatchDto
+            {
+                ChecklistId = criterion.Id,
+                ChecklistName = criterion.Name,
+                Category = criterion.Category,
+                Rationale = "Suggested from the trader's notes.",
+                Confidence = Math.Clamp(response.Confidence, 0m, 1m)
+            };
+        }
+
+        return new PreTradeChecklistInterpretationResultDto
+        {
+            ChecklistModelId = checklistModel.Id,
+            Summary = string.IsNullOrWhiteSpace(response.Summary) ? $"Mapped notes against {checklistModel.Name}." : response.Summary.Trim(),
+            Confidence = Math.Clamp(response.Confidence, 0m, 1m),
+            SuggestedChecklistIds = suggestedChecklistIds,
+            Matches = [.. matchesByChecklistId.Values.OrderByDescending(match => match.Confidence).ThenBy(match => match.ChecklistName)],
+            UnmatchedInputs = SanitizeStringList(response.UnmatchedInputs)
+        };
+    }
+
+    private static TradingSetupGenerationResultDto SanitizeTradingSetupGenerationResult(
+        TradingSetupGenerationResultDto response,
+        int maxNodes)
+    {
+        List<TradingSetupGenerationNodeDto> nodes = SanitizeTradingSetupNodes(response.Nodes, maxNodes);
+
+        if (nodes.Count == 0)
+        {
+            throw new InvalidOperationException("AI setup generation returned no valid nodes.");
+        }
+
+        HashSet<string> nodeIds = [.. nodes.Select(node => node.Id)];
+        List<TradingSetupGenerationEdgeDto> edges = SanitizeTradingSetupEdges(response.Edges, nodeIds);
+
+        if (nodes.Count > 1 && edges.Count == 0)
+        {
+            edges = CreateFallbackTradingSetupEdges(nodes);
+        }
+
+        return new TradingSetupGenerationResultDto
+        {
+            Summary = string.IsNullOrWhiteSpace(response.Summary) ? "Generated setup preview." : response.Summary.Trim(),
+            Name = string.IsNullOrWhiteSpace(response.Name) ? "AI Setup Draft" : response.Name.Trim(),
+            Description = string.IsNullOrWhiteSpace(response.Description) ? null : response.Description.Trim(),
+            Nodes = nodes,
+            Edges = edges,
+            Assumptions = SanitizeStringList(response.Assumptions),
+            Warnings = SanitizeStringList(response.Warnings),
+            Confidence = Math.Clamp(response.Confidence, 0m, 1m)
+        };
+    }
+
+    private static List<TradingSetupGenerationNodeDto> SanitizeTradingSetupNodes(
+        IReadOnlyList<TradingSetupGenerationNodeDto> nodes,
+        int maxNodes)
+    {
+        List<TradingSetupGenerationNodeDto> sanitized = [];
+        HashSet<string> seenIds = new(StringComparer.OrdinalIgnoreCase);
+
+        for (int index = 0; index < nodes.Count && sanitized.Count < maxNodes; index++)
+        {
+            TradingSetupGenerationNodeDto node = nodes[index];
+            string nodeId = string.IsNullOrWhiteSpace(node.Id) ? $"ai-node-{index + 1}" : node.Id.Trim();
+
+            if (!seenIds.Add(nodeId))
+            {
+                continue;
+            }
+
+            (double x, double y) = GetSetupNodePosition(index, node.X, node.Y);
+
+            sanitized.Add(new TradingSetupGenerationNodeDto
+            {
+                Id = nodeId,
+                Kind = NormalizeSetupNodeKind(node.Kind),
+                Title = string.IsNullOrWhiteSpace(node.Title) ? $"Step {sanitized.Count + 1}" : node.Title.Trim(),
+                Notes = string.IsNullOrWhiteSpace(node.Notes) ? null : node.Notes.Trim(),
+                X = x,
+                Y = y,
+            });
+        }
+
+        return sanitized;
+    }
+
+    private static List<TradingSetupGenerationEdgeDto> CreateFallbackTradingSetupEdges(IReadOnlyList<TradingSetupGenerationNodeDto> nodes)
+    {
+        List<TradingSetupGenerationEdgeDto> edges = [];
+
+        for (int index = 0; index < nodes.Count - 1; index++)
+        {
+            edges.Add(new TradingSetupGenerationEdgeDto
+            {
+                Id = $"ai-edge-fallback-{index + 1}",
+                Source = nodes[index].Id,
+                Target = nodes[index + 1].Id,
+                Label = null,
+            });
+        }
+
+        return edges;
+    }
+
+    private static List<TradingSetupGenerationEdgeDto> SanitizeTradingSetupEdges(
+        IReadOnlyList<TradingSetupGenerationEdgeDto> edges,
+        IReadOnlySet<string> nodeIds)
+    {
+        List<TradingSetupGenerationEdgeDto> sanitized = [];
+        HashSet<string> seenConnections = new(StringComparer.OrdinalIgnoreCase);
+
+        for (int index = 0; index < edges.Count; index++)
+        {
+            TradingSetupGenerationEdgeDto edge = edges[index];
+            string source = edge.Source?.Trim() ?? string.Empty;
+            string target = edge.Target?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(target))
+            {
+                continue;
+            }
+
+            if (!nodeIds.Contains(source) || !nodeIds.Contains(target) || string.Equals(source, target, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            string connectionKey = $"{source}->{target}";
+            if (!seenConnections.Add(connectionKey))
+            {
+                continue;
+            }
+
+            sanitized.Add(new TradingSetupGenerationEdgeDto
+            {
+                Id = string.IsNullOrWhiteSpace(edge.Id) ? $"ai-edge-{index + 1}" : edge.Id.Trim(),
+                Source = source,
+                Target = target,
+                Label = string.IsNullOrWhiteSpace(edge.Label) ? null : edge.Label.Trim(),
+            });
+        }
+
+        return sanitized;
+    }
+
+    private static string NormalizeSetupNodeKind(string? kind)
+    {
+        string normalizedKind = string.IsNullOrWhiteSpace(kind) ? "step" : kind.Trim().ToLowerInvariant();
+        return AllowedSetupNodeKinds.Contains(normalizedKind) ? normalizedKind : "step";
+    }
+
+    private static (double X, double Y) GetSetupNodePosition(int index, double x, double y)
+    {
+        if (double.IsFinite(x) && double.IsFinite(y))
+        {
+            return (x, y);
+        }
+
+        const double startX = 140;
+        const double startY = 80;
+        const double gapX = 280;
+        const double gapY = 170;
+        const int columns = 3;
+
+        int column = index % columns;
+        int row = index / columns;
+        return (startX + (column * gapX), startY + (row * gapY));
     }
 
     private async Task<List<byte[]>> LoadImageSourcesAsync(

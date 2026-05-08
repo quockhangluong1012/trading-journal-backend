@@ -31,4 +31,8 @@ public interface IPromptService
     public Task<string> GetPlaybookOptimization();
 
     public Task<string> GetTiltIntervention();
+
+    public Task<string> GetTradingSetupGeneration();
+
+    public Task<string> GetChecklistInterpretation();
 }

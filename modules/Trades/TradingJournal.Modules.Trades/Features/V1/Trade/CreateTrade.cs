@@ -28,6 +28,7 @@ public sealed class CreateTrade
         List<int> TradeHistoryChecklists,
         int TradingZoneId,
         int? TradingSessionId,
+        int? TradingSetupId = null,
         PowerOf3Phase? PowerOf3Phase = null,
         DailyBias? DailyBias = null,
         MarketStructure? MarketStructure = null,
@@ -91,6 +92,12 @@ public sealed class CreateTrade
                 .Cascade(CascadeMode.Stop)
                 .GreaterThan(0).WithErrorCode(nameof(HttpStatusCode.BadRequest))
                 .WithMessage("Trading Zone must be entered and greater than 0.");
+
+            RuleFor(x => x.TradingSetupId)
+                .GreaterThan(0)
+                .When(x => x.TradingSetupId.HasValue)
+                .WithErrorCode(nameof(HttpStatusCode.BadRequest))
+                .WithMessage("Trading setup must be greater than 0 when provided.");
         }
     }
 
@@ -99,6 +106,7 @@ public sealed class CreateTrade
         IScreenshotService screenshotService,
         IDisciplineEvaluator disciplineEvaluator,
         IHttpContextAccessor httpContextAccessor,
+        ISetupProvider setupProvider,
         ICacheRepository cacheRepository) : ICommandHandler<Request, Result<int>>
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
@@ -124,6 +132,17 @@ public sealed class CreateTrade
                 {
                     await context.RollbackTransaction();
                     return Result<int>.Failure(Error.Create("One or more pretrade checklist items are invalid for the current user."));
+                }
+
+                if (request.TradingSetupId.HasValue)
+                {
+                    bool hasSetup = await setupProvider.HasSetupAsync(userId, request.TradingSetupId.Value, cancellationToken);
+
+                    if (!hasSetup)
+                    {
+                        await context.RollbackTransaction();
+                        return Result<int>.Failure(Error.Create("The selected trading setup is invalid for the current user."));
+                    }
                 }
 
                 TradeHistory tradeHistory = request.Adapt<TradeHistory>();

@@ -21,7 +21,7 @@ public sealed class UpdateTradeValidatorTests
             null, null, 1.0800m, "Notes", DateTime.UtcNow,
             SharedEnums.TradeStatus.Open, null, null, null, [],
             null, null, ConfidenceLevel.Neutral, null,
-            [1], 1, null, null);
+            [1], 1, null, null, null);
 
     [Fact]
     public void Validate_ValidRequest_ReturnsValid()
@@ -70,13 +70,15 @@ public sealed class UpdateTradeHandlerTests
 {
     private Mock<ITradeDbContext> _ctx = null!;
     private Mock<IScreenshotService> _screenshotMock = null!;
+    private Mock<ISetupProvider> _setupProviderMock = null!;
     private UpdateTrade.Handler _handler = null!;
 
     public UpdateTradeHandlerTests()
     {
         _ctx = new Mock<ITradeDbContext>();
         _screenshotMock = new Mock<IScreenshotService>();
-        _handler = new UpdateTrade.Handler(_ctx.Object, _screenshotMock.Object, new Mock<ICacheRepository>().Object);
+        _setupProviderMock = new Mock<ISetupProvider>();
+        _handler = new UpdateTrade.Handler(_ctx.Object, _screenshotMock.Object, _setupProviderMock.Object, new Mock<ICacheRepository>().Object);
     }
 
     [Fact]
@@ -87,7 +89,7 @@ public sealed class UpdateTradeHandlerTests
             null, null, 1.0800m, "Notes", DateTime.UtcNow,
             SharedEnums.TradeStatus.Open, null, null, null, [],
             null, null, ConfidenceLevel.Neutral, null,
-            [1], 1, null, null, UserId: 42);
+            [1], 1, null, null, null, UserId: 42);
 
         _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
 
@@ -104,7 +106,7 @@ public sealed class UpdateTradeHandlerTests
             null, null, 1.0800m, "Updated", DateTime.UtcNow,
             SharedEnums.TradeStatus.Open, null, null, null, [],
             null, null, ConfidenceLevel.Neutral, null,
-            [1], 1, null, null, UserId: 42);
+            [1], 1, null, 88, null, UserId: 42);
 
         var trade = new TradeHistory { Id = 1, CreatedBy = 42, Asset = "GBPUSD",
             TradeEmotionTags = [], TradeChecklists = [], TradeTechnicalAnalysisTags = [], TradeScreenShots = [] };
@@ -118,6 +120,7 @@ public sealed class UpdateTradeHandlerTests
         _ctx.Setup(x => x.TradeHistoryChecklist).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistoryChecklist>().AsQueryable()).Object);
         _ctx.Setup(x => x.TradeTechnicalAnalysisTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeTechnicalAnalysisTag>().AsQueryable()).Object);
         _ctx.Setup(x => x.TradeScreenShots).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeScreenShot>().AsQueryable()).Object);
+        _setupProviderMock.Setup(x => x.HasSetupAsync(42, 88, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _ctx.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var result = await _handler.Handle(request, CancellationToken.None);
@@ -125,6 +128,7 @@ public sealed class UpdateTradeHandlerTests
         Assert.True(result.IsSuccess, $"Error: {result.Errors?.FirstOrDefault()?.Description}");
         Assert.True(result.Value);
         Assert.Equal("Updated", trade.Notes);
+        Assert.Equal(88, trade.TradingSetupId);
     }
 
     [Fact]
@@ -135,7 +139,7 @@ public sealed class UpdateTradeHandlerTests
             null, null, 1.0800m, "Updated", DateTime.UtcNow,
             SharedEnums.TradeStatus.Open, null, null, null, [],
             null, null, ConfidenceLevel.Neutral, null,
-            [1], 1, null, null, UserId: 42);
+            [1], 1, null, null, null, UserId: 42);
 
         var trade = new TradeHistory
         {
@@ -153,6 +157,40 @@ public sealed class UpdateTradeHandlerTests
         {
             new() { Id = 1, Name = "Checklist 1", ChecklistModelId = 1, ChecklistModel = new ChecklistModel { Id = 1, Name = "Model", CreatedBy = 7 } }
         }.AsQueryable()).Object);
+
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        _ctx.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_InvalidTradingSetup_ReturnsFailure()
+    {
+        var request = new UpdateTrade.Request(
+            1, "EURUSD", SharedEnums.PositionType.Long, 1.0850m, 1.0900m,
+            null, null, 1.0800m, "Updated", DateTime.UtcNow,
+            SharedEnums.TradeStatus.Open, null, null, null, [],
+            null, null, ConfidenceLevel.Neutral, null,
+            [1], 1, null, 77, null, UserId: 42);
+
+        var trade = new TradeHistory
+        {
+            Id = 1,
+            CreatedBy = 42,
+            Asset = "GBPUSD",
+            TradeEmotionTags = [],
+            TradeChecklists = [],
+            TradeTechnicalAnalysisTags = [],
+            TradeScreenShots = []
+        };
+
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory> { trade }.AsQueryable()).Object);
+        _ctx.Setup(x => x.PretradeChecklists).Returns(DbSetMockHelper.CreateMockDbSet(new List<PretradeChecklist>
+        {
+            new() { Id = 1, Name = "Checklist 1", ChecklistModelId = 1, ChecklistModel = new ChecklistModel { Id = 1, Name = "Model", CreatedBy = 42 } }
+        }.AsQueryable()).Object);
+        _setupProviderMock.Setup(x => x.HasSetupAsync(42, 77, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         var result = await _handler.Handle(request, CancellationToken.None);
 
