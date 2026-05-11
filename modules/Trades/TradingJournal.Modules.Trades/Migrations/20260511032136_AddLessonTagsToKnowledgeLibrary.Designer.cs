@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TradingJournal.Modules.Trades.Infrastructure;
 
@@ -11,9 +12,11 @@ using TradingJournal.Modules.Trades.Infrastructure;
 namespace TradingJournal.Modules.Trades.Migrations
 {
     [DbContext(typeof(TradeDbContext))]
-    partial class TradeDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260511032136_AddLessonTagsToKnowledgeLibrary")]
+    partial class AddLessonTagsToKnowledgeLibrary
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -461,12 +464,10 @@ namespace TradingJournal.Modules.Trades.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("EntryPrice")
-                        .HasPrecision(18, 5)
-                        .HasColumnType("decimal(18,5)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("ExitPrice")
-                        .HasPrecision(18, 5)
-                        .HasColumnType("decimal(18,5)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<bool?>("HitStopLoss")
                         .HasColumnType("bit");
@@ -502,20 +503,16 @@ namespace TradingJournal.Modules.Trades.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("StopLoss")
-                        .HasPrecision(18, 5)
-                        .HasColumnType("decimal(18,5)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("TargetTier1")
-                        .HasPrecision(18, 5)
-                        .HasColumnType("decimal(18,5)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("TargetTier2")
-                        .HasPrecision(18, 5)
-                        .HasColumnType("decimal(18,5)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("TargetTier3")
-                        .HasPrecision(18, 5)
-                        .HasColumnType("decimal(18,5)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("TradingResult")
                         .HasColumnType("nvarchar(max)");
@@ -687,20 +684,16 @@ namespace TradingJournal.Modules.Trades.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal?>("DefaultStopLoss")
-                        .HasPrecision(18, 5)
-                        .HasColumnType("decimal(18,5)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("DefaultTargetTier1")
-                        .HasPrecision(18, 5)
-                        .HasColumnType("decimal(18,5)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("DefaultTargetTier2")
-                        .HasPrecision(18, 5)
-                        .HasColumnType("decimal(18,5)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("DefaultTargetTier3")
-                        .HasPrecision(18, 5)
-                        .HasColumnType("decimal(18,5)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("DefaultTechnicalAnalysisTagIds")
                         .HasColumnType("nvarchar(max)");

@@ -10,6 +10,8 @@ public interface IOpenRouterAIService
 
     Task<AiCoachResponseDto> ChatWithCoachAsync(AiCoachRequestDto request, CancellationToken cancellationToken);
 
+    IAsyncEnumerable<string> StreamChatWithCoachAsync(AiCoachRequestDto request, CancellationToken cancellationToken);
+
     Task<PreTradeValidationResultDto?> ValidateTradeSetupAsync(PreTradeValidationRequestDto request, CancellationToken cancellationToken);
 
     Task<ChartScreenshotAnalysisResultDto?> AnalyzeChartScreenshotAsync(ChartScreenshotAnalysisRequestDto request, CancellationToken cancellationToken);

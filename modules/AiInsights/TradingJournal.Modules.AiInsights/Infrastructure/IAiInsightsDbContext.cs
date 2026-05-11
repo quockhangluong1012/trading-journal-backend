@@ -2,6 +2,8 @@ namespace TradingJournal.Modules.AiInsights.Infrastructure;
 
 public interface IAiInsightsDbContext
 {
+    DbSet<AiCoachConversation> AiCoachConversations { get; set; }
+
     DbSet<MorningBriefing> MorningBriefings { get; set; }
 
     DbSet<TradingReview> TradingReviews { get; set; }

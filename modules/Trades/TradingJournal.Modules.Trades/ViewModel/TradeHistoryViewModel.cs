@@ -25,4 +25,12 @@ public class TradeHistoryViewModel
     public List<EmotionTagCacheDto>? EmotionTags { get; set; }
 
     public ConfidenceLevel ConfidenceLevel { get; set; }
+
+    public PowerOf3Phase? PowerOf3Phase { get; set; }
+
+    public DailyBias? DailyBias { get; set; }
+
+    public MarketStructure? MarketStructure { get; set; }
+
+    public PremiumDiscount? PremiumDiscount { get; set; }
 }

@@ -18,7 +18,7 @@ public sealed class CreateLessonHandlerTests
     private CreateLesson.Handler CreateHandler() =>
         new(_contextMock.Object, _httpContextAccessorMock.Object);
 
-    private static CreateLesson.Request CreateRequest(List<int>? linkedTradeIds = null) =>
+    private static CreateLesson.Request CreateRequest(List<int>? linkedTradeIds = null, List<string>? tags = null) =>
         new(
             Title: "Wait for confirmation",
             Content: "Entering before confirmation increased risk.",
@@ -27,7 +27,8 @@ public sealed class CreateLessonHandlerTests
             KeyTakeaway: "Wait for candle close.",
             ActionItems: "Review the entry checklist before submitting.",
             ImpactScore: 7,
-            LinkedTradeIds: linkedTradeIds);
+            LinkedTradeIds: linkedTradeIds,
+            Tags: tags);
 
     private void SetupUserId(int userId)
     {
@@ -88,6 +89,37 @@ public sealed class CreateLessonHandlerTests
         _contextMock.Verify(x => x.ExecuteInTransactionAsync(
             It.IsAny<Func<CancellationToken, Task<Result<int>>>>(),
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WithTags_PersistsDistinctNormalizedTags()
+    {
+        SetupUserId(42);
+
+        var lessonSetMock = DbSetMockHelper.CreateMockDbSet(new List<LessonLearned>().AsQueryable());
+        var linkSetMock = DbSetMockHelper.CreateMockDbSet(new List<LessonTradeLink>().AsQueryable());
+        var tradeHistorySetMock = DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable());
+
+        LessonLearned? createdLesson = null;
+
+        lessonSetMock.Setup(x => x.AddAsync(It.IsAny<LessonLearned>(), It.IsAny<CancellationToken>()))
+            .Callback<LessonLearned, CancellationToken>((lesson, _) => createdLesson = lesson)
+            .ReturnsAsync((LessonLearned lesson, CancellationToken _) => null!);
+
+        _contextMock.Setup(x => x.LessonsLearned).Returns(lessonSetMock.Object);
+        _contextMock.Setup(x => x.LessonTradeLinks).Returns(linkSetMock.Object);
+        _contextMock.Setup(x => x.TradeHistories).Returns(tradeHistorySetMock.Object);
+        _contextMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        SetupTransactionalExecution();
+
+        var result = await CreateHandler().Handle(
+            CreateRequest(tags: [" AMD ", "London open", "amd", "  "]),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(createdLesson);
+        Assert.Equal(["AMD", "London open"], createdLesson!.Tags);
+        Assert.Equal("|AMD|London open|", createdLesson.TagsText);
     }
 
     [Fact]

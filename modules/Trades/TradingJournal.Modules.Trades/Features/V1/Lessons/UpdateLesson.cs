@@ -11,7 +11,8 @@ public sealed class UpdateLesson
         LessonStatus Status,
         string? KeyTakeaway,
         string? ActionItems,
-        int ImpactScore) : ICommand<Result>;
+        int ImpactScore,
+        List<string>? Tags) : ICommand<Result>;
 
     public sealed class Validator : AbstractValidator<Request>
     {
@@ -48,6 +49,15 @@ public sealed class UpdateLesson
             RuleFor(x => x.ImpactScore)
                 .InclusiveBetween(1, 10).WithErrorCode(nameof(HttpStatusCode.BadRequest))
                 .WithMessage("Impact score must be between 1 and 10.");
+
+            RuleFor(x => x.Tags)
+                .Must(tags => tags is null || LessonTagSerializer.NormalizeTags(tags).Count <= 8)
+                .WithErrorCode(nameof(HttpStatusCode.BadRequest))
+                .WithMessage("A lesson can have at most 8 tags.");
+
+            RuleForEach(x => x.Tags)
+                .MaximumLength(32).WithErrorCode(nameof(HttpStatusCode.BadRequest))
+                .WithMessage("Each tag must not exceed 32 characters.");
         }
     }
 
@@ -74,6 +84,7 @@ public sealed class UpdateLesson
             lesson.KeyTakeaway = request.KeyTakeaway;
             lesson.ActionItems = request.ActionItems;
             lesson.ImpactScore = request.ImpactScore;
+            lesson.Tags = request.Tags ?? [];
 
             await context.SaveChangesAsync(cancellationToken);
 

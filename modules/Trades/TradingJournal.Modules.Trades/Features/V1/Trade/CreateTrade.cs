@@ -98,6 +98,30 @@ public sealed class CreateTrade
                 .When(x => x.TradingSetupId.HasValue)
                 .WithErrorCode(nameof(HttpStatusCode.BadRequest))
                 .WithMessage("Trading setup must be greater than 0 when provided.");
+
+            RuleFor(x => x.PowerOf3Phase)
+                .IsInEnum()
+                .When(x => x.PowerOf3Phase.HasValue)
+                .WithErrorCode(nameof(HttpStatusCode.BadRequest))
+                .WithMessage("Power of 3 phase must be a valid value.");
+
+            RuleFor(x => x.DailyBias)
+                .IsInEnum()
+                .When(x => x.DailyBias.HasValue)
+                .WithErrorCode(nameof(HttpStatusCode.BadRequest))
+                .WithMessage("Daily bias must be a valid value.");
+
+            RuleFor(x => x.MarketStructure)
+                .IsInEnum()
+                .When(x => x.MarketStructure.HasValue)
+                .WithErrorCode(nameof(HttpStatusCode.BadRequest))
+                .WithMessage("Market structure must be a valid value.");
+
+            RuleFor(x => x.PremiumDiscount)
+                .IsInEnum()
+                .When(x => x.PremiumDiscount.HasValue)
+                .WithErrorCode(nameof(HttpStatusCode.BadRequest))
+                .WithMessage("Premium discount must be a valid value.");
         }
     }
 
@@ -143,6 +167,10 @@ public sealed class CreateTrade
                 Result<int> result = await context.ExecuteInTransactionAsync(async ct =>
                 {
                     TradeHistory tradeHistory = request.Adapt<TradeHistory>();
+                    tradeHistory.PowerOf3Phase = request.PowerOf3Phase;
+                    tradeHistory.DailyBias = request.DailyBias;
+                    tradeHistory.MarketStructure = request.MarketStructure;
+                    tradeHistory.PremiumDiscount = request.PremiumDiscount;
 
                     await disciplineEvaluator.EvaluateAsync(tradeHistory, userId, ct);
 

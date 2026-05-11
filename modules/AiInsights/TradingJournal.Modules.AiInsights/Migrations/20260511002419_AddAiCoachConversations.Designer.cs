@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TradingJournal.Modules.AiInsights.Infrastructure;
 
@@ -11,9 +12,11 @@ using TradingJournal.Modules.AiInsights.Infrastructure;
 namespace TradingJournal.Modules.AiInsights.Migrations
 {
     [DbContext(typeof(AiInsightsDbContext))]
-    partial class AiInsightsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260511002419_AddAiCoachConversations")]
+    partial class AddAiCoachConversations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

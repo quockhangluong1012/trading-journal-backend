@@ -12,6 +12,8 @@ public class LessonLearnedViewModel
 
     public LessonStatus Status { get; set; }
 
+    public List<string> Tags { get; set; } = [];
+
     public string? KeyTakeaway { get; set; }
 
     public int ImpactScore { get; set; }

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using TradingJournal.Modules.Trades.Common;
 
 namespace TradingJournal.Modules.Trades.Domain;
 
@@ -18,6 +19,16 @@ public sealed class LessonLearned : EntityBase<int>
     public LessonSeverity Severity { get; set; }
 
     public LessonStatus Status { get; set; } = LessonStatus.New;
+
+    [MaxLength(500)]
+    public string TagsText { get; set; } = string.Empty;
+
+    [NotMapped]
+    public List<string> Tags
+    {
+        get => LessonTagSerializer.Deserialize(TagsText);
+        set => TagsText = LessonTagSerializer.Serialize(value);
+    }
 
     [MaxLength(500)]
     public string? KeyTakeaway { get; set; }

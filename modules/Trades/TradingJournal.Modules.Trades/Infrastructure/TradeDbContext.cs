@@ -5,6 +5,9 @@ namespace TradingJournal.Modules.Trades.Infrastructure;
 internal sealed class TradeDbContext(DbContextOptions<TradeDbContext> options, IHttpContextAccessor httpContextAccessor)
     : AuditableDbContext(options, httpContextAccessor), ITradeDbContext
 {
+    private const int TradePricePrecision = 18;
+    private const int TradePriceScale = 5;
+
     public DbSet<TradeHistory> TradeHistories { get; set; } = null!;
 
     public DbSet<ChecklistModel> ChecklistModels { get; set; } = null!;
@@ -42,4 +45,27 @@ internal sealed class TradeDbContext(DbContextOptions<TradeDbContext> options, I
     public DbSet<ReviewActionItem> ReviewActionItems { get; set; } = null!;
 
     public DbSet<TradeTemplate> TradeTemplates { get; set; } = null!;
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<TradeHistory>(trade =>
+        {
+            trade.Property(t => t.EntryPrice).HasPrecision(TradePricePrecision, TradePriceScale);
+            trade.Property(t => t.ExitPrice).HasPrecision(TradePricePrecision, TradePriceScale);
+            trade.Property(t => t.StopLoss).HasPrecision(TradePricePrecision, TradePriceScale);
+            trade.Property(t => t.TargetTier1).HasPrecision(TradePricePrecision, TradePriceScale);
+            trade.Property(t => t.TargetTier2).HasPrecision(TradePricePrecision, TradePriceScale);
+            trade.Property(t => t.TargetTier3).HasPrecision(TradePricePrecision, TradePriceScale);
+        });
+
+        modelBuilder.Entity<TradeTemplate>(template =>
+        {
+            template.Property(t => t.DefaultStopLoss).HasPrecision(TradePricePrecision, TradePriceScale);
+            template.Property(t => t.DefaultTargetTier1).HasPrecision(TradePricePrecision, TradePriceScale);
+            template.Property(t => t.DefaultTargetTier2).HasPrecision(TradePricePrecision, TradePriceScale);
+            template.Property(t => t.DefaultTargetTier3).HasPrecision(TradePricePrecision, TradePriceScale);
+        });
+    }
 }

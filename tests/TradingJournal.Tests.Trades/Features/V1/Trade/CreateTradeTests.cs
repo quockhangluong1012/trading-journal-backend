@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using TradingJournal.Shared.Abstractions;
 using TradingJournal.Shared.Interfaces;
+using IctEnums = TradingJournal.Modules.Trades.Common.Enum;
 using SharedEnums = TradingJournal.Shared.Common.Enum;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Trade;
@@ -142,6 +143,15 @@ public sealed class CreateTradeValidatorTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("Status"));
     }
+
+    [Fact]
+    public void Validate_InvalidPowerOf3Phase_ReturnsInvalid()
+    {
+        var request = CreateValidRequest() with { PowerOf3Phase = (IctEnums.PowerOf3Phase)99 };
+        var result = _validator.Validate(request);
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("Power of 3"));
+    }
 }
 
 public sealed class CreateTradeHandlerTests
@@ -236,6 +246,50 @@ public sealed class CreateTradeHandlerTests
             It.IsAny<Func<CancellationToken, Task<Result<int>>>>(),
             It.IsAny<CancellationToken>()), Times.Once);
         _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_RequestWithIctFields_MapsPowerOf3PhaseOntoTradeHistory()
+    {
+        SetCurrentUser(42);
+        var request = new CreateTrade.Request(
+            Asset: "EURUSD", Position: SharedEnums.PositionType.Long, EntryPrice: 1.0850m,
+            TargetTier1: 1.0900m, TargetTier2: null, TargetTier3: null, StopLoss: 1.0800m,
+            Notes: "ICT setup", Date: DateTime.UtcNow, Status: SharedEnums.TradeStatus.Open,
+            ExitPrice: null, Pnl: null, ClosedDate: null, Screenshots: [],
+            TradeTechnicalAnalysisTags: [], EmotionTags: null,
+            ConfidenceLevel: TradingJournal.Shared.Common.Enum.ConfidenceLevel.Neutral, PsychologyNotes: null,
+            TradeHistoryChecklists: [1], TradingZoneId: 1, TradingSessionId: null, TradingSetupId: null,
+            PowerOf3Phase: IctEnums.PowerOf3Phase.Manipulation,
+            DailyBias: IctEnums.DailyBias.Bullish,
+            MarketStructure: IctEnums.MarketStructure.BOS,
+            PremiumDiscount: IctEnums.PremiumDiscount.Discount);
+
+        TradeHistory? evaluatedTrade = null;
+
+        _disciplineMock
+            .Setup(x => x.EvaluateAsync(It.IsAny<TradeHistory>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .Callback<TradeHistory, int, CancellationToken>((trade, _, _) => evaluatedTrade = trade)
+            .Returns(Task.CompletedTask);
+
+        _contextMock.Setup(c => c.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory>().AsQueryable()).Object);
+        _contextMock.Setup(c => c.TradeScreenShots).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeScreenShot>().AsQueryable()).Object);
+        _contextMock.Setup(c => c.TradeEmotionTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeEmotionTag>().AsQueryable()).Object);
+        _contextMock.Setup(c => c.TradeHistoryChecklist).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistoryChecklist>().AsQueryable()).Object);
+        _contextMock.Setup(c => c.TradeTechnicalAnalysisTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeTechnicalAnalysisTag>().AsQueryable()).Object);
+        SetupAccessibleChecklists(42, 1);
+        SetupTradingProfiles();
+        SetupTransactionalExecution();
+        _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(evaluatedTrade);
+        Assert.Equal(IctEnums.PowerOf3Phase.Manipulation, evaluatedTrade!.PowerOf3Phase);
+        Assert.Equal(IctEnums.DailyBias.Bullish, evaluatedTrade.DailyBias);
+        Assert.Equal(IctEnums.MarketStructure.BOS, evaluatedTrade.MarketStructure);
+        Assert.Equal(IctEnums.PremiumDiscount.Discount, evaluatedTrade.PremiumDiscount);
     }
 
     [Fact]

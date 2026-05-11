@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.Text.Json;
 using TradingJournal.Shared.Abstractions;
 using TradingJournal.Shared.Audit;
 using TradingJournal.Shared.Infrastructure;
@@ -81,6 +82,43 @@ public sealed class AuditableDbContextTests
         Assert.Equal("Delete", auditLogStore.SavedEntries[0].Action);
     }
 
+    [Fact]
+    public async Task SaveChangesAsync_SkipsAuditIgnoredProperties()
+    {
+        // Arrange
+        DelayedAuditLogStore auditLogStore = new(TimeSpan.FromMilliseconds(50));
+        using ServiceProvider services = new ServiceCollection()
+            .AddSingleton<IAuditLogStore>(auditLogStore)
+            .BuildServiceProvider();
+
+        IHttpContextAccessor httpContextAccessor = new HttpContextAccessor
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                RequestServices = services
+            }
+        };
+
+        DbContextOptions<TestAuditableDbContext> options = new DbContextOptionsBuilder<TestAuditableDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using TestAuditableDbContext context = new(options, httpContextAccessor);
+        TestAuditableEntity entity = new() { Name = "audit-test", SecretNotes = "do-not-log" };
+        context.Entities.Add(entity);
+
+        // Act
+        await context.SaveChangesAsync();
+
+        // Assert
+        Assert.Single(auditLogStore.SavedEntries);
+
+        using JsonDocument document = JsonDocument.Parse(auditLogStore.SavedEntries[0].NewValues!);
+        Assert.True(document.RootElement.TryGetProperty(nameof(TestAuditableEntity.Name), out JsonElement nameValue));
+        Assert.Equal("audit-test", nameValue.GetString());
+        Assert.False(document.RootElement.TryGetProperty(nameof(TestAuditableEntity.SecretNotes), out _));
+    }
+
     private sealed class TestAuditableDbContext(
         DbContextOptions<TestAuditableDbContext> options,
         IHttpContextAccessor httpContextAccessor)
@@ -92,6 +130,9 @@ public sealed class AuditableDbContextTests
     private sealed class TestAuditableEntity : EntityBase<int>
     {
         public string Name { get; set; } = string.Empty;
+
+        [AuditIgnore]
+        public string SecretNotes { get; set; } = string.Empty;
     }
 
     private sealed class DelayedAuditLogStore(TimeSpan delay) : IAuditLogStore

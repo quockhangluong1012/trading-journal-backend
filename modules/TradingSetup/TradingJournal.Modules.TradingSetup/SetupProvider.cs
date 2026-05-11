@@ -22,6 +22,30 @@ internal sealed class SetupProvider(ISetupDbContext context) : ISetupProvider
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<List<PlaybookKnowledgeItemDto>> GetPlaybookKnowledgeItemsAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        return await context.TradingSetups
+            .AsNoTracking()
+            .Where(setup => setup.CreatedBy == userId && !setup.IsDisabled)
+            .OrderBy(setup => setup.Status)
+            .ThenByDescending(setup => setup.UpdatedDate ?? setup.CreatedDate)
+            .Select(setup => new PlaybookKnowledgeItemDto
+            {
+                SetupId = setup.Id,
+                Name = setup.Name,
+                Description = setup.Description,
+                Status = setup.Status.ToString(),
+                EntryRules = setup.EntryRules,
+                ExitRules = setup.ExitRules,
+                IdealMarketConditions = setup.IdealMarketConditions,
+                RiskPerTrade = setup.RiskPerTrade,
+                TargetRiskReward = setup.TargetRiskReward,
+                PreferredTimeframes = setup.PreferredTimeframes,
+                PreferredAssets = setup.PreferredAssets,
+            })
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<bool> HasSetupAsync(int userId, int setupId, CancellationToken cancellationToken = default)
     {
         return context.TradingSetups

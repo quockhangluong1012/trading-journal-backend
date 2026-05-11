@@ -8,6 +8,8 @@ public interface IPromptService
 
     public Task<string> GetAiCoach();
 
+    public Task<string> GetAiCoachResearch();
+
     public Task<string> GetPreTradeValidation();
 
     public Task<string> GetChartScreenshotAnalysis();

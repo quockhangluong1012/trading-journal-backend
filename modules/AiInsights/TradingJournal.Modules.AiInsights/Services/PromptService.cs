@@ -10,6 +10,8 @@ namespace TradingJournal.Modules.AiInsights.Services
 
         public Task<string> GetAiCoach() => GetPrompt("AiCoach");
 
+        public Task<string> GetAiCoachResearch() => GetPrompt("AiCoachResearch");
+
         public Task<string> GetPreTradeValidation() => GetPrompt("PreTradeValidation");
 
         public Task<string> GetChartScreenshotAnalysis() => GetPrompt("ChartScreenshotAnalysis");

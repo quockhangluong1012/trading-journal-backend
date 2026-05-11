@@ -19,6 +19,62 @@ internal sealed class AiTradeDataProvider(
     IPsychologyProvider psychologyProvider,
     ISetupProvider setupProvider) : IAiTradeDataProvider
 {
+    private const int MaxKnowledgeCandidateLessons = 100;
+    private const int MaxResearchPlaybooks = 4;
+    private const int MaxResearchDailyNotes = 5;
+
+    private static readonly HashSet<string> KnowledgeStopWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "a",
+        "an",
+        "and",
+        "are",
+        "about",
+        "break",
+        "can",
+        "down",
+        "for",
+        "from",
+        "how",
+        "into",
+        "learn",
+        "me",
+        "on",
+        "the",
+        "this",
+        "teach",
+        "theme",
+        "themes",
+        "to",
+        "turn",
+        "use",
+        "what",
+        "with",
+        "you",
+        "saved",
+        "lesson",
+        "lessons",
+        "identify",
+        "main",
+        "concept",
+        "concepts",
+        "execution",
+        "study",
+        "studying",
+        "review",
+        "plan",
+        "week",
+        "day",
+        "days",
+        "focused",
+        "focus",
+        "keep",
+        "ict",
+        "your",
+        "them",
+        "build"
+    };
+
     public async Task<AiTradeDetailDto> GetTradeDetailForAiAsync(int tradeHistoryId, CancellationToken cancellationToken)
     {
         var trade = await context.TradeHistories
@@ -174,6 +230,188 @@ internal sealed class AiTradeDataProvider(
         };
     }
 
+    public async Task<LessonKnowledgeContextDto> GetLessonKnowledgeContextAsync(
+        int userId,
+        string? focusQuery,
+        int maxLessons,
+        CancellationToken cancellationToken)
+    {
+        int safeMaxLessons = Math.Clamp(maxLessons, 1, 10);
+        List<string> focusTerms = ExtractKnowledgeTerms(focusQuery);
+
+        IQueryable<LessonLearned> baseLessonQuery = context.LessonsLearned
+            .AsNoTracking()
+            .Where(lesson => lesson.CreatedBy == userId)
+            .Where(lesson => !lesson.IsDisabled && lesson.Status != LessonStatus.Archived)
+            .Include(lesson => lesson.LessonTradeLinks);
+
+        IQueryable<LessonLearned> candidateQuery = baseLessonQuery;
+
+        if (focusTerms.Count > 0)
+        {
+            candidateQuery = candidateQuery.Where(lesson => focusTerms.Any(term =>
+                lesson.Title.Contains(term) ||
+                lesson.Content.Contains(term) ||
+                (lesson.KeyTakeaway != null && lesson.KeyTakeaway.Contains(term)) ||
+                (lesson.ActionItems != null && lesson.ActionItems.Contains(term))));
+        }
+
+        List<LessonLearned> lessons = await candidateQuery
+            .OrderByDescending(lesson => lesson.ImpactScore)
+            .ThenByDescending(lesson => lesson.CreatedDate)
+            .Take(MaxKnowledgeCandidateLessons)
+            .ToListAsync(cancellationToken);
+
+        if (lessons.Count == 0 && focusTerms.Count > 0)
+        {
+            lessons = await baseLessonQuery
+                .OrderByDescending(lesson => lesson.ImpactScore)
+                .ThenByDescending(lesson => lesson.CreatedDate)
+                .Take(MaxKnowledgeCandidateLessons)
+                .ToListAsync(cancellationToken);
+        }
+
+        List<LessonKnowledgeItemDto> selectedLessons = [.. lessons
+            .Select(lesson => new
+            {
+                Lesson = lesson,
+                Score = CalculateKnowledgeScore(lesson, focusTerms)
+            })
+            .Where(item => focusTerms.Count == 0 || item.Score > 0)
+            .OrderByDescending(item => item.Score)
+            .ThenByDescending(item => item.Lesson.ImpactScore)
+            .ThenByDescending(item => item.Lesson.CreatedDate)
+            .Take(safeMaxLessons)
+            .Select(item => new LessonKnowledgeItemDto
+            {
+                LessonId = item.Lesson.Id,
+                Title = item.Lesson.Title,
+                Category = item.Lesson.Category.ToString(),
+                Severity = item.Lesson.Severity.ToString(),
+                Status = item.Lesson.Status.ToString(),
+                Tags = item.Lesson.Tags,
+                Content = item.Lesson.Content,
+                KeyTakeaway = item.Lesson.KeyTakeaway,
+                ActionItems = item.Lesson.ActionItems,
+                ImpactScore = item.Lesson.ImpactScore,
+                LinkedTradeIds = [.. item.Lesson.LessonTradeLinks
+                    .Where(link => !link.IsDisabled)
+                    .Select(link => link.TradeHistoryId)
+                    .Distinct()]
+            })];
+
+        if (selectedLessons.Count == 0)
+        {
+            selectedLessons = [.. lessons
+                .OrderByDescending(lesson => lesson.ImpactScore)
+                .ThenByDescending(lesson => lesson.CreatedDate)
+                .Take(safeMaxLessons)
+                .Select(lesson => new LessonKnowledgeItemDto
+                {
+                    LessonId = lesson.Id,
+                    Title = lesson.Title,
+                    Category = lesson.Category.ToString(),
+                    Severity = lesson.Severity.ToString(),
+                    Status = lesson.Status.ToString(),
+                    Tags = lesson.Tags,
+                    Content = lesson.Content,
+                    KeyTakeaway = lesson.KeyTakeaway,
+                    ActionItems = lesson.ActionItems,
+                    ImpactScore = lesson.ImpactScore,
+                    LinkedTradeIds = [.. lesson.LessonTradeLinks
+                        .Where(link => !link.IsDisabled)
+                        .Select(link => link.TradeHistoryId)
+                        .Distinct()]
+                })];
+        }
+
+        return new LessonKnowledgeContextDto
+        {
+            FocusQuery = string.IsNullOrWhiteSpace(focusQuery)
+                ? "General ICT research context."
+                : focusQuery.Trim(),
+            Lessons = selectedLessons,
+        };
+    }
+
+    public async Task<ResearchKnowledgeContextDto> GetResearchKnowledgeContextAsync(
+        int userId,
+        string? focusQuery,
+        CancellationToken cancellationToken)
+    {
+        LessonKnowledgeContextDto lessonContext = await GetLessonKnowledgeContextAsync(
+            userId,
+            focusQuery,
+            6,
+            cancellationToken);
+
+        List<string> focusTerms = ExtractKnowledgeTerms(focusQuery);
+        List<PlaybookKnowledgeItemDto> playbookCandidates = await setupProvider.GetPlaybookKnowledgeItemsAsync(userId, cancellationToken);
+        List<DailyNoteKnowledgeItemDto> dailyNoteCandidates = await psychologyProvider.GetDailyNoteKnowledgeItemsAsync(userId, cancellationToken);
+
+        List<PlaybookKnowledgeItemDto> selectedPlaybooks = [.. playbookCandidates
+            .Select(playbook => new
+            {
+                Item = playbook,
+                Score = CalculateKnowledgeScore(
+                    focusTerms,
+                    (playbook.Name, 4),
+                    (playbook.EntryRules, 3),
+                    (playbook.IdealMarketConditions, 2),
+                    (playbook.Description, 2),
+                    (playbook.ExitRules, 1),
+                    (playbook.PreferredAssets, 1),
+                    (playbook.PreferredTimeframes, 1))
+            })
+            .Where(item => focusTerms.Count == 0 || item.Score > 0)
+            .OrderByDescending(item => item.Score)
+            .ThenBy(item => item.Item.Status)
+            .ThenByDescending(item => item.Item.TargetRiskReward ?? 0)
+            .Take(MaxResearchPlaybooks)
+            .Select(item => item.Item)];
+
+        if (selectedPlaybooks.Count == 0)
+        {
+            selectedPlaybooks = [.. playbookCandidates
+                .Take(MaxResearchPlaybooks)];
+        }
+
+        List<DailyNoteKnowledgeItemDto> selectedDailyNotes = [.. dailyNoteCandidates
+            .Select(note => new
+            {
+                Item = note,
+                Score = CalculateKnowledgeScore(
+                    focusTerms,
+                    (note.SessionFocus, 3),
+                    (note.MarketStructureNotes, 3),
+                    (note.KeyLevelsAndLiquidity, 2),
+                    (note.KeyRulesAndReminders, 2),
+                    (note.DailyBias, 1),
+                    (note.NewsAndEvents, 1),
+                    (note.MentalState, 1))
+            })
+            .Where(item => focusTerms.Count == 0 || item.Score > 0)
+            .OrderByDescending(item => item.Score)
+            .ThenByDescending(item => item.Item.NoteDate)
+            .Take(MaxResearchDailyNotes)
+            .Select(item => item.Item)];
+
+        if (selectedDailyNotes.Count == 0)
+        {
+            selectedDailyNotes = [.. dailyNoteCandidates
+                .OrderByDescending(note => note.NoteDate)
+                .Take(MaxResearchDailyNotes)];
+        }
+
+        return new ResearchKnowledgeContextDto
+        {
+            FocusQuery = lessonContext.FocusQuery,
+            Lessons = lessonContext.Lessons,
+            Playbooks = selectedPlaybooks,
+            DailyNotes = selectedDailyNotes,
+        };
+    }
+
     public async Task<ReviewTradesPageDto> GetReviewTradesAsync(
         DateTime fromDate, DateTime toDate, int userId,
         int page, int pageSize, CancellationToken cancellationToken)
@@ -251,5 +489,71 @@ internal sealed class AiTradeDataProvider(
         }
 
         return $"Closed trades from {(start?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "the beginning")} to {(end?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "now")}.";
+    }
+
+    private static List<string> ExtractKnowledgeTerms(string? focusQuery)
+    {
+        if (string.IsNullOrWhiteSpace(focusQuery))
+        {
+            return [];
+        }
+
+        return [.. focusQuery
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(NormalizeKnowledgeTerm)
+            .Where(term => term.Length >= 3 && !KnowledgeStopWords.Contains(term))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(8)];
+    }
+
+    private static string NormalizeKnowledgeTerm(string rawTerm)
+    {
+        return new string(rawTerm
+            .Where(char.IsLetterOrDigit)
+            .ToArray())
+            .ToLowerInvariant();
+    }
+
+    private static int CalculateKnowledgeScore(LessonLearned lesson, IReadOnlyCollection<string> focusTerms)
+    {
+        return CalculateKnowledgeScore(
+            focusTerms,
+            (lesson.Title, 4),
+            (lesson.KeyTakeaway, 3),
+            (lesson.Content, 2),
+            (lesson.ActionItems, 1));
+    }
+
+    private static int CalculateKnowledgeScore(
+        IReadOnlyCollection<string> focusTerms,
+        params (string? Text, int Weight)[] weightedSegments)
+    {
+        if (focusTerms.Count == 0)
+        {
+            return 0;
+        }
+
+        int score = 0;
+
+        foreach ((string? Text, int Weight) weightedSegment in weightedSegments)
+        {
+            if (string.IsNullOrWhiteSpace(weightedSegment.Text) || weightedSegment.Weight <= 0)
+            {
+                continue;
+            }
+
+            HashSet<string> segmentTerms = ExtractKnowledgeTerms(weightedSegment.Text)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (string term in focusTerms)
+            {
+                if (segmentTerms.Contains(term))
+                {
+                    score += weightedSegment.Weight;
+                }
+            }
+        }
+
+        return score;
     }
 }

@@ -35,6 +35,23 @@ public interface IAiTradeDataProvider
         CancellationToken cancellationToken);
 
     /// <summary>
+    /// Returns user-authored lessons that are most relevant to the current AI research question.
+    /// </summary>
+    Task<LessonKnowledgeContextDto> GetLessonKnowledgeContextAsync(
+        int userId,
+        string? focusQuery,
+        int maxLessons,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Returns the user's saved lessons, playbooks, and daily notes that are most relevant to the current AI research question.
+    /// </summary>
+    Task<ResearchKnowledgeContextDto> GetResearchKnowledgeContextAsync(
+        int userId,
+        string? focusQuery,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// Retrieves paginated trades within a date range for review display.
     /// </summary>
     Task<ReviewTradesPageDto> GetReviewTradesAsync(

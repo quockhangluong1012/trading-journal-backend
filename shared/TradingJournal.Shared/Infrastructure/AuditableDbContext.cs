@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 using TradingJournal.Shared.Abstractions;
 using TradingJournal.Shared.Audit;
 using TradingJournal.Shared.Extensions;
@@ -112,13 +113,16 @@ public abstract class AuditableDbContext(DbContextOptions options, IHttpContextA
         foreach (EntityEntry entry in ChangeTracker.Entries())
         {
             // Skip entries that aren't tracked entity types
+            Type entityType = entry.Entity.GetType();
+
             if (entry.Entity is AuditEntry ||
+                entityType.IsDefined(typeof(AuditIgnoreAttribute), inherit: true) ||
                 entry.State is EntityState.Detached or EntityState.Unchanged)
             {
                 continue;
             }
 
-            string entityName = entry.Entity.GetType().Name;
+            string entityName = entityType.Name;
             string entityId = GetPrimaryKeyValue(entry);
 
             var builder = new AuditEntryBuilder
@@ -141,7 +145,7 @@ public abstract class AuditableDbContext(DbContextOptions options, IHttpContextA
                 string propertyName = property.Metadata.Name;
 
                 // Skip shadow properties and non-relational properties
-                if (property.Metadata.IsPrimaryKey())
+                if (property.Metadata.IsPrimaryKey() || ShouldIgnoreAuditProperty(property.Metadata.PropertyInfo))
                     continue;
 
                 switch (entry.State)
@@ -194,6 +198,11 @@ public abstract class AuditableDbContext(DbContextOptions options, IHttpContextA
 
         List<AuditEntry> entries = builders.Select(b => b.ToAuditEntry()).ToList();
         await store.SaveAsync(entries, ct);
+    }
+
+    private static bool ShouldIgnoreAuditProperty(PropertyInfo? propertyInfo)
+    {
+        return propertyInfo?.IsDefined(typeof(AuditIgnoreAttribute), inherit: true) == true;
     }
 
     /// <summary>

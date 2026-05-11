@@ -45,6 +45,7 @@ public sealed class GetLessonDetail
                 Category = lesson.Category,
                 Severity = lesson.Severity,
                 Status = lesson.Status,
+                Tags = lesson.Tags,
                 KeyTakeaway = lesson.KeyTakeaway,
                 ActionItems = lesson.ActionItems,
                 ImpactScore = lesson.ImpactScore,

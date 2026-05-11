@@ -5,6 +5,8 @@ namespace TradingJournal.Modules.AiInsights.Infrastructure;
 internal sealed class AiInsightsDbContext(DbContextOptions<AiInsightsDbContext> options, IHttpContextAccessor httpContextAccessor)
     : AuditableDbContext(options, httpContextAccessor), IAiInsightsDbContext
 {
+    public DbSet<AiCoachConversation> AiCoachConversations { get; set; } = null!;
+
     public DbSet<MorningBriefing> MorningBriefings { get; set; } = null!;
 
     public DbSet<TradingReview> TradingReviews { get; set; } = null!;
@@ -12,6 +14,13 @@ internal sealed class AiInsightsDbContext(DbContextOptions<AiInsightsDbContext> 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<AiCoachConversation>(builder =>
+        {
+            builder.ToTable("AiCoachConversations", "Trades");
+            builder.HasIndex(entity => new { entity.CreatedBy, entity.CreatedDate });
+            builder.Property(entity => entity.Mode).HasMaxLength(32);
+        });
 
         modelBuilder.Entity<MorningBriefing>(builder =>
         {

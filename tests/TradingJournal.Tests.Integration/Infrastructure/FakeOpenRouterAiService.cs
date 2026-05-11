@@ -1,4 +1,5 @@
 using System.Threading;
+using System.Runtime.CompilerServices;
 using TradingJournal.Modules.AiInsights.Dto;
 using TradingJournal.Modules.AiInsights.Services;
 
@@ -7,16 +8,27 @@ namespace TradingJournal.Tests.Integration.Infrastructure;
 public sealed class FakeOpenRouterAiService : IOpenRouterAIService
 {
     private int _analyzeChartScreenshotCalls;
+    private int _chatWithCoachCalls;
     private int _generateTradingSetupCalls;
+    private int _streamChatWithCoachCalls;
 
     public int AnalyzeChartScreenshotCalls => _analyzeChartScreenshotCalls;
 
+    public int ChatWithCoachCalls => _chatWithCoachCalls;
+
     public int GenerateTradingSetupCalls => _generateTradingSetupCalls;
+
+    public int StreamChatWithCoachCalls => _streamChatWithCoachCalls;
+
+    public AiCoachRequestDto? LastCoachRequest { get; private set; }
 
     public void Reset()
     {
         Interlocked.Exchange(ref _analyzeChartScreenshotCalls, 0);
+        Interlocked.Exchange(ref _chatWithCoachCalls, 0);
         Interlocked.Exchange(ref _generateTradingSetupCalls, 0);
+        Interlocked.Exchange(ref _streamChatWithCoachCalls, 0);
+        LastCoachRequest = null;
     }
 
     public Task<TradeAnalysisResultDto?> GenerateTradingOrderSummary(int tradeHistoryId, CancellationToken cancellationToken)
@@ -31,7 +43,26 @@ public sealed class FakeOpenRouterAiService : IOpenRouterAIService
 
     public Task<AiCoachResponseDto> ChatWithCoachAsync(AiCoachRequestDto request, CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _chatWithCoachCalls);
+        LastCoachRequest = request;
+
         return Task.FromResult(new AiCoachResponseDto("fake-response"));
+    }
+
+    public async IAsyncEnumerable<string> StreamChatWithCoachAsync(
+        AiCoachRequestDto request,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        Interlocked.Increment(ref _streamChatWithCoachCalls);
+        LastCoachRequest = request;
+
+        cancellationToken.ThrowIfCancellationRequested();
+        yield return "fake-";
+
+        await Task.Yield();
+
+        cancellationToken.ThrowIfCancellationRequested();
+        yield return "response";
     }
 
     public Task<PreTradeValidationResultDto?> ValidateTradeSetupAsync(PreTradeValidationRequestDto request, CancellationToken cancellationToken)

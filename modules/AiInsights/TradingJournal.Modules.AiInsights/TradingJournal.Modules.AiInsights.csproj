@@ -28,6 +28,7 @@
     <EmbeddedResource Include="Prompts\TradingOrderSummary.md" />
     <EmbeddedResource Include="Prompts\ReviewSummary.md" />
     <EmbeddedResource Include="Prompts\AiCoach.md" />
+    <EmbeddedResource Include="Prompts\AiCoachResearch.md" />
     <EmbeddedResource Include="Prompts\PreTradeValidation.md" />
     <EmbeddedResource Include="Prompts\ChecklistInterpretation.md" />
     <EmbeddedResource Include="Prompts\ChartScreenshotAnalysis.md" />

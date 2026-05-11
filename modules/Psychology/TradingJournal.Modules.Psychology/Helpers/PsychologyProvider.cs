@@ -1,3 +1,5 @@
+using TradingJournal.Shared.Dtos;
+
 namespace TradingJournal.Modules.Psychology.Helpers;
 
 internal sealed class PsychologyProvider(IPsychologyDbContext context) : IPsychologyProvider
@@ -32,6 +34,29 @@ internal sealed class PsychologyProvider(IPsychologyDbContext context) : IPsycho
         List<PsychologyJournal> journals = await LoadPsychologyJournalsAsync(fromDate, toDate, cancellationToken);
 
         return [.. journals.Select(BuildPeriodSummary)];
+    }
+
+    public async Task<List<DailyNoteKnowledgeItemDto>> GetDailyNoteKnowledgeItemsAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        return await context.DailyNotes
+            .AsNoTracking()
+            .Where(note => note.CreatedBy == userId)
+            .OrderByDescending(note => note.NoteDate)
+            .Take(30)
+            .Select(note => new DailyNoteKnowledgeItemDto
+            {
+                DailyNoteId = note.Id,
+                NoteDate = note.NoteDate,
+                DailyBias = note.DailyBias,
+                MarketStructureNotes = note.MarketStructureNotes,
+                KeyLevelsAndLiquidity = note.KeyLevelsAndLiquidity,
+                NewsAndEvents = note.NewsAndEvents,
+                SessionFocus = note.SessionFocus,
+                RiskAppetite = note.RiskAppetite,
+                MentalState = note.MentalState,
+                KeyRulesAndReminders = note.KeyRulesAndReminders,
+            })
+            .ToListAsync(cancellationToken);
     }
 
     private async Task<List<PsychologyJournal>> LoadPsychologyJournalsAsync(

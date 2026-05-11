@@ -12,6 +12,10 @@ public sealed class OpenRouterOptions
     [Required(ErrorMessage = "OpenRouterAI:Model is required.")]
     public string Model { get; set; } = string.Empty;
 
+    public string? AiCoachResearchModel { get; set; }
+
+    public string? DeepResearchModel { get; set; }
+
     [Required(ErrorMessage = "OpenRouterAI:BaseUrl is required.")]
     [Url(ErrorMessage = "OpenRouterAI:BaseUrl must be a valid URL.")]
     public string BaseUrl { get; set; } = string.Empty;

@@ -10,7 +10,8 @@ public sealed class CreateLesson
         string? KeyTakeaway,
         string? ActionItems,
         int ImpactScore,
-        List<int>? LinkedTradeIds) : ICommand<Result<int>>;
+        List<int>? LinkedTradeIds,
+        List<string>? Tags) : ICommand<Result<int>>;
 
     public sealed class Validator : AbstractValidator<Request>
     {
@@ -50,6 +51,15 @@ public sealed class CreateLesson
             RuleFor(x => x.ActionItems)
                 .MaximumLength(2000).WithErrorCode(nameof(HttpStatusCode.BadRequest))
                 .WithMessage("Action items must not exceed 2000 characters.");
+
+            RuleFor(x => x.Tags)
+                .Must(tags => tags is null || LessonTagSerializer.NormalizeTags(tags).Count <= 8)
+                .WithErrorCode(nameof(HttpStatusCode.BadRequest))
+                .WithMessage("A lesson can have at most 8 tags.");
+
+            RuleForEach(x => x.Tags)
+                .MaximumLength(32).WithErrorCode(nameof(HttpStatusCode.BadRequest))
+                .WithMessage("Each tag must not exceed 32 characters.");
         }
     }
 
@@ -91,6 +101,7 @@ public sealed class CreateLesson
                         Content = request.Content,
                         Category = request.Category,
                         Severity = request.Severity,
+                        Tags = request.Tags ?? [],
                         KeyTakeaway = request.KeyTakeaway,
                         ActionItems = request.ActionItems,
                         ImpactScore = request.ImpactScore,
