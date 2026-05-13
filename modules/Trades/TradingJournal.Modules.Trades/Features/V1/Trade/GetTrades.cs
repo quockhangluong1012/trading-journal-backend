@@ -7,6 +7,8 @@ namespace TradingJournal.Modules.Trades.Features.V1.Trade;
 
 public sealed class GetTrades
 {
+    private static readonly string[] EmptyRichTextNotes = ["<p></p>", "<p><br></p>", "<div></div>", "<div><br></div>"];
+
     public sealed class Request : IQuery<Result<PaginationViewModel<TradeHistoryViewModel>>>
     {
         public string? Asset { get; set; }
@@ -19,6 +21,8 @@ public sealed class GetTrades
 
         public DateTime? ToDate { get; set; }
 
+        public bool MissingNotesOnly { get; set; }
+
         public int Page { get; set; } = 1;
 
         public int PageSize { get; set; } = 10;
@@ -28,7 +32,10 @@ public sealed class GetTrades
 
     public sealed class Validator : AbstractValidator<Request>
     {
-        private const int MaxPageSize = 100;
+        private const int DefaultMaxPageSize = 100;
+        private const int MissingNotesMaxPageSize = 1000;
+
+        private static int GetMaxPageSize(Request request) => request.MissingNotesOnly ? MissingNotesMaxPageSize : DefaultMaxPageSize;
 
         public Validator()
         {
@@ -43,13 +50,13 @@ public sealed class GetTrades
                 .GreaterThan(0)
                 .WithErrorCode(HttpStatusCode.BadRequest.ToString())
                 .WithMessage("Page size must be greater than 0.")
-                .LessThanOrEqualTo(MaxPageSize)
+                .Must((request, pageSize) => pageSize <= GetMaxPageSize(request))
                 .WithErrorCode(HttpStatusCode.BadRequest.ToString())
-                .WithMessage($"Page size must not exceed {MaxPageSize}.");
+                .WithMessage(request => $"Page size must not exceed {GetMaxPageSize(request)}.");
         }
     }
 
-    public sealed class Handler(ITradeDbContext tradeDbContext, ICacheRepository cacheRepository, IEmotionTagProvider emotionTagProvider) : IQueryHandler<Request, Result<PaginationViewModel<TradeHistoryViewModel>>>
+    public sealed class Handler(ITradeDbContext tradeDbContext, IEmotionTagProvider emotionTagProvider) : IQueryHandler<Request, Result<PaginationViewModel<TradeHistoryViewModel>>>
     {
         public async Task<Result<PaginationViewModel<TradeHistoryViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -87,6 +94,13 @@ public sealed class GetTrades
             if (request.ToDate.HasValue)
             {
                 query = query.Where(th => th.Date <= request.ToDate.Value);
+            }
+
+            if (request.MissingNotesOnly)
+            {
+                query = query.Where(th =>
+                    (th.Notes ?? string.Empty).Trim() == string.Empty ||
+                    EmptyRichTextNotes.Contains((th.Notes ?? string.Empty).Trim()));
             }
 
             int totalItems = await query.CountAsync(cancellationToken);
@@ -155,6 +169,7 @@ public sealed class GetTrades
                 [FromQuery] TradeStatus? status,
                 [FromQuery] DateTime? fromDate,
                 [FromQuery] DateTime? toDate,
+                [FromQuery] bool missingNotesOnly = false,
                 [FromQuery] int page = 1,
                 [FromQuery] int pageSize = 10) =>
             {
@@ -165,6 +180,7 @@ public sealed class GetTrades
                     Status = status,
                     FromDate = fromDate,
                     ToDate = toDate,
+                    MissingNotesOnly = missingNotesOnly,
                     Page = page,
                     PageSize = pageSize,
                     UserId = user.GetCurrentUserId()

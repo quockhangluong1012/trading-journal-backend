@@ -22,6 +22,8 @@ public class TradeHistoryViewModel
 
     public DateTime? ClosedDate { get; set; }
 
+    public string? Notes { get; set; } = string.Empty;
+
     public List<EmotionTagCacheDto>? EmotionTags { get; set; }
 
     public ConfidenceLevel ConfidenceLevel { get; set; }

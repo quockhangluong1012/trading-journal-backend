@@ -28,20 +28,24 @@ public sealed class GetTradesValidatorTests
         var result = _validator.Validate(new GetTrades.Request { Page = 1, PageSize = 0 });
         Assert.False(result.IsValid);
     }
+
+    [Fact] public void Validate_MissingNotesPageSizeWithinExtendedLimit_ReturnsValid()
+    {
+        var result = _validator.Validate(new GetTrades.Request { Page = 1, PageSize = 1000, MissingNotesOnly = true, UserId = 1 });
+        Assert.True(result.IsValid);
+    }
 }
 
 public sealed class GetTradesHandlerTests
 {
     private Mock<ITradeDbContext> _ctx = null!;
-    private Mock<ICacheRepository> _cache = null!;
     private Mock<IEmotionTagProvider> _emoProvider = null!;
     private GetTrades.Handler _handler = null!;
     public GetTradesHandlerTests()
     {
         _ctx = new Mock<ITradeDbContext>();
-        _cache = new Mock<ICacheRepository>();
         _emoProvider = new Mock<IEmotionTagProvider>();
-        _handler = new GetTrades.Handler(_ctx.Object, _cache.Object, _emoProvider.Object);
+        _handler = new GetTrades.Handler(_ctx.Object, _emoProvider.Object);
     }
     [Fact]
     public async Task Handle_EmptyResults_ReturnsSuccess()
@@ -64,7 +68,7 @@ public sealed class GetTradesHandlerTests
 
         var result = await _handler.Handle(new GetTrades.Request { UserId = 1, Page = 1, PageSize = 10 }, CancellationToken.None);
         Assert.True(result.IsSuccess);
-        Assert.Equal(1, result.Value!.Values.Count);
+        Assert.Single(result.Value!.Values);
         Assert.Equal(1, result.Value.TotalItems);
     }
 
@@ -151,5 +155,70 @@ public sealed class GetTradesHandlerTests
         Assert.Single(result.Value!.Values);
         Assert.Equal(1, result.Value.TotalItems);
         Assert.Equal(1, result.Value.Values.First().Id);
+    }
+
+    [Fact]
+    public async Task Handle_MissingNotesOnly_ReturnsTradesWithoutMeaningfulNotes()
+    {
+        DateTime now = DateTime.UtcNow;
+        var trades = new List<TradeHistory>
+        {
+            new()
+            {
+                Id = 1,
+                Asset = "NQ",
+                Position = SharedEnums.PositionType.Long,
+                EntryPrice = 21240m,
+                Date = now.AddDays(-1),
+                Status = SharedEnums.TradeStatus.Closed,
+                TargetTier1 = 21280m,
+                StopLoss = 21210m,
+                CreatedBy = 1,
+                Notes = string.Empty,
+            },
+            new()
+            {
+                Id = 2,
+                Asset = "MNQ",
+                Position = SharedEnums.PositionType.Short,
+                EntryPrice = 21240m,
+                Date = now,
+                Status = SharedEnums.TradeStatus.Closed,
+                TargetTier1 = 21180m,
+                StopLoss = 21270m,
+                CreatedBy = 1,
+                Notes = "<p><br></p>",
+            },
+            new()
+            {
+                Id = 3,
+                Asset = "ES",
+                Position = SharedEnums.PositionType.Long,
+                EntryPrice = 5400m,
+                Date = now,
+                Status = SharedEnums.TradeStatus.Closed,
+                TargetTier1 = 5430m,
+                StopLoss = 5385m,
+                CreatedBy = 1,
+                Notes = "Waited for the opening range sweep.",
+            }
+        };
+
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(trades.AsQueryable()).Object);
+        _ctx.Setup(x => x.TradeEmotionTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeEmotionTag>().AsQueryable()).Object);
+        _emoProvider.Setup(x => x.GetEmotionTagsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<EmotionTagCacheDto>());
+
+        var result = await _handler.Handle(new GetTrades.Request
+        {
+            UserId = 1,
+            MissingNotesOnly = true,
+            Page = 1,
+            PageSize = 1000,
+        }, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value!.Values.Count);
+        Assert.Equal(new[] { 2, 1 }, result.Value.Values.Select(x => x.Id));
+        Assert.All(result.Value.Values, trade => Assert.NotNull(trade.Notes));
     }
 }

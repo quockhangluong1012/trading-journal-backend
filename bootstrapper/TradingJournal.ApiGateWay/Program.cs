@@ -35,244 +35,241 @@ Log.Logger = new LoggerConfiguration()
 try
 {
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+    WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-// Configure Serilog from appsettings.json (replaces default logging provider)
-builder.AddSerilog();
+    // Configure Serilog from appsettings.json (replaces default logging provider)
+    builder.AddSerilog();
 
-const string frontendCorsPolicyName = "FrontendApp";
-const string authRateLimitPolicyName = "auth";
-const string aiRateLimitPolicyName = "ai";
+    const string frontendCorsPolicyName = "FrontendApp";
+    const string authRateLimitPolicyName = "auth";
+    const string aiRateLimitPolicyName = "ai";
 
-builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddEndpointsApiExplorer();
 
-builder.Services.AddSwagger();
+    builder.Services.AddSwagger();
 
-ConfigurationManager configuration = builder.Configuration;
+    ConfigurationManager configuration = builder.Configuration;
 
-string jwtSecret = configuration.GetRequiredConfigurationValue("Jwt:Secret");
-string jwtIssuer = configuration.GetRequiredConfigurationValue("Jwt:Issuer");
-string jwtAudience = configuration.GetRequiredConfigurationValue("Jwt:Audience");
-string[] allowedOrigins = configuration.GetAllowedOrigins();
-int authPermitLimit = configuration.GetPositiveIntConfigurationValue("RateLimiting:Auth:PermitLimit", 5);
-int authWindowMinutes = configuration.GetPositiveIntConfigurationValue("RateLimiting:Auth:WindowMinutes", 15);
-int aiPermitLimit = configuration.GetPositiveIntConfigurationValue("RateLimiting:Ai:PermitLimit", 10);
-int aiWindowMinutes = configuration.GetPositiveIntConfigurationValue("RateLimiting:Ai:WindowMinutes", 10);
-int globalPermitLimit = configuration.GetPositiveIntConfigurationValue("RateLimiting:Global:PermitLimit", 120);
-int globalWindowMinutes = configuration.GetPositiveIntConfigurationValue("RateLimiting:Global:WindowMinutes", 1);
+    string jwtSecret = configuration.GetRequiredConfigurationValue("Jwt:Secret");
+    string jwtIssuer = configuration.GetRequiredConfigurationValue("Jwt:Issuer");
+    string jwtAudience = configuration.GetRequiredConfigurationValue("Jwt:Audience");
+    string[] allowedOrigins = configuration.GetAllowedOrigins();
+    int authPermitLimit = configuration.GetPositiveIntConfigurationValue("RateLimiting:Auth:PermitLimit", 5);
+    int authWindowMinutes = configuration.GetPositiveIntConfigurationValue("RateLimiting:Auth:WindowMinutes", 15);
+    int aiPermitLimit = configuration.GetPositiveIntConfigurationValue("RateLimiting:Ai:PermitLimit", 10);
+    int aiWindowMinutes = configuration.GetPositiveIntConfigurationValue("RateLimiting:Ai:WindowMinutes", 10);
+    int globalPermitLimit = configuration.GetPositiveIntConfigurationValue("RateLimiting:Global:PermitLimit", 120);
+    int globalWindowMinutes = configuration.GetPositiveIntConfigurationValue("RateLimiting:Global:WindowMinutes", 1);
 
-StartupConfigurationExtensions.ValidateJwtConfiguration(jwtSecret, jwtIssuer, jwtAudience);
+    StartupConfigurationExtensions.ValidateJwtConfiguration(jwtSecret, jwtIssuer, jwtAudience);
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(frontendCorsPolicyName, policy =>
+    builder.Services.AddCors(options =>
     {
-        policy.WithOrigins(allowedOrigins)
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
+        options.AddPolicy(frontendCorsPolicyName, policy =>
+        {
+            policy.WithOrigins(allowedOrigins)
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();
+        });
     });
-});
 
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.OnRejected = async (context, cancellationToken) =>
+    builder.Services.AddRateLimiter(options =>
     {
-        if (context.HttpContext.Response.HasStarted)
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        options.OnRejected = async (context, cancellationToken) =>
         {
-            return;
-        }
-
-        await context.HttpContext.Response.WriteAsJsonAsync(
-            new { errorCode = "TooManyRequests", message = "Too many requests. Please try again later." },
-            cancellationToken);
-    };
-
-    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            $"global:{StartupConfigurationExtensions.GetClientIpAddress(httpContext)}",
-            _ => new FixedWindowRateLimiterOptions
+            if (context.HttpContext.Response.HasStarted)
             {
-                PermitLimit = globalPermitLimit,
-                Window = TimeSpan.FromMinutes(globalWindowMinutes),
-                QueueLimit = 0,
-                AutoReplenishment = true,
-            }));
-
-    options.AddPolicy(authRateLimitPolicyName, httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            $"auth:{StartupConfigurationExtensions.GetClientIpAddress(httpContext)}:{httpContext.Request.Method}",
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = authPermitLimit,
-                Window = TimeSpan.FromMinutes(authWindowMinutes),
-                QueueLimit = 0,
-                AutoReplenishment = true,
-            }));
-
-    options.AddPolicy(aiRateLimitPolicyName, httpContext =>
-    {
-        string partitionKey = httpContext.User.Identity?.IsAuthenticated == true
-            ? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? StartupConfigurationExtensions.GetClientIpAddress(httpContext)
-            : StartupConfigurationExtensions.GetClientIpAddress(httpContext);
-
-        return RateLimitPartition.GetFixedWindowLimiter(
-            $"ai:{partitionKey}",
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = aiPermitLimit,
-                Window = TimeSpan.FromMinutes(aiWindowMinutes),
-                QueueLimit = 0,
-                AutoReplenishment = true,
-            });
-    });
-});
-
-builder.Services.AddCarter();
-
-builder.Services.AddHsts(options =>
-{
-    options.MaxAge = TimeSpan.FromDays(365);
-    options.IncludeSubDomains = true;
-    options.Preload = true;
-});
-
-builder.Services.ConfigureHttpJsonOptions(options =>
-{
-    options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-    options.SerializerOptions.PropertyNameCaseInsensitive = true;
-    options.SerializerOptions.NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals;
-});
-
-bool isDevelopment = builder.Environment.IsDevelopment();
-
-// JWT Authentication
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.RequireHttpsMetadata = !isDevelopment;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtIssuer,
-            ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-            NameClaimType = ClaimTypes.Name,
-            ClockSkew = TimeSpan.Zero,
-        };
-
-        options.Events = new JwtBearerEvents
-        {
-            OnMessageReceived = context =>
-            {
-                var accessToken = context.Request.Query["access_token"];
-                var path = context.HttpContext.Request.Path;
-
-                // Configure SignalR token
-                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
-                {
-                    context.Token = accessToken;
-                }
-
-                return Task.CompletedTask;
+                return;
             }
+
+            await context.HttpContext.Response.WriteAsJsonAsync(
+                new { errorCode = "TooManyRequests", message = "Too many requests. Please try again later." },
+                cancellationToken);
         };
+
+        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                $"global:{StartupConfigurationExtensions.GetClientIpAddress(httpContext)}",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = globalPermitLimit,
+                    Window = TimeSpan.FromMinutes(globalWindowMinutes),
+                    QueueLimit = 0,
+                    AutoReplenishment = true,
+                }));
+
+        options.AddPolicy(authRateLimitPolicyName, httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                $"auth:{StartupConfigurationExtensions.GetClientIpAddress(httpContext)}:{httpContext.Request.Method}",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = authPermitLimit,
+                    Window = TimeSpan.FromMinutes(authWindowMinutes),
+                    QueueLimit = 0,
+                    AutoReplenishment = true,
+                }));
+
+        options.AddPolicy(aiRateLimitPolicyName, httpContext =>
+        {
+            string partitionKey = httpContext.User.Identity?.IsAuthenticated == true
+                ? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? StartupConfigurationExtensions.GetClientIpAddress(httpContext)
+                : StartupConfigurationExtensions.GetClientIpAddress(httpContext);
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                $"ai:{partitionKey}",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = aiPermitLimit,
+                    Window = TimeSpan.FromMinutes(aiWindowMinutes),
+                    QueueLimit = 0,
+                    AutoReplenishment = true,
+                });
+        });
     });
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-});
+    builder.Services.AddCarter();
 
-builder.Services
-    .AddSharedModule()
-    .AddAuthModule(configuration, isDevelopment)
-    .AddTradeModule(configuration, isDevelopment)
-    .AddPsychologyModule(configuration, isDevelopment)
-    .AddAnalyticsModule(isDevelopment)
+    builder.Services.AddHsts(options =>
+    {
+        options.MaxAge = TimeSpan.FromDays(365);
+        options.IncludeSubDomains = true;
+        options.Preload = true;
+    });
 
-    .AddTradingSetupModule(configuration, isDevelopment)
-    .AddAiInsightsModule(configuration, isDevelopment)
-    .AddNotificationModule(configuration, isDevelopment)
-    .AddScannerModule(configuration, isDevelopment)
-    .AddRiskManagementModule(configuration, isDevelopment)
-    .AddInMemoryMessageQueue();
+    builder.Services.ConfigureHttpJsonOptions(options =>
+    {
+        options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        options.SerializerOptions.PropertyNameCaseInsensitive = true;
+        options.SerializerOptions.NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals;
+    });
 
-builder.Services.AddOpenApi(options =>
-{
-    options.UseJwtBearerAuthentication();
-});
+    bool isDevelopment = builder.Environment.IsDevelopment();
 
-builder.Services.AddHttpContextAccessor();
+    // JWT Authentication
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
+        {
+            options.RequireHttpsMetadata = !isDevelopment;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtIssuer,
+                ValidAudience = jwtAudience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+                NameClaimType = ClaimTypes.Name,
+                ClockSkew = TimeSpan.Zero,
+            };
 
-builder.Services.AddHealthChecks()
-    .AddSqlServer(configuration.GetConnectionString("TradeDatabase")!, name: "sqlserver");
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    var accessToken = context.Request.Query["access_token"];
+                    var path = context.HttpContext.Request.Path;
 
-WebApplication app = builder.Build();
+                    // Configure SignalR token
+                    if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                    {
+                        context.Token = accessToken;
+                    }
 
-if (app.Environment.IsDevelopment())
-{
-    await app.MigrateTradingDatabase();
-    await app.MigratePsychologyDatabase();
-    await app.MigrateSetupDatabase();
-    await app.MigrateAiInsightsDatabase();
-    await app.MigrateNotificationDatabase();
-    await app.MigrateScannerDatabase();
-    await app.MigrateRiskManagementDatabase();
-}
+                    return Task.CompletedTask;
+                }
+            };
+        });
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHsts();
-}
+    builder.Services.AddAuthorizationBuilder()
+        .AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 
-app.UseHttpsRedirection();
+    builder.Services
+        .AddSharedModule()
+        .AddAuthModule(configuration, isDevelopment)
+        .AddTradeModule(configuration, isDevelopment)
+        .AddPsychologyModule(configuration, isDevelopment)
+        .AddAnalyticsModule(isDevelopment)
+        .AddTradingSetupModule(configuration, isDevelopment)
+        .AddAiInsightsModule(configuration, isDevelopment)
+        .AddNotificationModule(configuration, isDevelopment)
+        .AddScannerModule(configuration, isDevelopment)
+        .AddRiskManagementModule(configuration, isDevelopment)
+        .AddInMemoryMessageQueue();
 
-app.UseSecurityHeaders(app.Environment);
+    builder.Services.AddOpenApi(options =>
+    {
+        options.UseJwtBearerAuthentication();
+    });
 
-app.UseStaticFiles();
+    builder.Services.AddHttpContextAccessor();
 
-app.UseRouting();
+    builder.Services.AddHealthChecks()
+        .AddSqlServer(configuration.GetConnectionString("TradeDatabase")!, name: "sqlserver");
 
-app.UseCors(frontendCorsPolicyName);
+    WebApplication app = builder.Build();
 
-app.UseCustomExceptionHandler();
+    if (app.Environment.IsDevelopment())
+    {
+        await app.MigrateTradingDatabase();
+        await app.MigratePsychologyDatabase();
+        await app.MigrateSetupDatabase();
+        await app.MigrateAiInsightsDatabase();
+        await app.MigrateNotificationDatabase();
+        await app.MigrateScannerDatabase();
+        await app.MigrateRiskManagementDatabase();
+    }
 
-app.UseSerilogHttpLogging();
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseHsts();
+    }
 
-app.UseIdempotency();
+    app.UseHttpsRedirection();
 
-app.UseRateLimiter();
+    app.UseSecurityHeaders(app.Environment);
 
-app.UseSwaggerDoc();
+    app.UseStaticFiles();
 
-app.UseAuthentication();
-app.UseAuthorization();
+    app.UseRouting();
 
-app.MapCarter();
+    app.UseCors(frontendCorsPolicyName);
 
-app.MapAuditLogEndpoint();
+    app.UseCustomExceptionHandler();
 
-app.MapHealthChecks("/health");
+    app.UseSerilogHttpLogging();
 
-app.MapOpenApi();
+    app.UseIdempotency();
 
-app.MapScalarApiReference(_ =>
-{
-});
+    app.UseRateLimiter();
+
+    app.UseSwaggerDoc();
+
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    app.MapCarter();
+
+    app.MapAuditLogEndpoint();
+
+    app.MapHealthChecks("/health");
+
+    app.MapOpenApi();
+
+    app.MapScalarApiReference(_ =>
+    {
+    });
 
 
-// SignalR hub for real-time notification delivery
-app.MapHub<NotificationHub>("/hubs/notifications");
+    // SignalR hub for real-time notification delivery
+    app.MapHub<NotificationHub>("/hubs/notifications");
 
-// SignalR hub for real-time scanner alerts and status
-app.MapHub<ScannerHub>("/hubs/scanner");
+    // SignalR hub for real-time scanner alerts and status
+    app.MapHub<ScannerHub>("/hubs/scanner");
 
-await app.RunAsync();
+    await app.RunAsync();
 
 }
 catch (Exception ex)
