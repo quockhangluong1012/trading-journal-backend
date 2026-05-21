@@ -61,7 +61,7 @@ public sealed class GetTradesHandlerTests
     [Fact]
     public async Task Handle_HasResults_ReturnsPaginatedData()
     {
-        var trades = new List<TradeHistory> { new() { Id = 1, Asset = "EURUSD", Position = SharedEnums.PositionType.Long, EntryPrice = 1.08m, Date = DateTime.UtcNow, Status = SharedEnums.TradeStatus.Open, TargetTier1 = 1.09m, StopLoss = 1.07m, CreatedBy = 1 } };
+        var trades = new List<TradeHistory> { new() { Id = 1, Asset = "EURUSD", Position = SharedEnums.PositionType.Long, EntryPrice = 1.08m, Date = DateTime.UtcNow, Status = SharedEnums.TradeStatus.Open, TargetTier1 = 1.09m, StopLoss = 1.07m, CreatedBy = 1, AccountBalanceAtEntry = 10000m, RiskAmountAtEntry = 100m, SuggestedPositionUnits = 20000m, SuggestedPositionLots = 0.2m, RiskRewardRatioAtEntry = 1.5m } };
         _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(trades.AsQueryable()).Object);
         _ctx.Setup(x => x.TradeEmotionTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeEmotionTag>().AsQueryable()).Object);
         _emoProvider.Setup(x => x.GetEmotionTagsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<EmotionTagCacheDto>());
@@ -70,6 +70,11 @@ public sealed class GetTradesHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value!.Values);
         Assert.Equal(1, result.Value.TotalItems);
+        Assert.Equal(10000m, result.Value.Values.First().AccountBalanceAtEntry);
+        Assert.Equal(100m, result.Value.Values.First().RiskAmountAtEntry);
+        Assert.Equal(20000m, result.Value.Values.First().SuggestedPositionUnits);
+        Assert.Equal(0.2m, result.Value.Values.First().SuggestedPositionLots);
+        Assert.Equal(1.5m, result.Value.Values.First().RiskRewardRatioAtEntry);
     }
 
     [Fact]

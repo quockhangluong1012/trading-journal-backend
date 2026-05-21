@@ -48,6 +48,13 @@ public sealed class GetTradeDetailHandlerTests
                 CreatedBy = 1,
                 Asset = "EURUSD",
                 Notes = "Test",
+                IsRuleBroken = true,
+                RuleBreakReason = "Risk critical: Max open positions reached.",
+                AccountBalanceAtEntry = 12500m,
+                RiskAmountAtEntry = 125m,
+                SuggestedPositionUnits = 25000m,
+                SuggestedPositionLots = 0.25m,
+                RiskRewardRatioAtEntry = 2.5m,
                 TradingSetupId = 55,
                 TradeScreenShots = [],
                 TradeEmotionTags = [],
@@ -61,6 +68,13 @@ public sealed class GetTradeDetailHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal("EURUSD", result.Value.Asset);
         Assert.Equal(55, result.Value.TradingSetupId);
+        Assert.True(result.Value.IsRuleBroken);
+        Assert.Equal("Risk critical: Max open positions reached.", result.Value.RuleBreakReason);
+        Assert.Equal(12500m, result.Value.AccountBalanceAtEntry);
+        Assert.Equal(125m, result.Value.RiskAmountAtEntry);
+        Assert.Equal(25000m, result.Value.SuggestedPositionUnits);
+        Assert.Equal(0.25m, result.Value.SuggestedPositionLots);
+        Assert.Equal(2.5m, result.Value.RiskRewardRatioAtEntry);
     }
 
     [Fact]

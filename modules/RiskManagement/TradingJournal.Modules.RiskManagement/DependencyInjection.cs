@@ -19,6 +19,7 @@ public static class DependencyInjection
 
         services.AddScoped<IRiskDbContext, RiskDbContext>();
         services.AddScoped<IRiskContextProvider, RiskContextProvider>();
+        services.AddScoped<ITradeRiskAssessmentService, TradeRiskAssessmentService>();
 
         return services;
     }

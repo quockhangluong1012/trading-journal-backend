@@ -17,6 +17,8 @@ public sealed class TradeDbContextPrecisionTests
     [InlineData(nameof(TradeHistory.TargetTier1))]
     [InlineData(nameof(TradeHistory.TargetTier2))]
     [InlineData(nameof(TradeHistory.TargetTier3))]
+    [InlineData(nameof(TradeHistory.SuggestedPositionUnits))]
+    [InlineData(nameof(TradeHistory.SuggestedPositionLots))]
     public void TradeHistoryPriceProperties_UseDecimal18_5(string propertyName)
     {
         IProperty property = GetProperty(typeof(TradeHistory), propertyName);
@@ -24,6 +26,19 @@ public sealed class TradeDbContextPrecisionTests
         Assert.Equal("decimal(18,5)", property.GetColumnType());
         Assert.Equal(18, property.GetPrecision());
         Assert.Equal(5, property.GetScale());
+    }
+
+    [Theory]
+    [InlineData(nameof(TradeHistory.AccountBalanceAtEntry))]
+    [InlineData(nameof(TradeHistory.RiskAmountAtEntry))]
+    [InlineData(nameof(TradeHistory.RiskRewardRatioAtEntry))]
+    public void TradeHistoryRiskSnapshotProperties_UseDecimal18_2(string propertyName)
+    {
+        IProperty property = GetProperty(typeof(TradeHistory), propertyName);
+
+        Assert.Equal("decimal(18,2)", property.GetColumnType());
+        Assert.Equal(18, property.GetPrecision());
+        Assert.Equal(2, property.GetScale());
     }
 
     [Theory]

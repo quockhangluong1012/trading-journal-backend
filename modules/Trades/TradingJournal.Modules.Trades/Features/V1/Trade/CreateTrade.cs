@@ -129,6 +129,7 @@ public sealed class CreateTrade
         ITradeDbContext context,
         IScreenshotService screenshotService,
         IDisciplineEvaluator disciplineEvaluator,
+        ITradeRiskAssessmentService tradeRiskAssessmentService,
         IHttpContextAccessor httpContextAccessor,
         ISetupProvider setupProvider,
         ICacheRepository cacheRepository) : ICommandHandler<Request, Result<int>>
@@ -173,6 +174,7 @@ public sealed class CreateTrade
                     tradeHistory.PremiumDiscount = request.PremiumDiscount;
 
                     await disciplineEvaluator.EvaluateAsync(tradeHistory, userId, ct);
+                    await ApplyRiskAssessmentAsync(tradeHistory, request, userId, ct);
 
                     tradeHistory.TradeTechnicalAnalysisTags = [];
                     tradeHistory.TradeScreenShots = [];
@@ -237,6 +239,40 @@ public sealed class CreateTrade
             {
                 return Result<int>.Failure(Error.Create(ex.Message));
             }
+        }
+
+        private async Task ApplyRiskAssessmentAsync(TradeHistory tradeHistory, Request request, int userId, CancellationToken cancellationToken)
+        {
+            TradeRiskAssessmentDto assessment = await tradeRiskAssessmentService.AssessAsync(
+                userId,
+                request.Asset,
+                request.EntryPrice,
+                request.StopLoss,
+                request.TargetTier1,
+                request.Status,
+                cancellationToken: cancellationToken);
+
+            tradeHistory.AccountBalanceAtEntry = assessment.AccountBalance;
+            tradeHistory.RiskAmountAtEntry = assessment.RecommendedRiskAmount;
+            tradeHistory.SuggestedPositionUnits = assessment.SuggestedPositionUnits;
+            tradeHistory.SuggestedPositionLots = assessment.SuggestedPositionLots;
+            tradeHistory.RiskRewardRatioAtEntry = assessment.RiskRewardRatio;
+
+            if (assessment.Alerts.Count == 0)
+            {
+                return;
+            }
+
+            tradeHistory.IsRuleBroken = true;
+
+            List<string> reasons = [];
+            if (!string.IsNullOrWhiteSpace(tradeHistory.RuleBreakReason))
+            {
+                reasons.Add(tradeHistory.RuleBreakReason);
+            }
+
+            reasons.AddRange(assessment.Alerts.Select(alert => $"Risk {alert.Severity}: {alert.Message}"));
+            tradeHistory.RuleBreakReason = string.Join("; ", reasons);
         }
     }
 

@@ -39,6 +39,20 @@ public sealed class TradeHistoryDetailViewModel
 
     public decimal StopLoss { get; set; }
 
+    public bool IsRuleBroken { get; set; }
+
+    public string? RuleBreakReason { get; set; }
+
+    public decimal? AccountBalanceAtEntry { get; set; }
+
+    public decimal? RiskAmountAtEntry { get; set; }
+
+    public decimal? SuggestedPositionUnits { get; set; }
+
+    public decimal? SuggestedPositionLots { get; set; }
+
+    public decimal? RiskRewardRatioAtEntry { get; set; }
+
     public ConfidenceLevel ConfidenceLevel { get; set; }
 
     public List<string> ScreenShots { get; set; } = [];

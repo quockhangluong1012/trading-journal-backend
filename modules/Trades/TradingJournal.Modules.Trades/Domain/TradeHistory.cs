@@ -56,6 +56,16 @@ public sealed class TradeHistory : EntityBase<int>
 
     public string? RuleBreakReason { get; set; }
 
+    public decimal? AccountBalanceAtEntry { get; set; }
+
+    public decimal? RiskAmountAtEntry { get; set; }
+
+    public decimal? SuggestedPositionUnits { get; set; }
+
+    public decimal? SuggestedPositionLots { get; set; }
+
+    public decimal? RiskRewardRatioAtEntry { get; set; }
+
     #endregion
 
     #region Psychology & Emotions

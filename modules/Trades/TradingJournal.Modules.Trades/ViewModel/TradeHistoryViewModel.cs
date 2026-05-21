@@ -24,6 +24,20 @@ public class TradeHistoryViewModel
 
     public string? Notes { get; set; } = string.Empty;
 
+    public bool IsRuleBroken { get; set; }
+
+    public string? RuleBreakReason { get; set; }
+
+    public decimal? AccountBalanceAtEntry { get; set; }
+
+    public decimal? RiskAmountAtEntry { get; set; }
+
+    public decimal? SuggestedPositionUnits { get; set; }
+
+    public decimal? SuggestedPositionLots { get; set; }
+
+    public decimal? RiskRewardRatioAtEntry { get; set; }
+
     public List<EmotionTagCacheDto>? EmotionTags { get; set; }
 
     public ConfidenceLevel ConfidenceLevel { get; set; }

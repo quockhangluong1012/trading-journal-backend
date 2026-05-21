@@ -105,7 +105,9 @@ public sealed class UpdateTrade
 
     public sealed class Handler(ITradeDbContext context,
         IScreenshotService screenshotService,
+        IDisciplineEvaluator disciplineEvaluator,
         ISetupProvider setupProvider,
+        ITradeRiskAssessmentService tradeRiskAssessmentService,
         ICacheRepository cacheRepository) : ICommandHandler<Request, Result<bool>>
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
@@ -165,6 +167,33 @@ public sealed class UpdateTrade
                 tradeHistory.DailyBias = request.DailyBias;
                 tradeHistory.MarketStructure = request.MarketStructure;
                 tradeHistory.PremiumDiscount = request.PremiumDiscount;
+                tradeHistory.IsRuleBroken = false;
+                tradeHistory.RuleBreakReason = null;
+
+                await disciplineEvaluator.EvaluateAsync(tradeHistory, request.UserId, cancellationToken);
+
+                TradeRiskAssessmentDto assessment = await tradeRiskAssessmentService.AssessAsync(
+                    request.UserId,
+                    request.Asset,
+                    request.EntryPrice,
+                    request.StopLoss,
+                    request.TargetTier1,
+                    request.Status,
+                    request.Id,
+                    cancellationToken);
+
+                tradeHistory.AccountBalanceAtEntry = assessment.AccountBalance;
+                tradeHistory.RiskAmountAtEntry = assessment.RecommendedRiskAmount;
+                tradeHistory.SuggestedPositionUnits = assessment.SuggestedPositionUnits;
+                tradeHistory.SuggestedPositionLots = assessment.SuggestedPositionLots;
+                tradeHistory.RiskRewardRatioAtEntry = assessment.RiskRewardRatio;
+
+                if (assessment.Alerts.Count > 0)
+                {
+                    tradeHistory.IsRuleBroken = true;
+                    tradeHistory.RuleBreakReason = string.Join("; ",
+                        assessment.Alerts.Select(alert => $"Risk {alert.Severity}: {alert.Message}"));
+                }
 
                 #region remove all existing emotion tags, pretrade checklists, and technical analysis tags
                 context.TradeEmotionTags.RemoveRange(tradeHistory.TradeEmotionTags ?? []);

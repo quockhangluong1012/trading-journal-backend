@@ -4,6 +4,7 @@ using TradingJournal.Modules.Trades.Features.V1.Trade;
 using TradingJournal.Modules.Trades.Infrastructure;
 using TradingJournal.Modules.Trades.Domain;
 using TradingJournal.Modules.Trades.Services;
+using TradingJournal.Shared.Dtos;
 using TradingJournal.Shared.Interfaces;
 using SharedEnums = TradingJournal.Shared.Common.Enum;
 using TradingJournal.Shared.Common.Enum;
@@ -70,15 +71,22 @@ public sealed class UpdateTradeHandlerTests
 {
     private Mock<ITradeDbContext> _ctx = null!;
     private Mock<IScreenshotService> _screenshotMock = null!;
+    private Mock<IDisciplineEvaluator> _disciplineEvaluatorMock = null!;
     private Mock<ISetupProvider> _setupProviderMock = null!;
+    private Mock<ITradeRiskAssessmentService> _tradeRiskAssessmentServiceMock = null!;
     private UpdateTrade.Handler _handler = null!;
 
     public UpdateTradeHandlerTests()
     {
         _ctx = new Mock<ITradeDbContext>();
         _screenshotMock = new Mock<IScreenshotService>();
+        _disciplineEvaluatorMock = new Mock<IDisciplineEvaluator>();
         _setupProviderMock = new Mock<ISetupProvider>();
-        _handler = new UpdateTrade.Handler(_ctx.Object, _screenshotMock.Object, _setupProviderMock.Object, new Mock<ICacheRepository>().Object);
+        _tradeRiskAssessmentServiceMock = new Mock<ITradeRiskAssessmentService>();
+        _tradeRiskAssessmentServiceMock
+            .Setup(x => x.AssessAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<SharedEnums.TradeStatus>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TradeRiskAssessmentDto(10000m, 1m, 100m, 20000m, 0.2m, 0.005m, 1m, 1, 1, true, []));
+        _handler = new UpdateTrade.Handler(_ctx.Object, _screenshotMock.Object, _disciplineEvaluatorMock.Object, _setupProviderMock.Object, _tradeRiskAssessmentServiceMock.Object, new Mock<ICacheRepository>().Object);
     }
 
     [Fact]
@@ -129,6 +137,11 @@ public sealed class UpdateTradeHandlerTests
         Assert.True(result.Value);
         Assert.Equal("Updated", trade.Notes);
         Assert.Equal(88, trade.TradingSetupId);
+        Assert.Equal(10000m, trade.AccountBalanceAtEntry);
+        Assert.Equal(100m, trade.RiskAmountAtEntry);
+        Assert.Equal(20000m, trade.SuggestedPositionUnits);
+        Assert.Equal(0.2m, trade.SuggestedPositionLots);
+        Assert.Equal(1m, trade.RiskRewardRatioAtEntry);
     }
 
     [Fact]
@@ -196,5 +209,50 @@ public sealed class UpdateTradeHandlerTests
 
         Assert.False(result.IsSuccess);
         _ctx.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_RiskAlerts_MarksTradeAsRuleBroken()
+    {
+        var request = new UpdateTrade.Request(
+            1, "EURUSD", SharedEnums.PositionType.Long, 1.0850m, 1.0860m,
+            null, null, 1.0800m, "Updated", DateTime.UtcNow,
+            SharedEnums.TradeStatus.Open, null, null, null, [],
+            null, null, ConfidenceLevel.Neutral, null,
+            [1], 1, null, null, null, UserId: 42);
+
+        var trade = new TradeHistory
+        {
+            Id = 1,
+            CreatedBy = 42,
+            Asset = "GBPUSD",
+            TradeEmotionTags = [],
+            TradeChecklists = [],
+            TradeTechnicalAnalysisTags = [],
+            TradeScreenShots = []
+        };
+
+        _tradeRiskAssessmentServiceMock
+            .Setup(x => x.AssessAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<SharedEnums.TradeStatus>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TradeRiskAssessmentDto(
+                10000m, 1m, 100m, 20000m, 0.2m, 0.005m, 0.2m, 5, 3, false,
+                [new TradeRiskAssessmentAlertDto("critical", "Projected open positions exceed configured max.")]));
+
+        _ctx.Setup(x => x.TradeHistories).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistory> { trade }.AsQueryable()).Object);
+        _ctx.Setup(x => x.PretradeChecklists).Returns(DbSetMockHelper.CreateMockDbSet(new List<PretradeChecklist>
+        {
+            new() { Id = 1, Name = "Checklist 1", ChecklistModelId = 1, ChecklistModel = new ChecklistModel { Id = 1, Name = "Model", CreatedBy = 42 } }
+        }.AsQueryable()).Object);
+        _ctx.Setup(x => x.TradeEmotionTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeEmotionTag>().AsQueryable()).Object);
+        _ctx.Setup(x => x.TradeHistoryChecklist).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeHistoryChecklist>().AsQueryable()).Object);
+        _ctx.Setup(x => x.TradeTechnicalAnalysisTags).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeTechnicalAnalysisTag>().AsQueryable()).Object);
+        _ctx.Setup(x => x.TradeScreenShots).Returns(DbSetMockHelper.CreateMockDbSet(new List<TradeScreenShot>().AsQueryable()).Object);
+        _ctx.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(trade.IsRuleBroken);
+        Assert.Contains("Risk critical", trade.RuleBreakReason);
     }
 }
