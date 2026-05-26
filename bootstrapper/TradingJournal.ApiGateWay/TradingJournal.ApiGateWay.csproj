@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -40,6 +40,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\modules\Analytics\TradingJournal.Modules.Analytics\TradingJournal.Modules.Analytics.csproj" />
+    <ProjectReference Include="..\..\modules\Backtest\TradingJournal.Modules.Backtest\TradingJournal.Modules.Backtest.csproj" />
     <ProjectReference Include="..\..\modules\Trades\TradingJournal.Modules.Trades\TradingJournal.Modules.Trades.csproj" />
     <ProjectReference Include="..\..\modules\AiInsights\TradingJournal.Modules.AiInsights\TradingJournal.Modules.AiInsights.csproj" />
     <ProjectReference Include="..\..\modules\Psychology\TradingJournal.Modules.Psychology\TradingJournal.Modules.Psychology.csproj" />
