@@ -45,8 +45,8 @@ public static class DependencyInjection
         services.AddHttpClient<IMarketDataProvider, YahooFinanceMarketDataProvider>();
 
         // Background services for data sync
-        // services.AddHostedService<DataSyncBackgroundService>();
-        // services.AddHostedService<CsvImportBackgroundService>();
+        services.AddHostedService<DataSyncBackgroundService>();
+        services.AddHostedService<CsvImportBackgroundService>();
 
         // Event handlers
         services.AddTransient<INotificationHandler<FetchHistoricalDataEvent>,

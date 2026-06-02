@@ -1,5 +1,5 @@
-using System.Globalization;
 using Microsoft.Extensions.Logging;
+using TradingJournal.Modules.Backtest.Services;
 
 namespace TradingJournal.Modules.Backtest.Features.V1.Admin;
 
@@ -60,7 +60,7 @@ public static class ImportAssetData
                     || line.Contains("Time", StringComparison.OrdinalIgnoreCase)))
                     continue;
 
-                OhlcvCandle? candle = ParseLine(line, asset.Symbol);
+                OhlcvCandle? candle = CsvCandleParser.ParseLine(line, asset.Symbol);
                 if (candle != null)
                 {
                     parsedCandles.Add(candle);
@@ -91,9 +91,9 @@ public static class ImportAssetData
                 .ToListAsync(cancellationToken))
                 .ToHashSet();
 
-            List<OhlcvCandle> newCandles = parsedCandles
-                .Where(c => !existingTimestamps.Contains(c.Timestamp))
-                .ToList();
+            List<OhlcvCandle> newCandles = CsvCandleDeduplicator.KeepOnlyNewCandles(
+                parsedCandles,
+                existingTimestamps);
 
             int skipped = parsedCandles.Count - newCandles.Count;
 
@@ -134,74 +134,6 @@ public static class ImportAssetData
             return Result<Response>.Success(new Response(imported, skipped, message));
         }
 
-        /// <summary>
-        /// Parses a single CSV line. Supports:
-        /// - HistData semicolon format: 20150101 000000;1.21010;1.21020;1.21010;1.21020;0
-        /// - Standard comma format: 2015-01-01 00:00:00,1.21010,1.21020,1.21010,1.21020,0
-        /// - Standard comma format: 2015-01-01,1.21010,1.21020,1.21010,1.21020,0
-        /// </summary>
-        private static OhlcvCandle? ParseLine(string line, string symbol)
-        {
-            try
-            {
-                string[] parts;
-                DateTime timestamp;
-
-                if (line.Contains(';'))
-                {
-                    // HistData format: 20150101 000000;1.21010;1.21020;1.21010;1.21020;0
-                    parts = line.Split(';');
-                    if (parts.Length < 5) return null;
-
-                    string dateStr = parts[0].Trim();
-                    if (dateStr.Length == 15) // "20150101 000000"
-                    {
-                        timestamp = DateTime.ParseExact(dateStr, "yyyyMMdd HHmmss",
-                            CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal)
-                            .ToUniversalTime();
-                    }
-                    else
-                    {
-                        timestamp = DateTime.Parse(dateStr, CultureInfo.InvariantCulture,
-                            DateTimeStyles.AssumeUniversal).ToUniversalTime();
-                    }
-                }
-                else
-                {
-                    // Standard CSV: 2015-01-01 00:00:00,1.21010,1.21020,1.21010,1.21020,0
-                    parts = line.Split(',');
-                    if (parts.Length < 5) return null;
-
-                    timestamp = DateTime.Parse(parts[0].Trim(), CultureInfo.InvariantCulture,
-                        DateTimeStyles.AssumeUniversal).ToUniversalTime();
-                }
-
-                decimal open = decimal.Parse(parts[1].Trim(), CultureInfo.InvariantCulture);
-                decimal high = decimal.Parse(parts[2].Trim(), CultureInfo.InvariantCulture);
-                decimal low = decimal.Parse(parts[3].Trim(), CultureInfo.InvariantCulture);
-                decimal close = decimal.Parse(parts[4].Trim(), CultureInfo.InvariantCulture);
-                decimal volume = parts.Length > 5
-                    ? decimal.TryParse(parts[5].Trim(), CultureInfo.InvariantCulture, out decimal v) ? v : 0m
-                    : 0m;
-
-                return new OhlcvCandle
-                {
-                    Id = 0,
-                    Asset = symbol,
-                    Timeframe = Timeframe.M1,
-                    Timestamp = timestamp,
-                    Open = open,
-                    High = high,
-                    Low = low,
-                    Close = close,
-                    Volume = volume
-                };
-            }
-            catch
-            {
-                return null;
-            }
-        }
     }
 
     public sealed class Endpoint : ICarterModule

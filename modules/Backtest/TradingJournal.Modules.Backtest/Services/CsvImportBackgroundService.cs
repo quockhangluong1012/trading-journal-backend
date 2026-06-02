@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -29,6 +28,20 @@ internal sealed class CsvImportBackgroundService(
     {
         logger.LogInformation("CsvImportBackgroundService started.");
 
+        try
+        {
+            await RecoverInterruptedJobs(stoppingToken);
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            logger.LogInformation("CsvImportBackgroundService stopped during startup recovery.");
+            return;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to recover interrupted CSV import jobs.");
+        }
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -48,6 +61,59 @@ internal sealed class CsvImportBackgroundService(
         }
 
         logger.LogInformation("CsvImportBackgroundService stopped.");
+    }
+
+    private async Task RecoverInterruptedJobs(CancellationToken ct)
+    {
+        using IServiceScope scope = scopeFactory.CreateScope();
+        IBacktestDbContext db = scope.ServiceProvider.GetRequiredService<IBacktestDbContext>();
+
+        List<CsvImportJob> interruptedJobs = await db.CsvImportJobs
+            .Include(j => j.Asset)
+            .Where(j => j.Status == CsvImportStatus.Processing)
+            .OrderBy(j => j.CreatedDate)
+            .ToListAsync(ct);
+
+        if (interruptedJobs.Count == 0) return;
+
+        logger.LogWarning(
+            "Found {Count} interrupted CSV import job(s) still marked as Processing. Recovering them.",
+            interruptedJobs.Count);
+
+        foreach (CsvImportJob job in interruptedJobs)
+        {
+            if (File.Exists(job.StoredFilePath))
+            {
+                job.Status = CsvImportStatus.Pending;
+                job.ErrorMessage = "Previous import attempt was interrupted and will be retried.";
+                job.ProcessedDate = null;
+
+                logger.LogInformation(
+                    "Reset interrupted CSV import job #{JobId} to Pending: {FileName}",
+                    job.Id, job.FileName);
+            }
+            else
+            {
+                job.Status = CsvImportStatus.Failed;
+                job.ErrorMessage = $"Stored CSV file not found: {job.StoredFilePath}";
+                job.ProcessedDate = DateTime.UtcNow;
+
+                logger.LogWarning(
+                    "Marked interrupted CSV import job #{JobId} as Failed because the stored file is missing: {Path}",
+                    job.Id, job.StoredFilePath);
+            }
+        }
+
+        await db.SaveChangesAsync(ct);
+
+        foreach (BacktestAsset asset in interruptedJobs
+            .Select(j => j.Asset)
+            .Where(a => a is not null)
+            .DistinctBy(a => a!.Id)
+            .Cast<BacktestAsset>())
+        {
+            await TryMarkAssetReady(db, asset, ct);
+        }
     }
 
     private async Task ProcessNextJob(CancellationToken ct)
@@ -186,7 +252,7 @@ internal sealed class CsvImportBackgroundService(
                 || line.Contains("Time", StringComparison.OrdinalIgnoreCase)))
                 continue;
 
-            OhlcvCandle? candle = ParseLine(line, asset.Symbol);
+            OhlcvCandle? candle = CsvCandleParser.ParseLine(line, asset.Symbol);
             if (candle != null)
             {
                 parsedCandles.Add(candle);
@@ -219,9 +285,9 @@ internal sealed class CsvImportBackgroundService(
             .ToListAsync(ct))
             .ToHashSet();
 
-        List<OhlcvCandle> newCandles = parsedCandles
-            .Where(c => !existingTimestamps.Contains(c.Timestamp))
-            .ToList();
+        List<OhlcvCandle> newCandles = CsvCandleDeduplicator.KeepOnlyNewCandles(
+            parsedCandles,
+            existingTimestamps);
 
         int skipped = parsedCandles.Count - newCandles.Count;
 
@@ -263,74 +329,5 @@ internal sealed class CsvImportBackgroundService(
             asset.LastSyncedDate = maxTime;
 
         return (imported, skipped);
-    }
-
-    /// <summary>
-    /// Parses a single CSV line. Supports:
-    /// - HistData semicolon format: 20150101 000000;1.21010;1.21020;1.21010;1.21020;0
-    /// - Standard comma format: 2015-01-01 00:00:00,1.21010,1.21020,1.21010,1.21020,0
-    /// - Standard comma format: 2015-01-01,1.21010,1.21020,1.21010,1.21020,0
-    /// </summary>
-    private static OhlcvCandle? ParseLine(string line, string symbol)
-    {
-        try
-        {
-            string[] parts;
-            DateTime timestamp;
-
-            if (line.Contains(';'))
-            {
-                // HistData format: 20150101 000000;1.21010;1.21020;1.21010;1.21020;0
-                parts = line.Split(';');
-                if (parts.Length < 5) return null;
-
-                string dateStr = parts[0].Trim();
-                if (dateStr.Length == 15) // "20150101 000000"
-                {
-                    timestamp = DateTime.ParseExact(dateStr, "yyyyMMdd HHmmss",
-                        CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal)
-                        .ToUniversalTime();
-                }
-                else
-                {
-                    timestamp = DateTime.Parse(dateStr, CultureInfo.InvariantCulture,
-                        DateTimeStyles.AssumeUniversal).ToUniversalTime();
-                }
-            }
-            else
-            {
-                // Standard CSV: 2015-01-01 00:00:00,1.21010,1.21020,1.21010,1.21020,0
-                parts = line.Split(',');
-                if (parts.Length < 5) return null;
-
-                timestamp = DateTime.Parse(parts[0].Trim(), CultureInfo.InvariantCulture,
-                    DateTimeStyles.AssumeUniversal).ToUniversalTime();
-            }
-
-            decimal open = decimal.Parse(parts[1].Trim(), CultureInfo.InvariantCulture);
-            decimal high = decimal.Parse(parts[2].Trim(), CultureInfo.InvariantCulture);
-            decimal low = decimal.Parse(parts[3].Trim(), CultureInfo.InvariantCulture);
-            decimal close = decimal.Parse(parts[4].Trim(), CultureInfo.InvariantCulture);
-            decimal volume = parts.Length > 5
-                ? decimal.TryParse(parts[5].Trim(), CultureInfo.InvariantCulture, out decimal v) ? v : 0m
-                : 0m;
-
-            return new OhlcvCandle
-            {
-                Id = 0,
-                Asset = symbol,
-                Timeframe = Timeframe.M1,
-                Timestamp = timestamp,
-                Open = open,
-                High = high,
-                Low = low,
-                Close = close,
-                Volume = volume
-            };
-        }
-        catch
-        {
-            return null;
-        }
     }
 }

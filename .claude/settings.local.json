@@ -31,7 +31,8 @@
       "Bash(sed -i 's/AnalyticsFilter\\\\.ThisWeek/AnalyticsFilter.OneWeek/g' GetEquityCurveTest.cs)",
       "Bash(sed -i 's/AnalyticsFilter\\\\.ThisMonth/AnalyticsFilter.OneMonth/g' GetMonthlyReturnsTest.cs GetDayOfWeekBreakdownTest.cs)",
       "Bash(sed -i 's/AnalyticsFilter\\\\.ThisYear/AnalyticsFilter.SixMonths/g' GetAssetBreakdownTest.cs)",
-      "Bash(sed -i 's/AnalyticsFilter\\\\.AllTime/AnalyticsFilter.AllTime/g' GetInsightsTest.cs)"
+      "Bash(sed -i 's/AnalyticsFilter\\\\.AllTime/AnalyticsFilter.AllTime/g' GetInsightsTest.cs)",
+      "Bash(Select-Object -First 50)"
     ]
   }
 }
