@@ -32,7 +32,10 @@
       "Bash(sed -i 's/AnalyticsFilter\\\\.ThisMonth/AnalyticsFilter.OneMonth/g' GetMonthlyReturnsTest.cs GetDayOfWeekBreakdownTest.cs)",
       "Bash(sed -i 's/AnalyticsFilter\\\\.ThisYear/AnalyticsFilter.SixMonths/g' GetAssetBreakdownTest.cs)",
       "Bash(sed -i 's/AnalyticsFilter\\\\.AllTime/AnalyticsFilter.AllTime/g' GetInsightsTest.cs)",
-      "Bash(Select-Object -First 50)"
+      "Bash(Select-Object -First 50)",
+      "Bash(Get-ChildItem -Path \"C:\\\\project\\\\.NET\\\\trading-journal-backend\" -Force)",
+      "Bash(Select-Object Name, FullName)",
+      "PowerShell(head *)"
     ]
   }
 }
