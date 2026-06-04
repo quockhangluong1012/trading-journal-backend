@@ -1,3 +1,4 @@
+using TradingJournal.Modules.Backtest.Common.Constants;
 using TradingJournal.Modules.Backtest.Dto;
 
 namespace TradingJournal.Modules.Backtest.Features.V1.MarketData;
@@ -33,10 +34,10 @@ public sealed class GetHistoricalCandles
             // Use the asset symbol as stored (already normalized when asset was created)
             string symbol = session.Asset;
 
-            DateTime fromDate = session.StartDate;
+            DateTime fromDate = BacktestReferenceWindow.GetStartDate(session.StartDate);
 
             // CRITICAL: Only return candles up to the current simulated timestamp
-            // to prevent look-ahead bias. We load from session.StartDate to start the chart empty.
+            // to prevent look-ahead bias, while keeping a pre-start reference window visible.
             List<OhlcvCandle> aggregated = await aggregationService.AggregateAsync(
                 symbol, tf, fromDate, session.CurrentTimestamp, cancellationToken);
 

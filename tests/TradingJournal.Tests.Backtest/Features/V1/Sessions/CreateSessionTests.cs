@@ -152,6 +152,28 @@ public sealed class CreateSessionHandlerTests
 
         _eventBus.Verify(x => x.PublishAsync(It.IsAny<TradingJournal.Modules.Backtest.Events.FetchHistoricalDataEvent>(), It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task Handle_PublishesEvent_FromThreeDaysBeforeSelectedStartDate()
+    {
+        DateTime selectedStartDate = new(2024, 1, 10, 9, 0, 0, DateTimeKind.Utc);
+
+        _context.Setup(x => x.BacktestAssets)
+            .Returns(DbSetMockHelper.CreateMockDbSet(new List<BacktestAsset>().AsQueryable()).Object);
+        _context.Setup(x => x.BacktestSessions)
+            .Returns(DbSetMockHelper.CreateMockDbSet(new List<BacktestSession>().AsQueryable()).Object);
+        _context.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        _eventBus.Setup(x => x.PublishAsync(It.IsAny<TradingJournal.Modules.Backtest.Events.FetchHistoricalDataEvent>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+        var request = new CreateSession.Request("EURUSD", selectedStartDate, selectedStartDate.AddDays(30), 10_000m, 50);
+        await _handler.Handle(request, CancellationToken.None);
+
+        _eventBus.Verify(x => x.PublishAsync(
+            It.Is<TradingJournal.Modules.Backtest.Events.FetchHistoricalDataEvent>(evt =>
+                evt.StartDate == selectedStartDate.AddDays(-3)
+                && evt.EndDate == selectedStartDate.AddDays(30)),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
 }
 
 #endregion

@@ -1,3 +1,4 @@
+using TradingJournal.Modules.Backtest.Common.Constants;
 using TradingJournal.Messaging.Shared.Abstractions;
 using TradingJournal.Modules.Backtest.Events;
 
@@ -86,7 +87,7 @@ public sealed class CreateSession
                     Guid.NewGuid(),
                     session.Id,
                     session.Asset,
-                    session.StartDate,
+                    BacktestReferenceWindow.GetStartDate(session.StartDate),
                     endDate,
                     request.UserId), cancellationToken);
 
