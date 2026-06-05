@@ -35,7 +35,13 @@
       "Bash(Select-Object -First 50)",
       "Bash(Get-ChildItem -Path \"C:\\\\project\\\\.NET\\\\trading-journal-backend\" -Force)",
       "Bash(Select-Object Name, FullName)",
-      "PowerShell(head *)"
+      "PowerShell(head *)",
+      "Bash(xargs wc -l)",
+      "Bash(echo \"=== commented code blocks \\(lines starting with //\\) sample ===\")",
+      "Bash(echo \"exit:$?\")",
+      "Bash(Select-Object -Last 30)",
+      "PowerShell(dotnet build *)",
+      "PowerShell(dotnet test *)"
     ]
   }
 }
