@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using TradingJournal.Messaging.Shared.Abstractions;
 using TradingJournal.Messaging.Shared.Events;
 
@@ -10,6 +11,7 @@ public static class DependencyInjection
     {
         services.AddSingleton<InMemoryMessageQueue>();
         services.AddScoped<IEventBus, EventBus>();
+        services.TryAddSingleton<IDeadLetterSink, LoggingDeadLetterSink>();
         services.AddHostedService<IntegrationEventProcessorJob>();
         
         return services;

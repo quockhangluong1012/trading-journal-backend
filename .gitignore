@@ -62,6 +62,8 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 artifacts/
+# .NET SDK artifacts output path (dotnet build --use-artifacts / <ArtifactsPath>)
+.artifacts/
 
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt

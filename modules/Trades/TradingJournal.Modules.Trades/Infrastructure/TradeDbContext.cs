@@ -52,6 +52,10 @@ internal sealed class TradeDbContext(DbContextOptions<TradeDbContext> options, I
 
         modelBuilder.Entity<TradeHistory>(trade =>
         {
+            // Every trade query is scoped to the owning user and usually ordered by trade date;
+            // index (CreatedBy, Date) to avoid full table scans per user.
+            trade.HasIndex(t => new { t.CreatedBy, t.Date });
+
             trade.Property(t => t.EntryPrice).HasPrecision(TradePricePrecision, TradePriceScale);
             trade.Property(t => t.ExitPrice).HasPrecision(TradePricePrecision, TradePriceScale);
             trade.Property(t => t.StopLoss).HasPrecision(TradePricePrecision, TradePriceScale);

@@ -1,0 +1,13 @@
+global using FluentValidation.TestHelper;
+global using Microsoft.EntityFrameworkCore;
+global using MockQueryable.Moq;
+global using Moq;
+global using TradingJournal.Modules.Setups.Common.Enum;
+global using TradingJournal.Modules.Setups.Domain;
+global using TradingJournal.Modules.Setups.Features.V1.TradingSetups;
+global using TradingJournal.Modules.Setups.Infrastructure;
+global using TradingSetup = TradingJournal.Modules.Setups.Domain.TradingSetup;
+global using TradingJournal.Shared.Abstractions;
+global using TradingJournal.Shared.Contracts;
+global using TradingJournal.Shared.Interfaces;
+global using Xunit;

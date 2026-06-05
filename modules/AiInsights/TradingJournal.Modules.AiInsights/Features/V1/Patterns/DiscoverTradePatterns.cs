@@ -61,6 +61,7 @@ public sealed class DiscoverTradePatterns
             .WithSummary("Discover AI patterns from trade history.")
             .WithDescription("Analyzes closed trades in the selected range and returns multi-variable patterns with evidence and action items.")
             .WithTags(Tags.AiPatterns)
+            .RequireRateLimiting("ai")
             .RequireAuthorization();
         }
     }

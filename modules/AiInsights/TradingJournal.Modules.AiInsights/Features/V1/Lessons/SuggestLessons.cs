@@ -61,6 +61,7 @@ public sealed class SuggestLessons
             .WithSummary("Suggest AI-generated lessons from recurring trade patterns.")
             .WithDescription("Analyzes recent closed trades, avoids duplicate lessons, and returns proposed lessons with linked trade ids.")
             .WithTags(Tags.AiLessons)
+            .RequireRateLimiting("ai")
             .RequireAuthorization();
         }
     }

@@ -1,6 +1,6 @@
 using TradingJournal.Messaging.Shared.Abstractions;
 
-namespace TradingJournal.Modules.Psychology.Events;
+namespace TradingJournal.Messaging.Shared.Contracts;
 
 /// <summary>
 /// Integration event published when a tilt circuit breaker is triggered.

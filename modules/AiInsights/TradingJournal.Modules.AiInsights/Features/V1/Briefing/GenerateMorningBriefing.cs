@@ -69,6 +69,7 @@ public sealed class GenerateMorningBriefing
             .WithSummary("Generate AI-powered morning briefing.")
             .WithDescription("Creates a personalized morning briefing using recent performance, open positions, tilt score, and economic events.")
             .WithTags(Tags.AiBriefing)
+            .RequireRateLimiting("ai")
             .RequireAuthorization();
         }
     }

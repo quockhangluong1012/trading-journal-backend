@@ -1,6 +1,6 @@
 using TradingJournal.Messaging.Shared.Abstractions;
 
-namespace TradingJournal.Modules.Scanner.Events;
+namespace TradingJournal.Messaging.Shared.Contracts;
 
 /// <summary>
 /// Integration event published when the scanner detects a new ICT pattern.

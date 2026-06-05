@@ -44,25 +44,25 @@ public sealed class Login
                 return Result<AuthResponse>.Failure(Error.Create("Account is disabled."));
             }
 
-            string token = GenerateJwtToken(user, configuration, request.RememberMe);
+            string token = GenerateJwtToken(user, configuration);
             string refreshToken = RefreshToken.Handler.GenerateRefreshToken();
-            int expiryMinutes = request.RememberMe ? 30 * 24 * 60 : configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
-            DateTime expiry = DateTime.UtcNow.AddMinutes(expiryMinutes);
+            DateTime expiry = DateTime.UtcNow.AddMinutes(TokenLifetime.AccessTokenMinutes(configuration));
 
-            // Store refresh token on the user
+            // The access token is short-lived; long sessions ("remember me") are sustained by a
+            // longer-lived refresh token that is rotated on every use.
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(TokenLifetime.RefreshTokenDays(configuration, request.RememberMe));
             await context.SaveChangesAsync(cancellationToken);
 
             return Result<AuthResponse>.Success(new AuthResponse(token, refreshToken, user.Email, user.FullName, expiry));
         }
 
-        private static string GenerateJwtToken(User user, IConfiguration configuration, bool rememberMe)
+        private static string GenerateJwtToken(User user, IConfiguration configuration)
         {
             string secret = configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT Secret is not configured.");
             string issuer = configuration["Jwt:Issuer"] ?? "TradingJournal";
             string audience = configuration["Jwt:Audience"] ?? "TradingJournal";
-            int expiryMinutes = rememberMe ? 30 * 24 * 60 : configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
+            int expiryMinutes = TokenLifetime.AccessTokenMinutes(configuration);
 
             SymmetricSecurityKey key = new(Encoding.UTF8.GetBytes(secret));
             SigningCredentials creds = new(key, SecurityAlgorithms.HmacSha256);

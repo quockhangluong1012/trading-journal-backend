@@ -233,6 +233,9 @@ try
 
     app.UseHttpsRedirection();
 
+    // Assign/propagate a correlation id and enrich all request-scoped logs with it.
+    app.UseCorrelationId();
+
     app.UseSecurityHeaders(app.Environment);
 
     app.UseStaticFiles();
@@ -249,7 +252,12 @@ try
 
     app.UseRateLimiter();
 
-    app.UseSwaggerDoc();
+    // API docs (Swagger UI, OpenAPI, Scalar) are exposed only in Development to avoid
+    // leaking the full API surface and schemas in production.
+    if (isDevelopment)
+    {
+        app.UseSwaggerDoc();
+    }
 
     app.UseAuthentication();
     app.UseAuthorization();
@@ -260,11 +268,14 @@ try
 
     app.MapHealthChecks("/health");
 
-    app.MapOpenApi();
-
-    app.MapScalarApiReference(_ =>
+    if (isDevelopment)
     {
-    });
+        app.MapOpenApi();
+
+        app.MapScalarApiReference(_ =>
+        {
+        });
+    }
 
     // SignalR hub for backtest real-time communication
     app.MapHub<BacktestHub>("/hubs/backtest");

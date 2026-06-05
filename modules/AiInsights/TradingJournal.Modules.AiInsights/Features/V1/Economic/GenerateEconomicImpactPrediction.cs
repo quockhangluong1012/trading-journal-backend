@@ -69,6 +69,7 @@ public sealed class GenerateEconomicImpactPrediction
             .WithSummary("Generate AI economic event impact prediction.")
             .WithDescription("Predicts the trading impact of current economic event conditions for a symbol using event proximity and historical event-trading behavior.")
             .WithTags(Tags.AiEconomic)
+            .RequireRateLimiting("ai")
             .RequireAuthorization();
         }
 

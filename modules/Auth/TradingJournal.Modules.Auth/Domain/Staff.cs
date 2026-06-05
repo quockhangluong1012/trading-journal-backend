@@ -16,4 +16,10 @@ public sealed class Staff : EntityBase<int>
     public DateTime? RefreshTokenExpiry { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// Whether this staff member has administrative privileges. Only staff with this flag
+    /// receive the "Admin" role claim; everyone else gets the lower-privileged "Staff" role.
+    /// </summary>
+    public bool IsAdmin { get; set; }
 }

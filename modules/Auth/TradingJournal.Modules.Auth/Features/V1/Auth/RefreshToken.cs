@@ -47,6 +47,40 @@ public sealed class RefreshToken
                 return Result<AuthResponse>.Failure(Error.Create("Invalid token claims."));
             }
 
+            DateTime expiry = DateTime.UtcNow.AddMinutes(TokenLifetime.AccessTokenMinutes(configuration));
+            string newRefreshToken = GenerateRefreshToken();
+            DateTime refreshExpiry = DateTime.UtcNow.AddDays(TokenLifetime.RefreshTokenDays(configuration, rememberMe: false));
+
+            // Staff (admin) tokens carry the Admin role — route them to the Staffs table.
+            bool isStaff = principal.FindFirst(ClaimTypes.Role)?.Value == "Admin";
+
+            if (isStaff)
+            {
+                Staff? staff = await context.Staffs.FirstOrDefaultAsync(s => s.Id == userId, cancellationToken);
+
+                if (staff == null || !staff.IsActive)
+                {
+                    return Result<AuthResponse>.Failure(Error.Create("User not found or disabled."));
+                }
+
+                if (staff.RefreshToken != request.RefreshToken ||
+                    staff.RefreshTokenExpiry == null ||
+                    staff.RefreshTokenExpiry <= DateTime.UtcNow)
+                {
+                    return Result<AuthResponse>.Failure(Error.Create("Invalid or expired refresh token."));
+                }
+
+                string staffAccessToken = GenerateStaffJwtToken(staff, configuration);
+
+                // Rotate refresh token (invalidates the old one)
+                staff.RefreshToken = newRefreshToken;
+                staff.RefreshTokenExpiry = refreshExpiry;
+                await context.SaveChangesAsync(cancellationToken);
+
+                return Result<AuthResponse>.Success(new AuthResponse(
+                    staffAccessToken, newRefreshToken, staff.Email, staff.FullName, expiry));
+            }
+
             User? user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
             if (user == null || !user.IsActive)
@@ -54,22 +88,18 @@ public sealed class RefreshToken
                 return Result<AuthResponse>.Failure(Error.Create("User not found or disabled."));
             }
 
-            if (user.RefreshToken != request.RefreshToken || 
-                user.RefreshTokenExpiry == null || 
+            if (user.RefreshToken != request.RefreshToken ||
+                user.RefreshTokenExpiry == null ||
                 user.RefreshTokenExpiry <= DateTime.UtcNow)
             {
                 return Result<AuthResponse>.Failure(Error.Create("Invalid or expired refresh token."));
             }
 
-            // Generate new tokens
             string newAccessToken = GenerateJwtToken(user, configuration);
-            string newRefreshToken = GenerateRefreshToken();
-            int expiryMinutes = configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
-            DateTime expiry = DateTime.UtcNow.AddMinutes(expiryMinutes);
 
             // Rotate refresh token (invalidates the old one)
             user.RefreshToken = newRefreshToken;
-            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+            user.RefreshTokenExpiry = refreshExpiry;
 
             await context.SaveChangesAsync(cancellationToken);
 
@@ -116,7 +146,7 @@ public sealed class RefreshToken
             string secret = configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT Secret is not configured.");
             string issuer = configuration["Jwt:Issuer"] ?? "TradingJournal";
             string audience = configuration["Jwt:Audience"] ?? "TradingJournal";
-            int expiryMinutes = configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
+            int expiryMinutes = TokenLifetime.AccessTokenMinutes(configuration);
 
             SymmetricSecurityKey key = new(Encoding.UTF8.GetBytes(secret));
             SigningCredentials creds = new(key, SecurityAlgorithms.HmacSha256);
@@ -127,6 +157,35 @@ public sealed class RefreshToken
                 new(ClaimTypes.Email, user.Email),
                 new(ClaimTypes.Name, user.FullName),
                 new("UserId", user.Id.ToString()),
+            ];
+
+            JwtSecurityToken token = new(
+                issuer: issuer,
+                audience: audience,
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
+                signingCredentials: creds);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        private static string GenerateStaffJwtToken(Staff staff, IConfiguration configuration)
+        {
+            string secret = configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT Secret is not configured.");
+            string issuer = configuration["Jwt:Issuer"] ?? "TradingJournal";
+            string audience = configuration["Jwt:Audience"] ?? "TradingJournal";
+            int expiryMinutes = TokenLifetime.AccessTokenMinutes(configuration);
+
+            SymmetricSecurityKey key = new(Encoding.UTF8.GetBytes(secret));
+            SigningCredentials creds = new(key, SecurityAlgorithms.HmacSha256);
+
+            List<Claim> claims =
+            [
+                new(ClaimTypes.NameIdentifier, staff.Id.ToString()),
+                new(ClaimTypes.Email, staff.Email),
+                new(ClaimTypes.Name, staff.FullName),
+                new(ClaimTypes.Role, "Admin"),
+                new("UserId", staff.Id.ToString()),
             ];
 
             JwtSecurityToken token = new(

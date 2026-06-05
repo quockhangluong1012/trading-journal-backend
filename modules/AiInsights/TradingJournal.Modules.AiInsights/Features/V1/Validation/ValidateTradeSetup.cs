@@ -100,6 +100,7 @@ public sealed class ValidateTradeSetup
             .WithSummary("Validate a trade setup with AI before entry.")
             .WithDescription("Sends trade setup data to AI for ICT methodology validation, R:R assessment, and emotional readiness check.")
             .WithTags(Tags.AiValidation)
+            .RequireRateLimiting("ai")
             .RequireAuthorization();
         }
     }

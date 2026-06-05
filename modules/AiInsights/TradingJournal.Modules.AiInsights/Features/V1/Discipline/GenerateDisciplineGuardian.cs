@@ -64,6 +64,7 @@ public sealed class GenerateDisciplineGuardian
             .WithSummary("Generate AI discipline guardian guidance.")
             .WithDescription("Uses the current tilt and discipline signals to produce AI guidance before behavior deteriorates further.")
             .WithTags(Tags.AiDiscipline)
+            .RequireRateLimiting("ai")
             .RequireAuthorization();
         }
 

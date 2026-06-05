@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
+using TradingJournal.Messaging.Shared.Contracts;
 using TradingJournal.Modules.Notifications.Common.Enums;
 using TradingJournal.Modules.Notifications.Services;
-using TradingJournal.Modules.Scanner.Events;
 
 namespace TradingJournal.Modules.Notifications.EventHandlers;
 

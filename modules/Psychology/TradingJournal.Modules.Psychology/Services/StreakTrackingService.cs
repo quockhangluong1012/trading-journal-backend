@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 using TradingJournal.Messaging.Shared.Abstractions;
-using TradingJournal.Modules.Psychology.Events;
+using TradingJournal.Messaging.Shared.Contracts;
 using TradingJournal.Shared.Contracts;
 using TradingJournal.Shared.Dtos;
 

@@ -41,7 +41,11 @@
       "Bash(echo \"exit:$?\")",
       "Bash(Select-Object -Last 30)",
       "PowerShell(dotnet build *)",
-      "PowerShell(dotnet test *)"
+      "PowerShell(dotnet test *)",
+      "Bash(Get-ChildItem *)",
+      "Bash(dotnet test *)",
+      "Bash(tasklist)",
+      "Bash(git rm *)"
     ]
   }
 }

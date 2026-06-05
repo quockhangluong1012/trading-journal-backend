@@ -64,6 +64,7 @@ public sealed class DetectEmotions
             .WithSummary("Detect emotions from text using AI.")
             .WithDescription("Analyzes trade notes, daily notes, or psychology entries to detect emotional state and suggest emotion tags.")
             .WithTags(Tags.AiEmotions)
+            .RequireRateLimiting("ai")
             .RequireAuthorization();
         }
     }

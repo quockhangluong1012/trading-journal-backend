@@ -1,0 +1,16 @@
+global using FluentValidation.TestHelper;
+global using Microsoft.EntityFrameworkCore;
+global using MockQueryable.Moq;
+global using Moq;
+global using TradingJournal.Modules.RiskManagement.Common.Enum;
+global using TradingJournal.Modules.RiskManagement.Common.Helpers;
+global using TradingJournal.Modules.RiskManagement.Domain;
+global using TradingJournal.Modules.RiskManagement.Features.V1;
+global using TradingJournal.Modules.RiskManagement.Infrastructure;
+global using TradingJournal.Modules.RiskManagement.Services;
+global using TradingJournal.Shared.Abstractions;
+global using TradingJournal.Shared.Common.Enum;
+global using TradingJournal.Shared.Contracts;
+global using TradingJournal.Shared.Dtos;
+global using TradingJournal.Shared.Interfaces;
+global using Xunit;

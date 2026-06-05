@@ -65,6 +65,7 @@ public sealed class SearchTradesNaturalLanguage
             .WithSummary("Translate a natural-language trade search into structured filters.")
             .WithDescription("Uses AI to interpret a natural-language trade-history query and returns structured filters compatible with the history view.")
             .WithTags(Tags.AiSearch)
+            .RequireRateLimiting("ai")
             .RequireAuthorization();
         }
     }

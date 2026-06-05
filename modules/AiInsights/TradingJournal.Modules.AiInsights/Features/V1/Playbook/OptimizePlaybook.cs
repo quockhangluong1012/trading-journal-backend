@@ -61,6 +61,7 @@ public sealed class OptimizePlaybook
             .WithSummary("Optimize playbook setups with AI.")
             .WithDescription("Analyzes setup performance over the selected range and recommends which setups to prioritize, refine, or retire.")
             .WithTags(Tags.AiPlaybook)
+            .RequireRateLimiting("ai")
             .RequireAuthorization();
         }
     }

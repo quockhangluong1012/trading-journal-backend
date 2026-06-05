@@ -125,6 +125,8 @@ public sealed class GenerateReviewSummary
             .WithSummary("Generate AI review summary.")
             .WithDescription("Publishes an event to generate a review summary asynchronously. Poll the status endpoint for results.")
             .WithTags(Tags.Reviews)
+            // Throttle the trigger: it queues an expensive async AI job, so unbounded calls = unbounded model cost.
+            .RequireRateLimiting("ai")
             .RequireAuthorization();
         }
     }

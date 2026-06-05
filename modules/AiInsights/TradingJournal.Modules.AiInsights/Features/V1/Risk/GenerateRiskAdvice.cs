@@ -48,6 +48,7 @@ public sealed class GenerateRiskAdvice
             .WithSummary("Generate AI risk advisor guidance.")
             .WithDescription("Analyzes current risk limits, active exposure, and recent trade behavior to return actionable AI risk guidance.")
             .WithTags(Tags.AiRisk)
+            .RequireRateLimiting("ai")
             .RequireAuthorization();
         }
 

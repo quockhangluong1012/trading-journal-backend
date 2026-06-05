@@ -4,8 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TradingJournal.Modules.Backtest.EventHandlers;
 using TradingJournal.Modules.Backtest.Events;
-using TradingJournal.Shared.Behaviors;
-using TradingJournal.Shared.MediatR;
+using TradingJournal.Shared.Extensions;
 
 namespace TradingJournal.Modules.Backtest;
 
@@ -14,35 +13,26 @@ public static class DependencyInjection
     public static IServiceCollection AddBacktestModule(this IServiceCollection services,
         IConfiguration configuration, bool isDevelopment = false)
     {
-        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+        // Route through the shared helpers so Backtest gets the same validators, MediatR handlers,
+        // and pipeline behaviors (Validation/UserAware/Logging) as every other module.
+        services.AddModuleDefaults(Assembly.GetExecutingAssembly(), isDevelopment);
 
-        services.AddMediatR(config =>
-        {
-            config.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
-            config.AddOpenBehavior(typeof(ValidationBehavior<,>));
-            config.AddOpenBehavior(typeof(UserAwareBehavior<,>));
-
-            if (isDevelopment)
-            {
-                config.AddOpenBehavior(typeof(LoggingBehavior<,>));
-            }
-        });
-
-        // Database
+        // Database (Backtest uses a separate database — the BacktestDatabase connection string).
+        // AddModuleDbContext applies the shared EnableRetryOnFailure policy.
         services.AddScoped<IBacktestDbContext, BacktestDbContext>();
-
-        services.AddDbContext<BacktestDbContext>(options =>
-        {
-            options.UseSqlServer(configuration.GetConnectionString("BacktestDatabase"));
-        });
+        services.AddModuleDbContext<BacktestDbContext>(configuration.GetConnectionString("BacktestDatabase")!);
 
         // Core services
         services.AddScoped<IOrderMatchingEngine, OrderMatchingEngine>();
         services.AddScoped<IPlaybackEngine, PlaybackEngine>();
         services.AddScoped<ICandleAggregationService, CandleAggregationService>();
 
-        // Market data provider (Yahoo Finance — free, supports all symbols including NASDAQ indices)
-        services.AddHttpClient<IMarketDataProvider, YahooFinanceMarketDataProvider>();
+        // Market data provider (Yahoo Finance — free, supports all symbols including NASDAQ indices).
+        // The standard resilience handler adds retry, circuit breaker, and per-attempt/total timeouts —
+        // important because this client is driven by background sync jobs against an external API with
+        // no built-in timeout (default HttpClient would otherwise hang for 100s on a stalled response).
+        services.AddHttpClient<IMarketDataProvider, YahooFinanceMarketDataProvider>()
+            .AddStandardResilienceHandler();
 
         // Background services for data sync
         services.AddHostedService<DataSyncBackgroundService>();

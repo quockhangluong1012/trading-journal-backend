@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore TradingJournal.slnx
+
+      # Build enforces the warnings-as-errors policy from Directory.Build.props.
+      - name: Build
+        run: dotnet build TradingJournal.slnx --configuration Release --no-restore
+
+      # Integration tests spin up SQL Server via Testcontainers; Docker is available on the runner.
+      - name: Test
+        run: dotnet test TradingJournal.slnx --configuration Release --no-build --verbosity normal
+
+      # Advisory for now: surfaces formatting drift against .editorconfig without blocking,
+      # since the existing codebase predates the config. Flip to a failing step once normalized.
+      - name: Format check (advisory)
+        continue-on-error: true
+        run: dotnet format TradingJournal.slnx --verify-no-changes --severity warn
+
+  model-drift:
+    name: EF model drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install EF tools
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Build
+        run: dotnet build bootstrapper/TradingJournal.ApiGateWay/TradingJournal.ApiGateWay.csproj --configuration Release
+
+      # Fails if a module's EF model no longer matches its latest migration snapshot
+      # (i.e. someone changed an entity without adding a migration). No database required.
+      - name: Check for pending model changes
+        run: |
+          set -e
+          STARTUP="bootstrapper/TradingJournal.ApiGateWay/TradingJournal.ApiGateWay.csproj"
+          MODULES=(
+            "modules/Trades/TradingJournal.Modules.Trades/TradingJournal.Modules.Trades.csproj"
+            "modules/Auth/TradingJournal.Modules.Auth/TradingJournal.Modules.Auth.csproj"
+            "modules/Psychology/TradingJournal.Modules.Psychology/TradingJournal.Modules.Psychology.csproj"
+            "modules/Backtest/TradingJournal.Modules.Backtest/TradingJournal.Modules.Backtest.csproj"
+            "modules/TradingSetup/TradingJournal.Modules.TradingSetup/TradingJournal.Modules.TradingSetup.csproj"
+            "modules/AiInsights/TradingJournal.Modules.AiInsights/TradingJournal.Modules.AiInsights.csproj"
+            "modules/Notifications/TradingJournal.Modules.Notifications/TradingJournal.Modules.Notifications.csproj"
+            "modules/Scanner/TradingJournal.Modules.Scanner/TradingJournal.Modules.Scanner.csproj"
+            "modules/RiskManagement/TradingJournal.Modules.RiskManagement/TradingJournal.Modules.RiskManagement.csproj"
+          )
+          for proj in "${MODULES[@]}"; do
+            echo "::group::$proj"
+            dotnet ef migrations has-pending-model-changes --project "$proj" --startup-project "$STARTUP" --no-build
+            echo "::endgroup::"
+          done

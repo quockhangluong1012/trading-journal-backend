@@ -58,7 +58,7 @@ Code analyzers (Microsoft.CodeAnalysis.Analyzers) are enabled project-wide.
 A modular monolith with a single entry point (`TradingJournal.ApiGateWay`) that references all business modules. Each module is a class library with its own DbContext, EF Core migrations, and vertical-slice features. Modules do not reference each other — cross-module communication is via integration events (see below).
 
 ### Project Structure
-- **bootstrapper/TradingJournal.ApiGateWay** — ASP.NET Core entry point. References all modules; configures auth (JWT + Google), CORS, rate limiting, Swagger/Scalar docs, OpenTelemetry, SignalR, and the in-memory message queue. `Program.cs` wires modules via `AddXModule(...)` extension calls.
+- **bootstrapper/TradingJournal.ApiGateWay** — ASP.NET Core entry point. References all modules; configures auth (JWT + Google), CORS, rate limiting, Swagger/Scalar docs (Development only), Serilog structured logging with per-request correlation IDs, SignalR, and the in-memory message queue. `Program.cs` wires modules via `AddXModule(...)` extension calls.
 - **modules/** — Business modules, each with its own DbContext:
   - `Auth` — Authentication, BCrypt hashing, JWT issuance
   - `Trades` — Trade history, technical analysis, AI summaries, review wizard, trade templates

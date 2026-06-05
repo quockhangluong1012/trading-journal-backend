@@ -1,0 +1,23 @@
+# Build artifacts
+**/bin/
+**/obj/
+**/.artifacts/
+**/out/
+
+# VCS / IDE
+.git/
+.github/
+.vs/
+.vscode/
+.idea/
+**/*.user
+
+# Tests aren't needed in the runtime image
+tests/
+
+# Local/dev files
+**/appsettings.Development.json
+*.md
+docker-compose*.yml
+.dockerignore
+.editorconfig

@@ -6,10 +6,17 @@ using TradingJournal.Messaging.Shared.Abstractions;
 
 namespace TradingJournal.Messaging.Shared.Events;
 
-internal sealed class IntegrationEventProcessorJob(InMemoryMessageQueue queue,
+internal sealed class IntegrationEventProcessorJob(
+    InMemoryMessageQueue queue,
     IServiceScopeFactory scopeFactory,
+    IDeadLetterSink deadLetterSink,
     ILogger<IntegrationEventProcessorJob> logger) : BackgroundService
 {
+    // Transient handler failures (e.g. a brief DB hiccup) are retried with exponential backoff
+    // before the event is dead-lettered, so a single failure no longer silently drops the event.
+    private const int MaxAttempts = 3;
+    private static readonly TimeSpan BaseRetryDelay = TimeSpan.FromMilliseconds(200);
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("Integration Event Processor Job started.");
@@ -18,26 +25,7 @@ internal sealed class IntegrationEventProcessorJob(InMemoryMessageQueue queue,
         {
             await foreach (IIntegrationEvent integrationEvent in queue.Reader.ReadAllAsync(stoppingToken))
             {
-                logger.LogInformation("Integration Event Processor Job started publishing {IntegrationEventType} with EventId: {IntegrationEventId}.",
-                    integrationEvent.GetType().Name, integrationEvent.EventId);
-
-                try
-                {
-                    // Create a scope per event so scoped services (DbContext, NotificationService, etc.)
-                    // can be resolved by MediatR notification handlers.
-                    await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
-                    IPublisher publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
-
-                    await publisher.Publish(integrationEvent, stoppingToken);
-                    logger.LogInformation("Successfully published {IntegrationEventType} with EventId: {IntegrationEventId}.",
-                        integrationEvent.GetType().Name, integrationEvent.EventId);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Failed to publish {IntegrationEventType} with EventId: {IntegrationEventId}.",
-                        integrationEvent.GetType().Name, integrationEvent.EventId);
-                    // Continue processing other events even if one fails
-                }
+                await ProcessEventAsync(integrationEvent, stoppingToken);
             }
         }
         catch (OperationCanceledException ex) when (stoppingToken.IsCancellationRequested)
@@ -51,5 +39,66 @@ internal sealed class IntegrationEventProcessorJob(InMemoryMessageQueue queue,
         }
 
         logger.LogInformation("Integration Event Processor Job stopped.");
+    }
+
+    private async Task ProcessEventAsync(IIntegrationEvent integrationEvent, CancellationToken stoppingToken)
+    {
+        string eventType = integrationEvent.GetType().Name;
+
+        for (int attempt = 1; attempt <= MaxAttempts; attempt++)
+        {
+            try
+            {
+                logger.LogInformation(
+                    "Publishing {IntegrationEventType} with EventId {IntegrationEventId} (attempt {Attempt}/{MaxAttempts}).",
+                    eventType, integrationEvent.EventId, attempt, MaxAttempts);
+
+                // Fresh scope per attempt so a failed/aborted DbContext is never reused on retry.
+                await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
+                IPublisher publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
+
+                await publisher.Publish(integrationEvent, stoppingToken);
+
+                logger.LogInformation("Successfully published {IntegrationEventType} with EventId {IntegrationEventId}.",
+                    eventType, integrationEvent.EventId);
+                return;
+            }
+            catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
+            {
+                if (attempt == MaxAttempts)
+                {
+                    logger.LogError(ex,
+                        "Exhausted {MaxAttempts} attempts publishing {IntegrationEventType} with EventId {IntegrationEventId}; dead-lettering.",
+                        MaxAttempts, eventType, integrationEvent.EventId);
+
+                    try
+                    {
+                        await deadLetterSink.SendAsync(integrationEvent, ex, attempt, stoppingToken);
+                    }
+                    catch (Exception sinkEx)
+                    {
+                        logger.LogError(sinkEx,
+                            "Dead-letter sink failed for {IntegrationEventType} with EventId {IntegrationEventId}.",
+                            eventType, integrationEvent.EventId);
+                    }
+
+                    return;
+                }
+
+                TimeSpan delay = BaseRetryDelay * Math.Pow(2, attempt - 1);
+                logger.LogWarning(ex,
+                    "Attempt {Attempt}/{MaxAttempts} failed publishing {IntegrationEventType} with EventId {IntegrationEventId}; retrying in {Delay}.",
+                    attempt, MaxAttempts, eventType, integrationEvent.EventId, delay);
+
+                try
+                {
+                    await Task.Delay(delay, stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+            }
+        }
     }
 }

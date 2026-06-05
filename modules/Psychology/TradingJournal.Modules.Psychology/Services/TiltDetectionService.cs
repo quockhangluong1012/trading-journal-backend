@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using TradingJournal.Messaging.Shared.Abstractions;
 using TradingJournal.Messaging.Shared.Contracts;
-using TradingJournal.Modules.Psychology.Events;
 using TradingJournal.Shared.Contracts;
 
 namespace TradingJournal.Modules.Psychology.Services;

@@ -1,0 +1,15 @@
+global using Microsoft.EntityFrameworkCore;
+global using Microsoft.Extensions.Logging.Abstractions;
+global using MockQueryable.Moq;
+global using Moq;
+global using TradingJournal.Messaging.Shared.Contracts;
+global using TradingJournal.Modules.Notifications.Common.Enums;
+global using TradingJournal.Modules.Notifications.Domain;
+global using TradingJournal.Modules.Notifications.Dto;
+global using TradingJournal.Modules.Notifications.Features.V1;
+global using TradingJournal.Modules.Notifications.Infrastructure;
+global using TradingJournal.Modules.Notifications.Services;
+global using TradingJournal.Shared.Abstractions;
+global using TradingJournal.Shared.Contracts;
+global using TradingJournal.Shared.Interfaces;
+global using Xunit;

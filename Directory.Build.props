@@ -1,0 +1,44 @@
+<Project>
+
+  <!--
+    Solution-wide build defaults. Centralizes the warning/analysis policy that was previously
+    unenforced (no Directory.Build.props existed, so `dotnet format` and analyzers were advisory only).
+
+    Per-project settings (TargetFramework, Nullable, ImplicitUsings) are intentionally left in each
+    .csproj since they're already consistent there; this file only adds the cross-cutting policy.
+  -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+
+    <!--
+      New warnings fail the build. This is the enforcement the repo was missing.
+      Existing warnings are grandfathered below (kept as warnings, not errors) so the build stays
+      green today while the policy applies to anything new. Burn the grandfathered list down over time.
+    -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      Grandfathered pre-existing compiler warnings. These remain visible as warnings (NOT errors)
+      so they don't block the build, but new occurrences of *other* warning codes will fail.
+        CS8981 - lowercase type names in generated EF migration classes (names contain spaces).
+        CS8618 - non-nullable member uninitialized (pre-existing nullable debt).
+        CS8604 - possible null reference argument (pre-existing nullable debt).
+        CS0105 - duplicate using directive.
+        CS0618 - use of an [Obsolete] member (e.g. the deprecated manual-transaction DbContext methods).
+        xUnit2012/xUnit2013 - assertion-style suggestions in pre-existing test code
+                              (prefer Assert.Contains / Assert.Single). Style-only, not correctness.
+    -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);CS8981;CS8618;CS8604;CS0105;CS0618;xUnit2012;xUnit2013</WarningsNotAsErrors>
+
+    <!--
+      NuGet diagnostics that CI cannot action from source:
+        NU1900 - the configured package feed was unreachable during restore (environment).
+        NU1903 - known vulnerability in a transitively-referenced package (track via a dependency bump).
+        NU1510 - reference not needed because it's provided by the framework/ImplicitUsings.
+    -->
+    <NoWarn>$(NoWarn);NU1900;NU1903;NU1510</NoWarn>
+  </PropertyGroup>
+
+</Project>

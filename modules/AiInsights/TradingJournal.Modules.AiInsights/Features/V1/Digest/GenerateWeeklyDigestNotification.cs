@@ -65,6 +65,7 @@ public sealed class GenerateWeeklyDigestNotification
             .WithSummary("Generate and push the weekly AI digest notification.")
             .WithDescription("Builds a weekly AI digest for the current user and sends it through the notification system.")
             .WithTags(Tags.AiDigest)
+            .RequireRateLimiting("ai")
             .RequireAuthorization();
         }
 

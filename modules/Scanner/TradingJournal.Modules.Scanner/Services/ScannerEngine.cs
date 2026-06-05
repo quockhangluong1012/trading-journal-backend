@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 using TradingJournal.Messaging.Shared.Abstractions;
-using TradingJournal.Modules.Scanner.Events;
+using TradingJournal.Messaging.Shared.Contracts;
 using TradingJournal.Modules.Scanner.Services.ICTAnalysis;
 using TradingJournal.Modules.Scanner.Services.LiveData;
 

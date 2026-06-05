@@ -114,6 +114,7 @@ public sealed class AnalyzeChartScreenshot
             .WithSummary("Analyze pre-entry chart screenshots with AI.")
             .WithDescription("Uses the vision-capable AI flow to read chart screenshots and return market structure, confluences, and warnings before entry.")
             .WithTags(Tags.AiValidation)
+            .RequireRateLimiting("ai")
             .RequireAuthorization();
         }
     }

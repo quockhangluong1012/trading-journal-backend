@@ -9,7 +9,7 @@ public sealed class StaffLogin
 {
     internal sealed record Request(string Email, string Password, bool RememberMe = false) : IQuery<Result<AuthResponse>>;
 
-    internal sealed record AuthResponse(string Token, string Email, string FullName, DateTime Expiry, bool IsAdmin);
+    internal sealed record AuthResponse(string Token, string RefreshToken, string Email, string FullName, DateTime Expiry, bool IsAdmin);
 
     internal sealed class Validator : AbstractValidator<Request>
     {
@@ -44,29 +44,39 @@ public sealed class StaffLogin
                 return Result<AuthResponse>.Failure(Error.Create("Admin account is disabled."));
             }
 
-            string token = GenerateJwtToken(staff, configuration, request.RememberMe);
-            int expiryMinutes = request.RememberMe ? 30 * 24 * 60 : configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
-            DateTime expiry = DateTime.UtcNow.AddMinutes(expiryMinutes);
+            string token = GenerateJwtToken(staff, configuration);
+            string refreshToken = RefreshToken.Handler.GenerateRefreshToken();
+            DateTime expiry = DateTime.UtcNow.AddMinutes(TokenLifetime.AccessTokenMinutes(configuration));
 
-            return Result<AuthResponse>.Success(new AuthResponse(token, staff.Email, staff.FullName, expiry, true));
+            // Admin sessions follow the same model as users: short-lived access token, long-lived
+            // rotating refresh token. This replaces the old 30-day admin access token (unrevocable).
+            staff.RefreshToken = refreshToken;
+            staff.RefreshTokenExpiry = DateTime.UtcNow.AddDays(TokenLifetime.RefreshTokenDays(configuration, request.RememberMe));
+            await context.SaveChangesAsync(cancellationToken);
+
+            return Result<AuthResponse>.Success(new AuthResponse(token, refreshToken, staff.Email, staff.FullName, expiry, staff.IsAdmin));
         }
 
-        private static string GenerateJwtToken(Staff staff, IConfiguration configuration, bool rememberMe)
+        private static string GenerateJwtToken(Staff staff, IConfiguration configuration)
         {
             string secret = configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT Secret is not configured.");
             string issuer = configuration["Jwt:Issuer"] ?? "TradingJournal";
             string audience = configuration["Jwt:Audience"] ?? "TradingJournal";
-            int expiryMinutes = rememberMe ? 30 * 24 * 60 : configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
+            int expiryMinutes = TokenLifetime.AccessTokenMinutes(configuration);
 
             SymmetricSecurityKey key = new(Encoding.UTF8.GetBytes(secret));
             SigningCredentials creds = new(key, SecurityAlgorithms.HmacSha256);
+
+            // Only staff explicitly flagged as admins receive the "Admin" role claim, which
+            // gates the AdminOnly authorization policy. Everyone else is a lower-privileged "Staff".
+            string role = staff.IsAdmin ? "Admin" : "Staff";
 
             List<Claim> claims =
             [
                 new(ClaimTypes.NameIdentifier, staff.Id.ToString()),
                 new(ClaimTypes.Email, staff.Email),
                 new(ClaimTypes.Name, staff.FullName),
-                new(ClaimTypes.Role, "Admin"),
+                new(ClaimTypes.Role, role),
                 new("UserId", staff.Id.ToString()),
             ];
 

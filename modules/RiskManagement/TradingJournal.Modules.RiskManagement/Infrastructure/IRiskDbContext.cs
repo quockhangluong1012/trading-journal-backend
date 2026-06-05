@@ -1,6 +1,6 @@
 namespace TradingJournal.Modules.RiskManagement.Infrastructure;
 
-internal interface IRiskDbContext
+public interface IRiskDbContext
 {
     DbSet<RiskConfig> RiskConfigs { get; set; }
     DbSet<AccountBalanceEntry> AccountBalanceEntries { get; set; }
