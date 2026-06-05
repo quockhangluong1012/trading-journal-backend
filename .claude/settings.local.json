@@ -45,7 +45,11 @@
       "Bash(Get-ChildItem *)",
       "Bash(dotnet test *)",
       "Bash(tasklist)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(powershell -NoProfile -Command 'Get-CimInstance Win32_Process -Filter \"Name='\\\\''dotnet.exe'\\\\''\" | Select-Object ProcessId, @{n='\\\\''Cmd'\\\\'';e={$_.CommandLine}} | Format-List')",
+      "PowerShell(Get-Process *)",
+      "Bash(cd \"C:\\\\project\\\\.NET\\\\trading-journal-backend\")",
+      "Bash(export ASPNETCORE_ENVIRONMENT=Development)"
     ]
   }
 }
