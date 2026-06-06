@@ -30,7 +30,7 @@ public sealed class GenerateTradingSetup
         }
     }
 
-    public sealed class Handler(IOpenRouterAIService aiService)
+    public sealed class Handler(IOpenRouterAiService aiService)
         : ICommandHandler<Request, Result<TradingSetupGenerationResultDto>>
     {
         public async Task<Result<TradingSetupGenerationResultDto>> Handle(Request request, CancellationToken cancellationToken)

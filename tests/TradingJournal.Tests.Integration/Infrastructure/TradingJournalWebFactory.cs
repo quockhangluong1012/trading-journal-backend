@@ -36,9 +36,9 @@ public sealed class TradingJournalWebFactory : WebApplicationFactory<Program>, I
 
         builder.ConfigureTestServices(services =>
         {
-            services.RemoveAll<IOpenRouterAIService>();
+            services.RemoveAll<IOpenRouterAiService>();
             services.AddSingleton(FakeOpenRouterAiService);
-            services.AddScoped<IOpenRouterAIService>(sp => sp.GetRequiredService<FakeOpenRouterAiService>());
+            services.AddScoped<IOpenRouterAiService>(sp => sp.GetRequiredService<FakeOpenRouterAiService>());
         });
     }
 

@@ -31,7 +31,7 @@ flowchart TD
 
 ### Middleware order
 
-The effective request pipeline in [Program.cs](../bootstrapper/TradingJournal.ApiGateWay/Program.cs) is:
+The effective request pipeline in [Program.cs](../bootstrapper/TradingJournal.ApiGateway/Program.cs) is:
 
 1. `UseHsts()` in non-development environments only
 2. `UseHttpsRedirection()`

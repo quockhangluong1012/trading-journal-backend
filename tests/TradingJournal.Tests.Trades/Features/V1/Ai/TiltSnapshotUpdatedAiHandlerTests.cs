@@ -14,7 +14,7 @@ public sealed class TiltSnapshotUpdatedAiHandlerTests
     [Fact]
     public async Task Handle_WhenAiRequestsNotification_PublishesAiTiltEvent()
     {
-        var aiService = new Mock<IOpenRouterAIService>();
+        var aiService = new Mock<IOpenRouterAiService>();
         var eventBus = new Mock<IEventBus>();
 
         aiService
@@ -49,7 +49,7 @@ public sealed class TiltSnapshotUpdatedAiHandlerTests
     [Fact]
     public async Task Handle_WhenAiRiskLevelUsesDifferentCasing_PublishesAiTiltEvent()
     {
-        var aiService = new Mock<IOpenRouterAIService>();
+        var aiService = new Mock<IOpenRouterAiService>();
         var eventBus = new Mock<IEventBus>();
 
         aiService
@@ -84,7 +84,7 @@ public sealed class TiltSnapshotUpdatedAiHandlerTests
     [Fact]
     public async Task Handle_WhenAiThrows_DoesNotPublishEvent()
     {
-        var aiService = new Mock<IOpenRouterAIService>();
+        var aiService = new Mock<IOpenRouterAiService>();
         var eventBus = new Mock<IEventBus>();
 
         aiService

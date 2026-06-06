@@ -98,7 +98,8 @@ public class UploadScreenShootHandlerTests
     [Fact]
     public async Task Handle_Returns_Failure_When_Screenshot_Service_Rejects_File()
     {
-        byte[] imageBytes = [0x00, 0x01, 0x02, 0x03];
+        // Valid PNG header so content detection passes and the service throw is exercised.
+        byte[] imageBytes = [0x89, 0x50, 0x4E, 0x47];
         Mock<IFormFile> formFile = CreateFormFileMock(imageBytes, "image/png");
         _screenshotServiceMock
             .Setup(service => service.SaveScreenshotAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -107,6 +108,22 @@ public class UploadScreenShootHandlerTests
         Result<string> result = await _handler.Handle(new UploadScreenShoot.Request(formFile.Object), CancellationToken.None);
 
         Assert.True(result.IsFailure);
+    }
+
+    [Fact]
+    public async Task Handle_Rejects_NonImage_Content_Even_When_ContentType_Is_Spoofed()
+    {
+        // Bytes are not a real image, but the client claims image/png — content detection must reject
+        // it before the file ever reaches the screenshot service.
+        byte[] notAnImage = [0x00, 0x01, 0x02, 0x03];
+        Mock<IFormFile> formFile = CreateFormFileMock(notAnImage, "image/png");
+
+        Result<string> result = await _handler.Handle(new UploadScreenShoot.Request(formFile.Object), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        _screenshotServiceMock.Verify(
+            service => service.SaveScreenshotAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     private static Mock<IFormFile> CreateFormFileMock(byte[] bytes, string contentType)

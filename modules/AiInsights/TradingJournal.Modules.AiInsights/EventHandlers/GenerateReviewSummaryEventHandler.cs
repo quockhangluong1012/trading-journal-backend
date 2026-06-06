@@ -12,7 +12,7 @@ internal sealed class GenerateReviewSummaryEventHandler(
     {
         using AsyncServiceScope scope = serviceScopeFactory.CreateAsyncScope();
 
-        IOpenRouterAIService aiService = scope.ServiceProvider.GetRequiredService<IOpenRouterAIService>();
+        IOpenRouterAiService aiService = scope.ServiceProvider.GetRequiredService<IOpenRouterAiService>();
         IAiInsightsDbContext context = scope.ServiceProvider.GetRequiredService<IAiInsightsDbContext>();
 
         ReviewSummaryRequestDto aiRequest = new(

@@ -24,7 +24,7 @@ public sealed class SuggestLessonsValidatorTests
 
 public sealed class SuggestLessonsHandlerTests
 {
-    private readonly Mock<IOpenRouterAIService> _aiService = new();
+    private readonly Mock<IOpenRouterAiService> _aiService = new();
 
     [Fact]
     public async Task Handle_WhenAiReturnsSuggestions_ReturnsSuccess()

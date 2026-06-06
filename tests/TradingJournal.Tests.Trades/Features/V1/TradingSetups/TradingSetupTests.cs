@@ -2,10 +2,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using FluentValidation.TestHelper;
 using Moq;
-using TradingJournal.Modules.Setups.Common.Enum;
-using TradingJournal.Modules.Setups.Domain;
-using TradingJournal.Modules.Setups.Features.V1.TradingSetups;
-using TradingJournal.Modules.Setups.Infrastructure;
+using TradingJournal.Modules.TradingSetup.Common.Enum;
+using TradingJournal.Modules.TradingSetup.Domain;
+using TradingJournal.Modules.TradingSetup.Features.V1.TradingSetups;
+using TradingJournal.Modules.TradingSetup.Infrastructure;
 using TradingJournal.Shared.Interfaces;
 using TradingJournal.Tests.Trades.Helpers;
 

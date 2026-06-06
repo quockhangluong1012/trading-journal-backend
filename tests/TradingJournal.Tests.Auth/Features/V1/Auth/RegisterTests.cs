@@ -51,9 +51,18 @@ public class RegisterValidatorTests
     }
 
     [Fact]
+    public void Should_Have_Error_When_Password_Lacks_Complexity()
+    {
+        // Long enough but no uppercase/digit/special character.
+        var request = new Register.Request("test@example.com", "alllowercase", "Test User");
+        var result = _validator.TestValidate(request);
+        result.ShouldHaveValidationErrorFor(x => x.Password);
+    }
+
+    [Fact]
     public void Should_Not_Have_Error_When_All_Fields_Are_Valid()
     {
-        var request = new Register.Request("test@example.com", "password123", "Test User");
+        var request = new Register.Request("test@example.com", "Password123!", "Test User");
         var result = _validator.TestValidate(request);
         result.ShouldNotHaveValidationErrorFor(x => x.Email);
         result.ShouldNotHaveValidationErrorFor(x => x.Password);

@@ -8,7 +8,7 @@ namespace TradingJournal.Modules.Trades;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddTradeModule(this IServiceCollection services, IConfiguration configuration,
+    public static IServiceCollection AddTradesModule(this IServiceCollection services, IConfiguration configuration,
         bool isDevelopment = false)
     {
         services.AddModuleDefaults(Assembly.GetExecutingAssembly(), isDevelopment);

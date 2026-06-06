@@ -1,7 +1,7 @@
 using Serilog;
 using Serilog.Events;
 
-namespace TradingJournal.ApiGateWay.Extensions;
+namespace TradingJournal.ApiGateway.Extensions;
 
 /// <summary>
 /// Serilog bootstrap and request-logging pipeline helpers.

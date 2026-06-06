@@ -11,7 +11,10 @@ public sealed class CreateStaff
         public Validator()
         {
             RuleFor(x => x.Email).NotEmpty().EmailAddress();
-            RuleFor(x => x.Password).NotEmpty().MinimumLength(6);
+            RuleFor(x => x.Password)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .StrongPassword();
             RuleFor(x => x.FullName).NotEmpty();
         }
     }

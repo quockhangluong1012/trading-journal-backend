@@ -2,7 +2,7 @@ using TradingJournal.Modules.AiInsights.Dto;
 
 namespace TradingJournal.Modules.AiInsights.Services;
 
-public interface IOpenRouterAIService
+public interface IOpenRouterAiService
 {
     Task<TradeAnalysisResultDto?> GenerateTradingOrderSummary(int tradeHistoryId, CancellationToken cancellationToken);
 

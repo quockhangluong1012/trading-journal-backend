@@ -40,7 +40,7 @@ public static class DependencyInjection
         .AddStandardResilienceHandler();
         services.AddScoped<ITradeAiContextService, TradeAiContextService>();
 
-        services.AddHttpClient<IOpenRouterAIService, OpenRouterAiService>((sp, client) =>
+        services.AddHttpClient<IOpenRouterAiService, OpenRouterAiService>((sp, client) =>
         {
             OpenRouterOptions openRouterOptions = configuration
                 .GetSection(OpenRouterOptions.BindLocator)

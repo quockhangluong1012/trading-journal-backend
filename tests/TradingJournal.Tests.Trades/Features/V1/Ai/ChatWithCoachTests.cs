@@ -18,7 +18,7 @@ public sealed class ChatWithCoachHandlerTests
         PropertyNameCaseInsensitive = true,
     };
 
-    private readonly Mock<IOpenRouterAIService> _aiService = new();
+    private readonly Mock<IOpenRouterAiService> _aiService = new();
     private readonly Mock<IAiInsightsDbContext> _context = new();
     private readonly Mock<DbSet<AiCoachConversation>> _conversationSet;
     private readonly NullLogger<ChatWithCoach.Handler> _logger = NullLogger<ChatWithCoach.Handler>.Instance;

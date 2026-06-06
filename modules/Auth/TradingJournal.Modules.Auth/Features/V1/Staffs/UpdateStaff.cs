@@ -13,7 +13,9 @@ public sealed class UpdateStaff
             RuleFor(x => x.FullName).NotEmpty();
             When(x => !string.IsNullOrEmpty(x.Password), () =>
             {
-                RuleFor(x => x.Password).MinimumLength(6);
+                RuleFor(x => x.Password)
+                    .Cascade(CascadeMode.Stop)
+                    .StrongPassword();
             });
         }
     }

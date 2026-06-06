@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace TradingJournal.Modules.Setups.Domain;
+namespace TradingJournal.Modules.TradingSetup.Domain;
 
 [Table(name: "SetupConnections", Schema = "Setups")]
 public sealed class SetupConnection : EntityBase<int>

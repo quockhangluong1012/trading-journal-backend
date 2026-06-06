@@ -1,4 +1,4 @@
-namespace TradingJournal.Modules.Setups.Common.Enum;
+namespace TradingJournal.Modules.TradingSetup.Common.Enum;
 
 public enum SetupStatus
 {

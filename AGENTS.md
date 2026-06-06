@@ -6,13 +6,13 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ### Build
 ```bash
-dotnet build bootstrapper/TradingJournal.ApiGateWay/TradingJournal.ApiGateWay.csproj
+dotnet build bootstrapper/TradingJournal.ApiGateway/TradingJournal.ApiGateway.csproj
 ```
 The API Gateway project references all modules, so building it compiles the entire application.
 
 ### Run
 ```bash
-dotnet run --project bootstrapper/TradingJournal.ApiGateWay/TradingJournal.ApiGateWay.csproj
+dotnet run --project bootstrapper/TradingJournal.ApiGateway/TradingJournal.ApiGateway.csproj
 ```
 
 ### Test
@@ -33,14 +33,14 @@ Add migration for a module (e.g., Auth):
 ```bash
 dotnet ef migrations add <MigrationName> \
   --project modules/Auth/TradingJournal.Modules.Auth/TradingJournal.Modules.Auth.csproj \
-  --startup-project bootstrapper/TradingJournal.ApiGateWay/TradingJournal.ApiGateWay.csproj
+  --startup-project bootstrapper/TradingJournal.ApiGateway/TradingJournal.ApiGateway.csproj
 ```
 
 Apply migrations:
 ```bash
 dotnet ef database update \
   --project modules/Auth/TradingJournal.Modules.Auth/TradingJournal.Modules.Auth.csproj \
-  --startup-project bootstrapper/TradingJournal.ApiGateWay/TradingJournal.ApiGateWay.csproj
+  --startup-project bootstrapper/TradingJournal.ApiGateway/TradingJournal.ApiGateway.csproj
 ```
 
 ### Format/Lint
@@ -52,10 +52,10 @@ Code analyzers (Microsoft.CodeAnalysis.Analyzers) are enabled project-wide.
 ## Architecture
 
 ### Modular Monolith
-The application is a modular monolith with a single entry point (`TradingJournal.ApiGateWay`) that references all business modules. Each module is a separate class library with its own DbContext and EF Core migrations.
+The application is a modular monolith with a single entry point (`TradingJournal.ApiGateway`) that references all business modules. Each module is a separate class library with its own DbContext and EF Core migrations.
 
 ### Project Structure
-- **bootstrapper/TradingJournal.ApiGateWay** - ASP.NET Core entry point, references all modules, configures auth (JWT + Google), CORS, rate limiting, Swagger/Scalar docs (Development only), and Serilog structured logging with per-request correlation IDs.
+- **bootstrapper/TradingJournal.ApiGateway** - ASP.NET Core entry point, references all modules, configures auth (JWT + Google), CORS, rate limiting, Swagger/Scalar docs (Development only), and Serilog structured logging with per-request correlation IDs.
 - **modules/** - Business modules, each with its own DbContext:
   - `Auth` - User authentication, BCrypt hashing, JWT issuance
   - `Trades` - Trade history, technical analysis, AI summaries, review wizard, trade templates

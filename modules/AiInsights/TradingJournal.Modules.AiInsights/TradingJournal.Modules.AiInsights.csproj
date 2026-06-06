@@ -46,7 +46,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="TradingJournal.Tests.AiInsights" />
+    <!-- AiInsights features are exercised by the Trades test project. -->
     <InternalsVisibleTo Include="TradingJournal.Tests.Trades" />
   </ItemGroup>
 

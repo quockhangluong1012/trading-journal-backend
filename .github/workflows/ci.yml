@@ -50,14 +50,14 @@ jobs:
         run: dotnet tool install --global dotnet-ef
 
       - name: Build
-        run: dotnet build bootstrapper/TradingJournal.ApiGateWay/TradingJournal.ApiGateWay.csproj --configuration Release
+        run: dotnet build bootstrapper/TradingJournal.ApiGateway/TradingJournal.ApiGateway.csproj --configuration Release
 
       # Fails if a module's EF model no longer matches its latest migration snapshot
       # (i.e. someone changed an entity without adding a migration). No database required.
       - name: Check for pending model changes
         run: |
           set -e
-          STARTUP="bootstrapper/TradingJournal.ApiGateWay/TradingJournal.ApiGateWay.csproj"
+          STARTUP="bootstrapper/TradingJournal.ApiGateway/TradingJournal.ApiGateway.csproj"
           MODULES=(
             "modules/Trades/TradingJournal.Modules.Trades/TradingJournal.Modules.Trades.csproj"
             "modules/Auth/TradingJournal.Modules.Auth/TradingJournal.Modules.Auth.csproj"

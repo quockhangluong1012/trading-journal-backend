@@ -24,7 +24,7 @@ TradingJournal is a comprehensive **Trading Analysis Platform** built with .NET 
     ```
 
 3.  **Configure the database**
-        For local `Development` runs, set `ConnectionStrings__TradeDatabase` via environment variables/user secrets or update `bootstrapper/TradingJournal.ApiGateWay/appsettings.Development.json`. The default launch profiles use `ASPNETCORE_ENVIRONMENT=Development`, so `appsettings.Development.json` overrides `appsettings.json`.
+        For local `Development` runs, set `ConnectionStrings__TradeDatabase` via environment variables/user secrets or update `bootstrapper/TradingJournal.ApiGateway/appsettings.Development.json`. The default launch profiles use `ASPNETCORE_ENVIRONMENT=Development`, so `appsettings.Development.json` overrides `appsettings.json`.
     ```json
     {
       "ConnectionStrings": {
@@ -35,7 +35,7 @@ TradingJournal is a comprehensive **Trading Analysis Platform** built with .NET 
 
 4.  **Run the application**
     ```bash
-    dotnet run --project bootstrapper/TradingJournal.ApiGateWay/TradingJournal.ApiGateWay.csproj
+    dotnet run --project bootstrapper/TradingJournal.ApiGateway/TradingJournal.ApiGateway.csproj
     ```
     In `Development`, the host applies several module migrations automatically on startup. The current startup path does not include the Auth module, so on a fresh database you may still need to apply Auth migrations manually using the module-specific EF Core commands described in `CLAUDE.md`.
     The API will be available at `http://localhost:5226` and `https://localhost:7177`.
@@ -79,7 +79,7 @@ The frontend lives in a separate checkout. Clone or open `trading-journal-ui` al
 ```
 trading-journal-backend/
 ├── bootstrapper/
-│   └── TradingJournal.ApiGateWay/           # ASP.NET Core host and composition root
+│   └── TradingJournal.ApiGateway/           # ASP.NET Core host and composition root
 ├── modules/                                 # Business modules
 │   ├── Auth/
 │   ├── Trades/
@@ -144,7 +144,7 @@ npm run test
 
 ### Backend Module Architecture
 
-The backend is a modular monolith with a single host in `bootstrapper/TradingJournal.ApiGateWay`. Each module owns its own handlers, validators, registrations, and persistence boundary, while shared infrastructure lives under `shared/`.
+The backend is a modular monolith with a single host in `bootstrapper/TradingJournal.ApiGateway`. Each module owns its own handlers, validators, registrations, and persistence boundary, while shared infrastructure lives under `shared/`.
 
 ## 📄 License
 

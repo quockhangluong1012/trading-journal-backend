@@ -10,9 +10,9 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/bootstrapper/TradingJournal.ApiGateWay/bin/Debug/net10.0/TradingJournal.ApiGateWay.dll",
+            "program": "${workspaceFolder}/bootstrapper/TradingJournal.ApiGateway/bin/Debug/net10.0/TradingJournal.ApiGateway.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/bootstrapper/TradingJournal.ApiGateWay",
+            "cwd": "${workspaceFolder}/bootstrapper/TradingJournal.ApiGateway",
             "stopAtEntry": false,
             // Enable launching a web browser when ASP.NET Core starts. For more information: https://aka.ms/VSCode-CS-LaunchJson-WebBrowser
             "serverReadyAction": {

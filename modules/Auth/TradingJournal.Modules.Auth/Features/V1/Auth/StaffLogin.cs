@@ -30,11 +30,20 @@ public sealed class StaffLogin
     internal sealed class Handler(IAuthDbContext context, IConfiguration configuration)
         : IQueryHandler<Request, Result<AuthResponse>>
     {
+        // A precomputed hash to verify against when no staff matches, so a failed login takes the
+        // same time whether or not the email exists — closing a user-enumeration timing side channel.
+        private static readonly string DummyPasswordHash =
+            BCrypt.Net.BCrypt.HashPassword("user-enumeration-timing-mitigation");
+
         public async Task<Result<AuthResponse>> Handle(Request request, CancellationToken cancellationToken)
         {
             Staff? staff = await context.Staffs.FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
 
-            if (staff == null || !BCrypt.Net.BCrypt.Verify(request.Password, staff.PasswordHash))
+            // Always run BCrypt.Verify (against a dummy hash when the staff is missing) so login
+            // timing stays constant regardless of whether the email is registered.
+            bool passwordValid = BCrypt.Net.BCrypt.Verify(request.Password, staff?.PasswordHash ?? DummyPasswordHash);
+
+            if (staff == null || !passwordValid)
             {
                 return Result<AuthResponse>.Failure(Error.Create("Invalid admin email or password."));
             }

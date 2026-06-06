@@ -10,8 +10,8 @@ WORKDIR /src
 # reliably from a full copy; Directory.Build.props/.editorconfig are picked up automatically.
 COPY . .
 
-RUN dotnet restore bootstrapper/TradingJournal.ApiGateWay/TradingJournal.ApiGateWay.csproj
-RUN dotnet publish bootstrapper/TradingJournal.ApiGateWay/TradingJournal.ApiGateWay.csproj \
+RUN dotnet restore bootstrapper/TradingJournal.ApiGateway/TradingJournal.ApiGateway.csproj
+RUN dotnet publish bootstrapper/TradingJournal.ApiGateway/TradingJournal.ApiGateway.csproj \
     -c Release -o /app/publish --no-restore -p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
@@ -23,4 +23,4 @@ ENV ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 8080
 
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "TradingJournal.ApiGateWay.dll"]
+ENTRYPOINT ["dotnet", "TradingJournal.ApiGateway.dll"]

@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using TradingJournal.Modules.Setups.Infrastructure;
+using TradingJournal.Modules.TradingSetup.Infrastructure;
 
 #nullable disable
 
-namespace TradingJournal.Modules.Setups.Migrations
+namespace TradingJournal.Modules.TradingSetup.Migrations
 {
     [DbContext(typeof(SetupDbContext))]
     [Migration("20260429233842_AddPlaybookFields")]
@@ -25,7 +25,7 @@ namespace TradingJournal.Modules.Setups.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("TradingJournal.Modules.Setups.Domain.SetupConnection", b =>
+            modelBuilder.Entity("TradingJournal.Modules.TradingSetup.Domain.SetupConnection", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -77,7 +77,7 @@ namespace TradingJournal.Modules.Setups.Migrations
                     b.ToTable("SetupConnections", "Setups");
                 });
 
-            modelBuilder.Entity("TradingJournal.Modules.Setups.Domain.SetupStep", b =>
+            modelBuilder.Entity("TradingJournal.Modules.TradingSetup.Domain.SetupStep", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -133,7 +133,7 @@ namespace TradingJournal.Modules.Setups.Migrations
                     b.ToTable("SetupSteps", "Setups");
                 });
 
-            modelBuilder.Entity("TradingJournal.Modules.Setups.Domain.TradingSetup", b =>
+            modelBuilder.Entity("TradingJournal.Modules.TradingSetup.Domain.TradingSetup", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -205,21 +205,21 @@ namespace TradingJournal.Modules.Setups.Migrations
                     b.ToTable("TradingSetups", "Setups");
                 });
 
-            modelBuilder.Entity("TradingJournal.Modules.Setups.Domain.SetupConnection", b =>
+            modelBuilder.Entity("TradingJournal.Modules.TradingSetup.Domain.SetupConnection", b =>
                 {
-                    b.HasOne("TradingJournal.Modules.Setups.Domain.SetupStep", "SourceStep")
+                    b.HasOne("TradingJournal.Modules.TradingSetup.Domain.SetupStep", "SourceStep")
                         .WithMany()
                         .HasForeignKey("SourceStepId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("TradingJournal.Modules.Setups.Domain.SetupStep", "TargetStep")
+                    b.HasOne("TradingJournal.Modules.TradingSetup.Domain.SetupStep", "TargetStep")
                         .WithMany()
                         .HasForeignKey("TargetStepId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("TradingJournal.Modules.Setups.Domain.TradingSetup", "TradingSetup")
+                    b.HasOne("TradingJournal.Modules.TradingSetup.Domain.TradingSetup", "TradingSetup")
                         .WithMany("Connections")
                         .HasForeignKey("TradingSetupId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -232,9 +232,9 @@ namespace TradingJournal.Modules.Setups.Migrations
                     b.Navigation("TradingSetup");
                 });
 
-            modelBuilder.Entity("TradingJournal.Modules.Setups.Domain.SetupStep", b =>
+            modelBuilder.Entity("TradingJournal.Modules.TradingSetup.Domain.SetupStep", b =>
                 {
-                    b.HasOne("TradingJournal.Modules.Setups.Domain.TradingSetup", "TradingSetup")
+                    b.HasOne("TradingJournal.Modules.TradingSetup.Domain.TradingSetup", "TradingSetup")
                         .WithMany("Steps")
                         .HasForeignKey("TradingSetupId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -243,7 +243,7 @@ namespace TradingJournal.Modules.Setups.Migrations
                     b.Navigation("TradingSetup");
                 });
 
-            modelBuilder.Entity("TradingJournal.Modules.Setups.Domain.TradingSetup", b =>
+            modelBuilder.Entity("TradingJournal.Modules.TradingSetup.Domain.TradingSetup", b =>
                 {
                     b.Navigation("Connections");
 

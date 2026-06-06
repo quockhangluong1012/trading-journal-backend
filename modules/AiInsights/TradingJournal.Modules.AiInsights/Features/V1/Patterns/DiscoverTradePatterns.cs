@@ -21,7 +21,7 @@ public sealed class DiscoverTradePatterns
         }
     }
 
-    public sealed class Handler(IOpenRouterAIService aiService)
+    public sealed class Handler(IOpenRouterAiService aiService)
         : ICommandHandler<Request, Result<TradePatternDiscoveryResultDto>>
     {
         public async Task<Result<TradePatternDiscoveryResultDto>> Handle(Request request, CancellationToken cancellationToken)

@@ -19,8 +19,7 @@ public sealed class Register
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty().WithErrorCode(HttpStatusCode.BadRequest.ToString())
                 .WithMessage("Password is required.")
-                .MinimumLength(8).WithErrorCode(HttpStatusCode.BadRequest.ToString())
-                .WithMessage("Password must be at least 8 characters.");
+                .StrongPassword();
 
             RuleFor(x => x.FullName)
                 .Cascade(CascadeMode.Stop)

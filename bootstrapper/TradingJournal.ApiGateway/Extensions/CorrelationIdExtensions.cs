@@ -1,6 +1,6 @@
 using Serilog.Context;
 
-namespace TradingJournal.ApiGateWay.Extensions;
+namespace TradingJournal.ApiGateway.Extensions;
 
 /// <summary>
 /// Correlation-ID middleware. Assigns (or honours an inbound <c>X-Correlation-ID</c> header) a

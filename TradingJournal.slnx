@@ -1,6 +1,6 @@
 <Solution>
   <Folder Name="/bootstrapper/">
-    <Project Path="bootstrapper/TradingJournal.ApiGateWay/TradingJournal.ApiGateWay.csproj" />
+    <Project Path="bootstrapper/TradingJournal.ApiGateway/TradingJournal.ApiGateway.csproj" />
   </Folder>
   <Folder Name="/docs/" />
   <Folder Name="/modules/">

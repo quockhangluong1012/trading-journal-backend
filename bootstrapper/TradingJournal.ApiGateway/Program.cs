@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using TradingJournal.ApiGateWay.Extensions;
+using TradingJournal.ApiGateway.Extensions;
 using TradingJournal.Shared;
 using TradingJournal.Shared.Extensions;
 using TradingJournal.Modules.Analytics;
@@ -16,7 +16,7 @@ using TradingJournal.Modules.Auth;
 using TradingJournal.Modules.Backtest;
 using TradingJournal.Modules.Backtest.Hubs;
 
-using TradingJournal.Modules.Setups;
+using TradingJournal.Modules.TradingSetup;
 using TradingJournal.Modules.Notifications;
 using TradingJournal.Modules.Notifications.Hubs;
 using TradingJournal.Modules.Scanner;
@@ -45,6 +45,7 @@ try
     const string frontendCorsPolicyName = "FrontendApp";
     const string authRateLimitPolicyName = "auth";
     const string aiRateLimitPolicyName = "ai";
+    const string uploadRateLimitPolicyName = "upload";
 
     builder.Services.AddEndpointsApiExplorer();
 
@@ -60,6 +61,8 @@ try
     int authWindowMinutes = configuration.GetPositiveIntConfigurationValue("RateLimiting:Auth:WindowMinutes", 15);
     int aiPermitLimit = configuration.GetPositiveIntConfigurationValue("RateLimiting:Ai:PermitLimit", 10);
     int aiWindowMinutes = configuration.GetPositiveIntConfigurationValue("RateLimiting:Ai:WindowMinutes", 10);
+    int uploadPermitLimit = configuration.GetPositiveIntConfigurationValue("RateLimiting:Upload:PermitLimit", 20);
+    int uploadWindowMinutes = configuration.GetPositiveIntConfigurationValue("RateLimiting:Upload:WindowMinutes", 1);
     int globalPermitLimit = configuration.GetPositiveIntConfigurationValue("RateLimiting:Global:PermitLimit", 120);
     int globalWindowMinutes = configuration.GetPositiveIntConfigurationValue("RateLimiting:Global:WindowMinutes", 1);
 
@@ -129,6 +132,25 @@ try
                     AutoReplenishment = true,
                 });
         });
+
+        // File uploads are authenticated, so partition per user (falling back to IP) to throttle
+        // expensive image processing without one client starving others.
+        options.AddPolicy(uploadRateLimitPolicyName, httpContext =>
+        {
+            string partitionKey = httpContext.User.Identity?.IsAuthenticated == true
+                ? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? StartupConfigurationExtensions.GetClientIpAddress(httpContext)
+                : StartupConfigurationExtensions.GetClientIpAddress(httpContext);
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                $"upload:{partitionKey}",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = uploadPermitLimit,
+                    Window = TimeSpan.FromMinutes(uploadWindowMinutes),
+                    QueueLimit = 0,
+                    AutoReplenishment = true,
+                });
+        });
     });
 
     builder.Services.AddCarter();
@@ -191,13 +213,13 @@ try
     builder.Services
         .AddSharedModule()
         .AddAuthModule(configuration, isDevelopment)
-        .AddTradeModule(configuration, isDevelopment)
+        .AddTradesModule(configuration, isDevelopment)
         .AddPsychologyModule(configuration, isDevelopment)
         .AddAnalyticsModule(isDevelopment)
         .AddBacktestModule(configuration, isDevelopment)
         .AddTradingSetupModule(configuration, isDevelopment)
         .AddAiInsightsModule(configuration, isDevelopment)
-        .AddNotificationModule(configuration, isDevelopment)
+        .AddNotificationsModule(configuration, isDevelopment)
         .AddScannerModule(configuration, isDevelopment)
         .AddRiskManagementModule(configuration, isDevelopment)
         .AddInMemoryMessageQueue();

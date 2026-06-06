@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\bootstrapper\TradingJournal.ApiGateWay\TradingJournal.ApiGateWay.csproj" />
+    <ProjectReference Include="..\..\bootstrapper\TradingJournal.ApiGateway\TradingJournal.ApiGateway.csproj" />
   </ItemGroup>
 
   <ItemGroup>

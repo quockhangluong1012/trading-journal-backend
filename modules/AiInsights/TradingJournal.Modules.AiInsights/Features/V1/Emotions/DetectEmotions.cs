@@ -25,7 +25,7 @@ public sealed class DetectEmotions
         }
     }
 
-    public sealed class Handler(IOpenRouterAIService aiService) : ICommandHandler<Request, Result<EmotionDetectionResultDto>>
+    public sealed class Handler(IOpenRouterAiService aiService) : ICommandHandler<Request, Result<EmotionDetectionResultDto>>
     {
         public async Task<Result<EmotionDetectionResultDto>> Handle(Request request, CancellationToken cancellationToken)
         {

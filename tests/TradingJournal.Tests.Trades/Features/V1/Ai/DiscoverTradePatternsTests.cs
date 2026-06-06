@@ -24,7 +24,7 @@ public sealed class DiscoverTradePatternsValidatorTests
 
 public sealed class DiscoverTradePatternsHandlerTests
 {
-    private readonly Mock<IOpenRouterAIService> _aiService = new();
+    private readonly Mock<IOpenRouterAiService> _aiService = new();
 
     [Fact]
     public async Task Handle_WhenAiReturnsPatterns_ReturnsSuccess()

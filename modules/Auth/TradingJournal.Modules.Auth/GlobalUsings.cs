@@ -13,3 +13,4 @@ global using TradingJournal.Shared.Abstractions;
 global using System.Security.Claims;
 global using System.Security.Claims;
 global using TradingJournal.Shared.Extensions;
+global using TradingJournal.Modules.Auth.Common;

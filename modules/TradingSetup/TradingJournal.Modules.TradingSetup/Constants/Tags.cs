@@ -1,4 +1,4 @@
-namespace TradingJournal.Modules.Setups.Constants;
+namespace TradingJournal.Modules.TradingSetup.Constants;
 
 public static class Tags
 {

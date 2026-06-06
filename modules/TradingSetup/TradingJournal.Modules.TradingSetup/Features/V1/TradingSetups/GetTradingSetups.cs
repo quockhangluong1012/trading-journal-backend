@@ -1,10 +1,10 @@
-namespace TradingJournal.Modules.Setups.Features.V1.TradingSetups;
+namespace TradingJournal.Modules.TradingSetup.Features.V1.TradingSetups;
 
 public sealed class GetTradingSetups
 {
     public record Request(int UserId = 0) : ICommand<Result<IReadOnlyCollection<TradingSetupViewModel>>>;
 
-    internal static IQueryable<TradingSetupViewModel> BuildQuery(IQueryable<TradingSetup> tradingSetups, int userId)
+    internal static IQueryable<TradingSetupViewModel> BuildQuery(IQueryable<Domain.TradingSetup> tradingSetups, int userId)
     {
         return tradingSetups
             .Where(setup => setup.CreatedBy == userId && !setup.IsDisabled)

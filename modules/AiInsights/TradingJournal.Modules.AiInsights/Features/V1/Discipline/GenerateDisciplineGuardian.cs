@@ -11,7 +11,7 @@ public sealed class GenerateDisciplineGuardian
 
     public sealed class Handler(
         IDisciplineContextProvider disciplineContextProvider,
-        IOpenRouterAIService aiService)
+        IOpenRouterAiService aiService)
         : ICommandHandler<Request, Result<AiTiltInterventionResultDto>>
     {
         public async Task<Result<AiTiltInterventionResultDto>> Handle(Request request, CancellationToken cancellationToken)

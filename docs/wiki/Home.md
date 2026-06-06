@@ -21,7 +21,7 @@ This folder is a wiki-ready staging layout for the backend documentation. If you
 
 ## Quick System Summary
 
-- Single ASP.NET Core host under `bootstrapper/TradingJournal.ApiGateWay/Program.cs`
+- Single ASP.NET Core host under `bootstrapper/TradingJournal.ApiGateway/Program.cs`
 - 9 business modules: Auth, Trades, Psychology, Analytics, TradingSetup, AiInsights, Notifications, Scanner, RiskManagement
 - Shared infrastructure for cache, idempotency, audit logging, file storage, user context, and event dispatch
 - SignalR hubs for notifications and scanner delivery

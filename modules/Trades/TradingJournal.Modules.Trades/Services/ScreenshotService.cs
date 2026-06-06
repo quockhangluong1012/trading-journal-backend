@@ -23,17 +23,6 @@ internal sealed class ScreenshotService(IFileStorageService fileStorageService) 
         "image/webp"
     };
 
-    /// <summary>
-    /// Magic byte signatures for known image formats.
-    /// </summary>
-    private static readonly (string MimeType, byte[] MagicBytes)[] ImageSignatures =
-    [
-        ("image/png", [0x89, 0x50, 0x4E, 0x47]),     // PNG: ‰PNG
-        ("image/jpeg", [0xFF, 0xD8, 0xFF]),           // JPEG: ÿØÿ
-        ("image/gif", [0x47, 0x49, 0x46]),            // GIF: GIF
-        ("image/webp", [0x52, 0x49, 0x46, 0x46]),    // WebP: RIFF
-    ];
-
     public async Task<string> SaveScreenshotAsync(string base64String, CancellationToken cancellationToken = default)
     {
         string mimeType = ExtractAndValidateMimeType(base64String);
@@ -97,28 +86,12 @@ internal sealed class ScreenshotService(IFileStorageService fileStorageService) 
     }
 
     /// <summary>
-    /// Verifies the decoded image bytes contain valid magic bytes for the claimed MIME type.
+    /// Verifies the decoded image bytes actually begin with a known image signature, so a spoofed
+    /// data-URI MIME type cannot smuggle non-image content past the upload pipeline.
     /// </summary>
     private static void ValidateMagicBytes(byte[] imageBytes, string claimedMimeType)
     {
-        if (imageBytes.Length < 4)
-        {
-            throw new InvalidOperationException("Image data is too small to be a valid image file.");
-        }
-
-        bool matchesAnySignature = false;
-
-        foreach (var (_, magicBytes) in ImageSignatures)
-        {
-            if (imageBytes.Length >= magicBytes.Length &&
-                imageBytes.AsSpan(0, magicBytes.Length).SequenceEqual(magicBytes))
-            {
-                matchesAnySignature = true;
-                break;
-            }
-        }
-
-        if (!matchesAnySignature)
+        if (ImageContentTypeDetector.Detect(imageBytes) is null)
         {
             throw new InvalidOperationException(
                 $"Uploaded file does not match any known image format. Claimed MIME type: '{claimedMimeType}'.");

@@ -2,7 +2,7 @@
 
 ## What This System Is
 
-Trading Journal backend is a modular monolith hosted by a single ASP.NET Core application. The entry point is `bootstrapper/TradingJournal.ApiGateWay/Program.cs`, which composes the shared runtime and all business modules.
+Trading Journal backend is a modular monolith hosted by a single ASP.NET Core application. The entry point is `bootstrapper/TradingJournal.ApiGateway/Program.cs`, which composes the shared runtime and all business modules.
 
 ## High-Level Shape
 
@@ -36,7 +36,7 @@ Trading Journal backend is a modular monolith hosted by a single ASP.NET Core ap
 
 ## Where To Start In Code
 
-1. `bootstrapper/TradingJournal.ApiGateWay/Program.cs` for composition and middleware.
+1. `bootstrapper/TradingJournal.ApiGateway/Program.cs` for composition and middleware.
 2. `shared/TradingJournal.Shared/Extensions/ModuleExtensions.cs` for the default module registration pattern.
 3. `modules/*/DependencyInjection.cs` to see what each module owns.
 4. `modules/*/Features/V1/*` for request handlers and endpoints.

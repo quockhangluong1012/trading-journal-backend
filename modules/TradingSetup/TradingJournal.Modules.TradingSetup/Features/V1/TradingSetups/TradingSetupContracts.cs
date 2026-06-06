@@ -1,4 +1,4 @@
-namespace TradingJournal.Modules.Setups.Features.V1.TradingSetups;
+namespace TradingJournal.Modules.TradingSetup.Features.V1.TradingSetups;
 
 public sealed record TradingSetupNodeDto(string Id, string Kind, double X, double Y, string Title, string? Notes);
 

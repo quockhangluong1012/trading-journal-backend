@@ -7,7 +7,7 @@ namespace TradingJournal.Modules.Notifications;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddNotificationModule(this IServiceCollection services,
+    public static IServiceCollection AddNotificationsModule(this IServiceCollection services,
         IConfiguration configuration, bool isDevelopment = false)
     {
         services.AddModuleDefaults(Assembly.GetExecutingAssembly(), isDevelopment);

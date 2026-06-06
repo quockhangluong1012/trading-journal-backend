@@ -49,11 +49,21 @@ public sealed class UploadScreenShoot
 
             await using MemoryStream stream = new();
             await request.File.CopyToAsync(stream, cancellationToken);
+            byte[] fileBytes = stream.ToArray();
 
-            string base64Payload = Convert.ToBase64String(stream.ToArray());
+            // Derive the MIME type from the file's actual content, not the client-supplied
+            // Content-Type header (which is trivially spoofable).
+            string? contentType = ImageContentTypeDetector.Detect(fileBytes);
+            if (contentType is null)
+            {
+                return Result<string>.Failure(
+                    Error.Create("File content is not a supported image (PNG, JPEG, GIF, or WebP)."));
+            }
+
+            string base64Payload = Convert.ToBase64String(fileBytes);
             string dataUri = string.Create(
                 CultureInfo.InvariantCulture,
-                $"data:{request.File.ContentType};base64,{base64Payload}");
+                $"data:{contentType};base64,{base64Payload}");
 
             try
             {
@@ -83,9 +93,11 @@ public sealed class UploadScreenShoot
             .Produces<Result<string>>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status500InternalServerError)
+            .Produces(StatusCodes.Status429TooManyRequests)
             .WithSummary("Upload a screenshot.")
             .WithDescription("Uploads a screenshot.")
             .WithTags(Tags.TradingScreenshoots)
+            .RequireRateLimiting("upload")
             .RequireAuthorization();
         }
     }

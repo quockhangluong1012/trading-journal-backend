@@ -2,7 +2,7 @@
 
 > Purpose: fast orientation for engineers working in the backend.
 > Audience: developers onboarding, tracing bugs, or planning feature work.
-> Canonical sources: `bootstrapper/TradingJournal.ApiGateWay/Program.cs`, `shared/TradingJournal.Shared/Extensions/ModuleExtensions.cs`, `shared/TradingJournal.Messaging.Shared/*`, and each module's `DependencyInjection.cs` plus `Features/V1/*` slices.
+> Canonical sources: `bootstrapper/TradingJournal.ApiGateway/Program.cs`, `shared/TradingJournal.Shared/Extensions/ModuleExtensions.cs`, `shared/TradingJournal.Messaging.Shared/*`, and each module's `DependencyInjection.cs` plus `Features/V1/*` slices.
 
 ## Documentation Map
 
@@ -20,7 +20,7 @@
 
 ## System Snapshot
 
-- Single ASP.NET Core host under [Program.cs](../bootstrapper/TradingJournal.ApiGateWay/Program.cs)
+- Single ASP.NET Core host under [Program.cs](../bootstrapper/TradingJournal.ApiGateway/Program.cs)
 - .NET 10 + Carter minimal APIs + MediatR vertical slices
 - 9 business modules: Auth, Trades, Psychology, Analytics, TradingSetup, AiInsights, Notifications, Scanner, RiskManagement
 - SQL Server persistence through per-module `DbContext` registrations; Analytics is the main read-only module without its own database context
@@ -30,7 +30,7 @@
 
 ## Composition Root
 
-The runtime is composed in [Program.cs](../bootstrapper/TradingJournal.ApiGateWay/Program.cs).
+The runtime is composed in [Program.cs](../bootstrapper/TradingJournal.ApiGateway/Program.cs).
 
 1. Configure bootstrap logging, configuration access, CORS, rate limiting, Swagger/OpenAPI/Scalar, JSON options, and JWT auth.
 2. Register the shared module and then each business module through its `Add{Module}Module(...)` method.
@@ -69,7 +69,7 @@ The runtime is composed in [Program.cs](../bootstrapper/TradingJournal.ApiGateWa
 
 ### Follow an HTTP endpoint
 
-1. Start in [Program.cs](../bootstrapper/TradingJournal.ApiGateWay/Program.cs) to confirm the host and middleware.
+1. Start in [Program.cs](../bootstrapper/TradingJournal.ApiGateway/Program.cs) to confirm the host and middleware.
 2. Open the feature slice under `modules/*/Features/V1/*`.
 3. Read `Endpoint`, then `Request`, then `Validator`, then `Handler` in the same file.
 4. If the handler delegates, step to the injected service or provider.

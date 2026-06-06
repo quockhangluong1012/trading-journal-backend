@@ -7,7 +7,7 @@ namespace TradingJournal.Tests.Trades.Features.V1.Ai;
 
 public sealed class GenerateRiskAdviceHandlerTests
 {
-    private readonly Mock<IOpenRouterAIService> _aiService = new();
+    private readonly Mock<IOpenRouterAiService> _aiService = new();
 
     [Fact]
     public async Task Handle_WhenAiReturnsAdvice_ReturnsSuccess()

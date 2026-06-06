@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace TradingJournal.ApiGateWay.Extensions;
+namespace TradingJournal.ApiGateway.Extensions;
 
 /// <summary>
 /// Startup configuration helpers extracted from Program.cs to keep the entry point clean.

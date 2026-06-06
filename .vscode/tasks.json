@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/bootstrapper/TradingJournal.ApiGateWay/TradingJournal.ApiGateWay.csproj",
+                "${workspaceFolder}/bootstrapper/TradingJournal.ApiGateway/TradingJournal.ApiGateway.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/bootstrapper/TradingJournal.ApiGateWay/TradingJournal.ApiGateWay.csproj",
+                "${workspaceFolder}/bootstrapper/TradingJournal.ApiGateway/TradingJournal.ApiGateway.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -33,7 +33,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/bootstrapper/TradingJournal.ApiGateWay/TradingJournal.ApiGateWay.csproj"
+                "${workspaceFolder}/bootstrapper/TradingJournal.ApiGateway/TradingJournal.ApiGateway.csproj"
             ],
             "problemMatcher": "$msCompile"
         }

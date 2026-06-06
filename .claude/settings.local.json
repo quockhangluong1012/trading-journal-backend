@@ -49,7 +49,16 @@
       "Bash(powershell -NoProfile -Command 'Get-CimInstance Win32_Process -Filter \"Name='\\\\''dotnet.exe'\\\\''\" | Select-Object ProcessId, @{n='\\\\''Cmd'\\\\'';e={$_.CommandLine}} | Format-List')",
       "PowerShell(Get-Process *)",
       "Bash(cd \"C:\\\\project\\\\.NET\\\\trading-journal-backend\")",
-      "Bash(export ASPNETCORE_ENVIRONMENT=Development)"
+      "Bash(export ASPNETCORE_ENVIRONMENT=Development)",
+      "Bash(xxd)",
+      "Bash(xargs sed -i 's/TradingJournal\\\\.Modules\\\\.Setups/TradingJournal.Modules.TradingSetup/g')",
+      "Bash(xargs sed -i 's/OpenRouterAIService/OpenRouterAiService/g')",
+      "Bash(git mv *)",
+      "Bash(xargs perl -i -pe 's/\\(?<![.\\\\w]\\)TradingSetup\\(?![s\\\\w]\\)/Domain.TradingSetup/g')",
+      "Bash(tee /tmp/gw_files.txt)",
+      "Bash(xargs sed -i 's/GateWay/Gateway/g')",
+      "Read(//tmp/**)",
+      "PowerShell(Get-CimInstance *)"
     ]
   }
 }

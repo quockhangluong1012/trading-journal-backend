@@ -1,11 +1,11 @@
 using TradingJournal.Shared.Infrastructure;
 
-namespace TradingJournal.Modules.Setups.Infrastructure;
+namespace TradingJournal.Modules.TradingSetup.Infrastructure;
 
 internal sealed class SetupDbContext(DbContextOptions<SetupDbContext> options, IHttpContextAccessor httpContextAccessor)
     : AuditableDbContext(options, httpContextAccessor), ISetupDbContext
 {
-    public DbSet<TradingSetup> TradingSetups { get; set; } = null!;
+    public DbSet<Domain.TradingSetup> TradingSetups { get; set; } = null!;
 
     public DbSet<SetupStep> SetupSteps { get; set; } = null!;
 
@@ -15,7 +15,7 @@ internal sealed class SetupDbContext(DbContextOptions<SetupDbContext> options, I
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<TradingSetup>(builder =>
+        modelBuilder.Entity<Domain.TradingSetup>(builder =>
         {
             builder.ToTable("TradingSetups", "Setups");
 

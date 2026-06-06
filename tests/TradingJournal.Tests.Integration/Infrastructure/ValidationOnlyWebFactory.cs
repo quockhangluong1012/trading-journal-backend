@@ -26,9 +26,9 @@ public sealed class ValidationOnlyWebFactory : WebApplicationFactory<Program>
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<IHostedService>();
-            services.RemoveAll<IOpenRouterAIService>();
+            services.RemoveAll<IOpenRouterAiService>();
             services.AddSingleton(FakeOpenRouterAiService);
-            services.AddScoped<IOpenRouterAIService>(sp => sp.GetRequiredService<FakeOpenRouterAiService>());
+            services.AddScoped<IOpenRouterAiService>(sp => sp.GetRequiredService<FakeOpenRouterAiService>());
         });
     }
 

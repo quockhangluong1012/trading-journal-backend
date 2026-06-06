@@ -145,7 +145,7 @@ public sealed class ChatWithCoach
     }
 
     public sealed class Handler(
-        IOpenRouterAIService aiService,
+        IOpenRouterAiService aiService,
         IAiInsightsDbContext context,
         ILogger<Handler>? logger = null) : ICommandHandler<Request, Result<AiCoachResponseDto>>
     {
@@ -193,7 +193,7 @@ public sealed class ChatWithCoach
             group.MapPost("/chat/stream", async (
                 HttpContext httpContext,
                 IValidator<Request> validator,
-                IOpenRouterAIService aiService,
+                IOpenRouterAiService aiService,
                 IAiInsightsDbContext context,
                 ILogger<Endpoint> logger,
                 [FromBody] Request request,

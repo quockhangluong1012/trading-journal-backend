@@ -21,7 +21,7 @@ public sealed class SuggestLessons
         }
     }
 
-    public sealed class Handler(IOpenRouterAIService aiService)
+    public sealed class Handler(IOpenRouterAiService aiService)
         : ICommandHandler<Request, Result<SuggestedLessonsResultDto>>
     {
         public async Task<Result<SuggestedLessonsResultDto>> Handle(Request request, CancellationToken cancellationToken)

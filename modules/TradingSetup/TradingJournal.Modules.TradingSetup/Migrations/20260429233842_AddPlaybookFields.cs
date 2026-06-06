@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace TradingJournal.Modules.Setups.Migrations
+namespace TradingJournal.Modules.TradingSetup.Migrations
 {
     /// <inheritdoc />
     public partial class AddPlaybookFields : Migration

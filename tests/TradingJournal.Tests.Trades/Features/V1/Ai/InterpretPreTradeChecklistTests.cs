@@ -21,7 +21,7 @@ public sealed class InterpretPreTradeChecklistValidatorTests
 
 public sealed class InterpretPreTradeChecklistHandlerTests
 {
-    private readonly Mock<IOpenRouterAIService> _aiService = new();
+    private readonly Mock<IOpenRouterAiService> _aiService = new();
 
     [Fact]
     public async Task Handle_WhenAiReturnsMatches_ReturnsSuccess()

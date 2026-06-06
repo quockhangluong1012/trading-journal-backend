@@ -47,7 +47,7 @@ public sealed class ValidateTradeSetup
         }
     }
 
-    public sealed class Handler(IOpenRouterAIService aiService) : ICommandHandler<Request, Result<PreTradeValidationResultDto>>
+    public sealed class Handler(IOpenRouterAiService aiService) : ICommandHandler<Request, Result<PreTradeValidationResultDto>>
     {
         public async Task<Result<PreTradeValidationResultDto>> Handle(Request request, CancellationToken cancellationToken)
         {

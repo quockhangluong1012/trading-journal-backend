@@ -1,8 +1,8 @@
-namespace TradingJournal.Modules.Setups.Infrastructure;
+namespace TradingJournal.Modules.TradingSetup.Infrastructure;
 
 public interface ISetupDbContext
 {
-    DbSet<TradingSetup> TradingSetups { get; set; }
+    DbSet<Domain.TradingSetup> TradingSetups { get; set; }
 
     DbSet<SetupStep> SetupSteps { get; set; }
 

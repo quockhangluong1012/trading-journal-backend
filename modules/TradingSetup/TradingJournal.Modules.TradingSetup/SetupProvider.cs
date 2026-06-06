@@ -1,9 +1,9 @@
-using TradingJournal.Modules.Setups.Infrastructure;
+using TradingJournal.Modules.TradingSetup.Infrastructure;
 using TradingJournal.Shared.Dtos;
 using TradingJournal.Shared.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace TradingJournal.Modules.Setups;
+namespace TradingJournal.Modules.TradingSetup;
 
 internal sealed class SetupProvider(ISetupDbContext context) : ISetupProvider
 {

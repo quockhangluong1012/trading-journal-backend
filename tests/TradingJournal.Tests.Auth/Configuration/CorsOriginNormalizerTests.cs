@@ -1,4 +1,4 @@
-using TradingJournal.ApiGateWay.Extensions;
+using TradingJournal.ApiGateway.Extensions;
 
 namespace TradingJournal.Tests.Auth.Configuration;
 

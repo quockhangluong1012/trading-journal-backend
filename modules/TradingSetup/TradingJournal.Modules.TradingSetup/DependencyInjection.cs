@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using TradingJournal.Shared.Extensions;
 
-namespace TradingJournal.Modules.Setups;
+namespace TradingJournal.Modules.TradingSetup;
 
 public static class DependencyInjection
 {

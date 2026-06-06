@@ -43,7 +43,7 @@
 ```mermaid
 graph TB
     subgraph "API Gateway (Bootstrapper)"
-        GW["TradingJournal.ApiGateWay<br/>Program.cs — Single entry point"]
+        GW["TradingJournal.ApiGateway<br/>Program.cs — Single entry point"]
     end
 
     subgraph "Shared Libraries"
@@ -88,7 +88,7 @@ graph TB
 trading-journal-backend/
 ├── TradingJournal.slnx
 ├── bootstrapper/
-│   └── TradingJournal.ApiGateWay/         # Single host / composition root
+│   └── TradingJournal.ApiGateway/         # Single host / composition root
 ├── shared/
 │   ├── TradingJournal.Shared/             # Core abstractions and cross-cutting services
 │   └── TradingJournal.Messaging.Shared/   # Event bus infrastructure

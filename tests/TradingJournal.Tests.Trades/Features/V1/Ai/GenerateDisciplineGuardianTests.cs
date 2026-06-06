@@ -10,7 +10,7 @@ namespace TradingJournal.Tests.Trades.Features.V1.Ai;
 public sealed class GenerateDisciplineGuardianHandlerTests
 {
     private readonly Mock<IDisciplineContextProvider> _disciplineContextProvider = new();
-    private readonly Mock<IOpenRouterAIService> _aiService = new();
+    private readonly Mock<IOpenRouterAiService> _aiService = new();
 
     [Fact]
     public async Task Handle_WhenAiReturnsGuidance_ReturnsSuccess()

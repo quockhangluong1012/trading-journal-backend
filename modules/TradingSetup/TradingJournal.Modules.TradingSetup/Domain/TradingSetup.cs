@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
-using TradingJournal.Modules.Setups.Common.Enum;
+using TradingJournal.Modules.TradingSetup.Common.Enum;
 
-namespace TradingJournal.Modules.Setups.Domain;
+namespace TradingJournal.Modules.TradingSetup.Domain;
 
 [Table(name: "TradingSetups", Schema = "Setups")]
 public sealed class TradingSetup : EntityBase<int>

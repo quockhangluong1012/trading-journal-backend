@@ -29,7 +29,7 @@ internal sealed class TradeProvider(ITradeDbContext context, ICacheRepository ca
                     TargetTier1 = t.TargetTier1,
                     Status = t.Status,
                     Date = t.Date,
-                    Pnl = (decimal?)t.Pnl,
+                    Pnl = t.Pnl,
                     ClosedDate = t.ClosedDate,
                     TradingSessionId = t.TradingSessionId,
                     TradingZoneId = t.TradingZoneId,

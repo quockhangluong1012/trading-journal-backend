@@ -1,4 +1,4 @@
-namespace TradingJournal.Modules.Setups.Features.V1.TradingSetups;
+namespace TradingJournal.Modules.TradingSetup.Features.V1.TradingSetups;
 
 public sealed class DeleteTradingSetup
 {
@@ -19,7 +19,7 @@ public sealed class DeleteTradingSetup
     {
         public async Task<Result<bool>> Handle(Request request, CancellationToken cancellationToken)
         {
-            TradingSetup? tradingSetup = await context.TradingSetups
+            Domain.TradingSetup? tradingSetup = await context.TradingSetups
                 .FirstOrDefaultAsync(setup => setup.Id == request.Id && setup.CreatedBy == request.UserId, cancellationToken);
 
             if (tradingSetup is null)

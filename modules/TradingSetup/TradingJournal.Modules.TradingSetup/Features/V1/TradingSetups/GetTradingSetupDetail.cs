@@ -1,4 +1,4 @@
-namespace TradingJournal.Modules.Setups.Features.V1.TradingSetups;
+namespace TradingJournal.Modules.TradingSetup.Features.V1.TradingSetups;
 
 public sealed class GetTradingSetupDetail
 {
@@ -24,7 +24,7 @@ public sealed class GetTradingSetupDetail
                 return Result<TradingSetupDetailViewModel>.Failure(Error.Create("Current user is required."));
             }
 
-            TradingSetup? tradingSetup = await context.TradingSetups
+            Domain.TradingSetup? tradingSetup = await context.TradingSetups
                 .AsNoTracking()
                 .Include(setup => setup.Steps)
                 .Include(setup => setup.Connections)

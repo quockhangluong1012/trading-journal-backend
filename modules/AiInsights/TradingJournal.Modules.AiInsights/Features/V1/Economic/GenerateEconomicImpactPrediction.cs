@@ -28,7 +28,7 @@ public sealed class GenerateEconomicImpactPrediction
         }
     }
 
-    public sealed class Handler(IOpenRouterAIService aiService)
+    public sealed class Handler(IOpenRouterAiService aiService)
         : ICommandHandler<Request, Result<AiEconomicImpactPredictorResultDto>>
     {
         public async Task<Result<AiEconomicImpactPredictorResultDto>> Handle(Request request, CancellationToken cancellationToken)

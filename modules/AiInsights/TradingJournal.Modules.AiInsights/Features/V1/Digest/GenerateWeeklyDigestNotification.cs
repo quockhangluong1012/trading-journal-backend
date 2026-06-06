@@ -10,7 +10,7 @@ public sealed class GenerateWeeklyDigestNotification
     public sealed record Request(int UserId = 0) : ICommand<Result<AiWeeklyDigestResultDto>>;
 
     public sealed class Handler(
-        IOpenRouterAIService aiService,
+        IOpenRouterAiService aiService,
         IEventBus eventBus)
         : ICommandHandler<Request, Result<AiWeeklyDigestResultDto>>
     {

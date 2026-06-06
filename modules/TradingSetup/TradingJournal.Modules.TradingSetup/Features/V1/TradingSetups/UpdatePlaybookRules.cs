@@ -1,4 +1,4 @@
-namespace TradingJournal.Modules.Setups.Features.V1.TradingSetups;
+namespace TradingJournal.Modules.TradingSetup.Features.V1.TradingSetups;
 
 public sealed class UpdatePlaybookRules
 {
@@ -45,7 +45,7 @@ public sealed class UpdatePlaybookRules
                 return Result<bool>.Failure(Error.Create("Current user is required."));
             }
 
-            TradingSetup? setup = await context.TradingSetups
+            Domain.TradingSetup? setup = await context.TradingSetups
                 .FirstOrDefaultAsync(s => s.Id == request.SetupId && s.CreatedBy == request.UserId && !s.IsDisabled,
                     cancellationToken);
 

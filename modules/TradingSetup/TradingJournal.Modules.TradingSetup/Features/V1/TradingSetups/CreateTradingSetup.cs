@@ -1,4 +1,4 @@
-namespace TradingJournal.Modules.Setups.Features.V1.TradingSetups;
+namespace TradingJournal.Modules.TradingSetup.Features.V1.TradingSetups;
 
 public sealed class CreateTradingSetup
 {
@@ -44,7 +44,7 @@ public sealed class CreateTradingSetup
             IReadOnlyDictionary<string, SetupStep> stepsByNodeId = TradingSetupDiagram.MapStepsByNodeId(request.Nodes, steps);
             List<SetupConnection> connections = TradingSetupDiagram.BuildConnections(request.Edges, stepsByNodeId);
 
-            TradingSetup tradingSetup = new()
+            Domain.TradingSetup tradingSetup = new()
             {
                 Id = 0,
                 Name = request.Name.Trim(),

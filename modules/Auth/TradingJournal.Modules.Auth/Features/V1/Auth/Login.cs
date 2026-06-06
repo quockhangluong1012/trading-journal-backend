@@ -30,11 +30,20 @@ public sealed class Login
     internal sealed class Handler(IAuthDbContext context, IConfiguration configuration)
         : IQueryHandler<Request, Result<AuthResponse>>
     {
+        // A precomputed hash to verify against when no user matches, so a failed login takes the
+        // same time whether or not the email exists — closing a user-enumeration timing side channel.
+        private static readonly string DummyPasswordHash =
+            BCrypt.Net.BCrypt.HashPassword("user-enumeration-timing-mitigation");
+
         public async Task<Result<AuthResponse>> Handle(Request request, CancellationToken cancellationToken)
         {
             User? user = await context.Users.FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            // Always run BCrypt.Verify (against a dummy hash when the user is missing) so login
+            // timing stays constant regardless of whether the email is registered.
+            bool passwordValid = BCrypt.Net.BCrypt.Verify(request.Password, user?.PasswordHash ?? DummyPasswordHash);
+
+            if (user == null || !passwordValid)
             {
                 return Result<AuthResponse>.Failure(Error.Create("Invalid email or password."));
             }
