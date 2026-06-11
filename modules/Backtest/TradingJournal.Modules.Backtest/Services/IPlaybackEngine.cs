@@ -5,7 +5,12 @@ public record PlaybackAdvanceResult(
     MatchingResult? MatchingResult,
     decimal UpdatedBalance,
     DateTime NewTimestamp,
-    bool IsSessionEnded);
+    bool IsSessionEnded,
+    // The orders the engine just filled/closed this advance, in the state it left them.
+    // They are already tracked in the request's DbContext, so callers map these directly
+    // instead of re-fetching each one by id.
+    IReadOnlyList<BacktestOrder>? FilledOrders = null,
+    IReadOnlyList<BacktestOrder>? ClosedOrders = null);
 
 public interface IPlaybackEngine
 {

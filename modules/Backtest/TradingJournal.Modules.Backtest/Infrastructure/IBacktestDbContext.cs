@@ -1,7 +1,15 @@
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+
 namespace TradingJournal.Modules.Backtest.Infrastructure;
 
 public interface IBacktestDbContext
 {
+    /// <summary>
+    /// Change tracker for the underlying context. Exposed so bulk-insert paths can
+    /// detach already-persisted entities and keep the tracker (and memory) bounded.
+    /// </summary>
+    ChangeTracker ChangeTracker { get; }
+
     DbSet<BacktestSession> BacktestSessions { get; set; }
 
     DbSet<BacktestOrder> BacktestOrders { get; set; }

@@ -36,12 +36,48 @@ internal sealed class PlaybackEngine(
             return new PlaybackAdvanceResult(null, null, session.CurrentBalance, session.CurrentTimestamp, true);
         }
 
-        // ── Fetch the next DISPLAY candle (the one shown on screen) ──
-        OhlcvCandle? displayCandle = await aggregationService.GetNextAggregatedCandleAsync(
-            session.Asset,
-            session.ActiveTimeframe,
-            session.CurrentTimestamp,
-            cancellationToken);
+        // ── Load orders ──
+        List<BacktestOrder> pendingOrders = await context.BacktestOrders
+            .Where(o => o.SessionId == sessionId && o.Status == BacktestOrderStatus.Pending)
+            .ToListAsync(cancellationToken);
+
+        List<BacktestOrder> activePositions = await context.BacktestOrders
+            .Where(o => o.SessionId == sessionId && o.Status == BacktestOrderStatus.Active)
+            .ToListAsync(cancellationToken);
+
+        // The matcher reports fills/closes by order id. Those orders are exactly the
+        // tracked entities we just loaded above (intra-bar replay shuffles them between
+        // the two lists but keeps the same instances), so build one id→entity lookup now
+        // and reuse it to persist mutations — no FindAsync round trip per order.
+        Dictionary<int, BacktestOrder> ordersById = pendingOrders
+            .Concat(activePositions)
+            .ToDictionary(o => o.Id);
+
+        // ── INTRA-BAR M1 EVALUATION ──
+        // If display timeframe > M1 AND there are pending/active orders, we must replay
+        // the underlying M1 candles for accurate SL/TP resolution. That same M1 window
+        // also defines the display candle's O/H/L/C/V — so load it ONCE and reuse it for
+        // both, rather than reading the bucket once to aggregate and again to replay.
+        // With no orders (or on M1) there's nothing to replay, so the display candle is
+        // computed with a SQL aggregate that never materializes the bucket's M1 rows.
+        bool hasOrders = pendingOrders.Count > 0 || activePositions.Count > 0;
+        bool intraBar = session.ActiveTimeframe != Timeframe.M1 && hasOrders;
+
+        OhlcvCandle? displayCandle;
+        List<OhlcvCandle>? bucketM1Candles = null;
+
+        if (intraBar)
+        {
+            NextBucket? bucket = await aggregationService.GetNextBucketWithM1Async(
+                session.Asset, session.ActiveTimeframe, session.CurrentTimestamp, cancellationToken);
+            displayCandle = bucket?.DisplayCandle;
+            bucketM1Candles = bucket?.M1Candles;
+        }
+        else
+        {
+            displayCandle = await aggregationService.GetNextAggregatedCandleAsync(
+                session.Asset, session.ActiveTimeframe, session.CurrentTimestamp, cancellationToken);
+        }
 
         if (displayCandle is null)
         {
@@ -60,54 +96,34 @@ internal sealed class PlaybackEngine(
             return new PlaybackAdvanceResult(null, null, session.CurrentBalance, session.CurrentTimestamp, true);
         }
 
-        // ── Load orders ──
-        List<BacktestOrder> pendingOrders = await context.BacktestOrders
-            .Where(o => o.SessionId == sessionId && o.Status == BacktestOrderStatus.Pending)
-            .ToListAsync(cancellationToken);
-
-        List<BacktestOrder> activePositions = await context.BacktestOrders
-            .Where(o => o.SessionId == sessionId && o.Status == BacktestOrderStatus.Active)
-            .ToListAsync(cancellationToken);
-
-        // ── INTRA-BAR M1 EVALUATION ──
-        // If display timeframe > M1 AND there are pending/active orders,
-        // iterate through underlying M1 candles for accurate SL/TP resolution.
-        MatchingResult result;
-        bool hasOrders = pendingOrders.Count > 0 || activePositions.Count > 0;
-
-        if (session.ActiveTimeframe != Timeframe.M1 && hasOrders)
-        {
-            result = await EvaluateIntraBarAsync(
-                session, displayCandle, pendingOrders, activePositions, cancellationToken);
-        }
-        else
-        {
-            // No orders to evaluate, or already on M1 — use the display candle directly
-            result = matchingEngine.EvaluateCandle(
+        MatchingResult result = intraBar
+            ? EvaluateIntraBar(session, bucketM1Candles!, pendingOrders, activePositions)
+            : matchingEngine.EvaluateCandle(
                 displayCandle, pendingOrders, activePositions, session.CurrentBalance, session.Spread, session.Leverage, session.MaintenanceMarginPercentage);
-        }
 
         // ── Persist fills ──
+        List<BacktestOrder> filledOrders = [];
         foreach (OrderFill fill in result.Fills)
         {
-            BacktestOrder? order = await context.BacktestOrders.FindAsync([fill.OrderId], cancellationToken);
-            if (order is null) continue;
+            if (!ordersById.TryGetValue(fill.OrderId, out BacktestOrder? order)) continue;
 
             order.Status = BacktestOrderStatus.Active;
             order.FilledPrice = fill.FilledPrice;
             order.FilledAt = fill.FilledAt;
+            filledOrders.Add(order);
         }
 
         // ── Persist closes ──
+        List<BacktestOrder> closedOrders = [];
         foreach (OrderClose close in result.Closes)
         {
-            BacktestOrder? order = await context.BacktestOrders.FindAsync([close.OrderId], cancellationToken);
-            if (order is null) continue;
+            if (!ordersById.TryGetValue(close.OrderId, out BacktestOrder? order)) continue;
 
             order.Status = BacktestOrderStatus.Closed;
             order.ExitPrice = close.ExitPrice;
             order.Pnl = close.Pnl;
             order.ClosedAt = close.ClosedAt;
+            closedOrders.Add(order);
 
             await context.BacktestTradeResults.AddAsync(new BacktestTradeResult
             {
@@ -154,38 +170,30 @@ internal sealed class PlaybackEngine(
             result,
             newBalance,
             displayCandle.Timestamp,
-            result.IsLiquidated || session.Status == BacktestSessionStatus.Completed);
+            result.IsLiquidated || session.Status == BacktestSessionStatus.Completed,
+            filledOrders,
+            closedOrders);
     }
 
     /// <summary>
     /// Iterates through all M1 candles within the display candle's time period
     /// to accurately determine the real order of SL/TP hits.
     ///
+    /// The M1 window is passed in already loaded — it was read once by the caller and
+    /// reused both to derive the display candle and to drive this replay, avoiding a
+    /// second read of the same bucket on the hot auto-play path.
+    ///
     /// Example: D1 candle 2024-01-15
-    ///   → loads M1 candles from 2024-01-15 00:00 to 2024-01-15 23:59
+    ///   → replays M1 candles from 2024-01-15 00:00 to 2024-01-15 23:59
     ///   → evaluates each M1 candle against pending/active orders
     ///   → stops at the first SL/TP hit (accurate price movement simulation)
     /// </summary>
-    private async Task<MatchingResult> EvaluateIntraBarAsync(
+    private MatchingResult EvaluateIntraBar(
         BacktestSession session,
-        OhlcvCandle displayCandle,
+        List<OhlcvCandle> m1Candles,
         List<BacktestOrder> pendingOrders,
-        List<BacktestOrder> activePositions,
-        CancellationToken cancellationToken)
+        List<BacktestOrder> activePositions)
     {
-        int bucketMinutes = (int)session.ActiveTimeframe;
-        DateTime periodStart = displayCandle.Timestamp;
-        DateTime periodEnd = periodStart.AddMinutes(bucketMinutes);
-        
-        // Stream M1 candles within this display candle's period to save memory
-        IAsyncEnumerable<OhlcvCandle> m1Candles = context.OhlcvCandles
-            .Where(c => c.Asset == session.Asset && c.Timeframe == Timeframe.M1
-                        && c.Timestamp >= periodStart && c.Timestamp < periodEnd)
-            .OrderBy(c => c.Timestamp)
-            .AsNoTracking()
-            .AsAsyncEnumerable();
-
-        bool hasM1Data = false;
         List<OrderFill> allFills = [];
         List<OrderClose> allCloses = [];
         decimal balance = session.CurrentBalance;
@@ -193,10 +201,8 @@ internal sealed class PlaybackEngine(
         decimal equity = balance;
         bool isLiquidated = false;
 
-        await foreach (OhlcvCandle m1Candle in m1Candles.WithCancellation(cancellationToken))
+        foreach (OhlcvCandle m1Candle in m1Candles)
         {
-            hasM1Data = true;
-
             if (isLiquidated) break;
 
             // Only evaluate if there are still pending/active orders
@@ -232,16 +238,6 @@ internal sealed class PlaybackEngine(
                 filled.FilledAt = fillData.FilledAt;
                 activePositions.Add(filled);
             }
-        }
-
-        if (!hasM1Data)
-        {
-            // Fallback: no M1 data available, use the display candle directly
-            logger.LogWarning(
-                "No M1 data for intra-bar evaluation of {Asset} at {Timestamp}. Falling back to display candle.",
-                session.Asset, displayCandle.Timestamp);
-            return matchingEngine.EvaluateCandle(
-                displayCandle, pendingOrders, activePositions, session.CurrentBalance, session.Spread, session.Leverage, session.MaintenanceMarginPercentage);
         }
 
         return new MatchingResult(allFills, allCloses, unrealizedPnl, equity, isLiquidated);

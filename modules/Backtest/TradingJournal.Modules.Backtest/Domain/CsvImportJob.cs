@@ -8,8 +8,9 @@ namespace TradingJournal.Modules.Backtest.Domain;
 /// Created when an admin uploads one or more CSV files via the bulk-import endpoint.
 /// Processed sequentially by the CsvImportBackgroundService.
 /// </summary>
+// The (Status, CreatedDate) index is configured fluently in BacktestDbContext
+// to keep a single source of truth and avoid duplicate indexes.
 [Table("CsvImportJobs", Schema = "Backtest")]
-[Index(nameof(Status), nameof(CreatedDate), Name = "IX_CsvImportJobs_StatusCreated")]
 public sealed class CsvImportJob : EntityBase<int>
 {
     /// <summary>

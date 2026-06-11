@@ -47,11 +47,13 @@ public sealed class GetHistoricalCandlesHandlerTests
             .Returns(DbSetMockHelper.CreateMockDbSet(new List<BacktestSession> { session }.AsQueryable()).Object);
 
         _aggregationService
-            .Setup(x => x.AggregateAsync(
+            .Setup(x => x.AggregatePagedAsync(
                 It.IsAny<string>(),
                 It.IsAny<Timeframe>(),
                 It.IsAny<DateTime>(),
                 It.IsAny<DateTime>(),
+                It.IsAny<int>(),
+                It.IsAny<int>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
@@ -59,11 +61,13 @@ public sealed class GetHistoricalCandlesHandlerTests
             new GetHistoricalCandles.Request(session.Id, "M15", 1, 500) { UserId = session.CreatedBy },
             CancellationToken.None);
 
-        _aggregationService.Verify(x => x.AggregateAsync(
+        _aggregationService.Verify(x => x.AggregatePagedAsync(
             "EURUSD",
             Timeframe.M15,
             expectedReferenceStart,
             currentTimestamp,
+            1,
+            500,
             It.IsAny<CancellationToken>()), Times.Once);
     }
 }

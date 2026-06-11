@@ -38,12 +38,13 @@ public sealed class GetHistoricalCandles
 
             // CRITICAL: Only return candles up to the current simulated timestamp
             // to prevent look-ahead bias, while keeping a pre-start reference window visible.
-            List<OhlcvCandle> aggregated = await aggregationService.AggregateAsync(
-                symbol, tf, fromDate, session.CurrentTimestamp, cancellationToken);
+            // Bucketing and paging happen in SQL — only the requested page of display
+            // candles is materialized, never the full session history.
+            List<OhlcvCandle> aggregated = await aggregationService.AggregatePagedAsync(
+                symbol, tf, fromDate, session.CurrentTimestamp,
+                request.Page, request.PageSize, cancellationToken);
 
             List<CandleDto> candles = aggregated
-                .Skip((request.Page - 1) * request.PageSize)
-                .Take(request.PageSize)
                 .Select(c => new CandleDto(
                     c.Timestamp, c.Open, c.High, c.Low, c.Close, c.Volume))
                 .ToList();

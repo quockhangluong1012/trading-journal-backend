@@ -25,12 +25,19 @@ public sealed class GetSessionAnalytics
                 .OrderBy(t => t.ExitTime)
                 .ToListAsync(cancellationToken);
 
+            // Single pass over the trade log for all tallies instead of ~5 separate scans.
             int totalTrades = tradeResults.Count;
-            int totalWins = tradeResults.Count(t => t.Pnl > 0);
-            int totalLosses = tradeResults.Count(t => t.Pnl <= 0);
+            int totalWins = 0;
+            decimal grossProfit = 0m, grossLoss = 0m;
+
+            foreach (BacktestTradeResult t in tradeResults)
+            {
+                if (t.Pnl > 0) { totalWins++; grossProfit += t.Pnl; }
+                else { grossLoss += t.Pnl; }
+            }
+
+            int totalLosses = totalTrades - totalWins;
             decimal winRate = totalTrades > 0 ? Math.Round((decimal)totalWins / totalTrades * 100m, 2) : 0m;
-            decimal grossProfit = tradeResults.Where(t => t.Pnl > 0).Sum(t => t.Pnl);
-            decimal grossLoss = tradeResults.Where(t => t.Pnl <= 0).Sum(t => t.Pnl);
             decimal netPnl = grossProfit + grossLoss;
 
             // Calculate max drawdown

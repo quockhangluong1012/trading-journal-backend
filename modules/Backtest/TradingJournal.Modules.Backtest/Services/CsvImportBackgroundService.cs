@@ -291,11 +291,26 @@ internal sealed class CsvImportBackgroundService(
 
         int skipped = parsedCandles.Count - newCandles.Count;
 
+        // Seed the running total once from the current DB count, then keep it in memory.
+        // Avoids a full COUNT(*) scan of the table on every chunk (which made the import
+        // roughly O(n²) for multi-million-row files).
+        long runningTotal = await db.OhlcvCandles
+            .Where(c => c.Asset == asset.Symbol && c.Timeframe == Timeframe.M1)
+            .LongCountAsync(ct);
+
         // Bulk insert in chunks
         const int chunkSize = 10000;
+        // Only push progress every N chunks (plus the final one) so a large import
+        // doesn't flood the importer's clients with one message per 10k rows.
+        const int broadcastEveryChunks = 5;
         int imported = 0;
+        int chunkIndex = 0;
 
-        for (int i = 0; i < newCandles.Count; i += chunkSize)
+        // The CSV importer (admin) — scope progress to their connections only,
+        // rather than broadcasting to every connected client.
+        string importerUserId = job.CreatedBy.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        for (int i = 0; i < newCandles.Count; i += chunkSize, chunkIndex++)
         {
             ct.ThrowIfCancellationRequested();
 
@@ -303,26 +318,33 @@ internal sealed class CsvImportBackgroundService(
             await db.OhlcvCandles.AddRangeAsync(chunk, ct);
             await db.SaveChangesAsync(ct);
             imported += chunk.Count;
+            runningTotal += chunk.Count;
 
-            // Update stats in real-time per chunk
-            job.ImportedCandles = imported;
-            
-            asset.TotalCandles = await db.OhlcvCandles
-                .Where(c => c.Asset == asset.Symbol && c.Timeframe == Timeframe.M1)
-                .LongCountAsync(ct);
-                
-            await db.SaveChangesAsync(ct);
+            // Detach the just-persisted candles so the change tracker (and memory) stays
+            // bounded and DetectChanges doesn't get slower with every chunk. The tracked
+            // job/asset entities are left attached so their later updates still persist.
+            foreach (var entry in db.ChangeTracker.Entries<OhlcvCandle>().ToList())
+                entry.State = EntityState.Detached;
 
             logger.LogDebug("Imported chunk: {Imported}/{Total}", imported, newCandles.Count);
-            
-            // Broadcast progress to any UI listening (e.g. for toast or Asset list updates)
-            await hubContext.Clients.All.SendAsync("DataProgress", new { 
-                Asset = asset.Symbol,
-                TotalCandles = asset.TotalCandles,
-                ImportedCandles = imported,
-                TotalExpected = newCandles.Count
-            }, ct);
+
+            bool isLastChunk = i + chunkSize >= newCandles.Count;
+            if (chunkIndex % broadcastEveryChunks == 0 || isLastChunk)
+            {
+                // Broadcast progress to the importer's UI (toast / asset list refresh).
+                await hubContext.Clients.User(importerUserId).SendAsync("DataProgress", new
+                {
+                    Asset = asset.Symbol,
+                    TotalCandles = runningTotal,
+                    ImportedCandles = imported,
+                    TotalExpected = newCandles.Count
+                }, ct);
+            }
         }
+
+        // Keep the in-memory job count current; the authoritative asset total is recomputed
+        // once by the caller after the loop completes.
+        job.ImportedCandles = imported;
 
         // Update last synced date
         if (maxTime > (asset.LastSyncedDate ?? DateTime.MinValue))

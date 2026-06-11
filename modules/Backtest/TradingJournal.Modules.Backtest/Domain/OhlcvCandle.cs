@@ -3,9 +3,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TradingJournal.Modules.Backtest.Domain;
 
+// The (Asset, Timeframe, Timestamp) unique index is configured fluently in
+// BacktestDbContext to keep a single source of truth and avoid duplicate indexes.
 [Table("OhlcvCandles", Schema = "Backtest")]
-[Index(nameof(Asset), nameof(Timeframe), nameof(Timestamp), IsUnique = true)]
-[Index(nameof(Asset), nameof(Timeframe), nameof(Timestamp), Name = "IX_OhlcvCandles_Lookup")]
 public sealed class OhlcvCandle : EntityBase<int>
 {
     [MaxLength(20)]

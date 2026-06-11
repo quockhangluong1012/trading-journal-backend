@@ -34,6 +34,15 @@ public sealed class BacktestHub(
     // Track playing sessions: sessionId → CancellationTokenSource
     private static readonly ConcurrentDictionary<int, CancellationTokenSource> PlayingSessions = new();
 
+    // Track which connection started the play loop for a session, so we can stop
+    // the loop when that connection disconnects: sessionId → connectionId
+    private static readonly ConcurrentDictionary<int, string> SessionPlayers = new();
+
+    // Current playback speed per actively-playing session: sessionId → speed.
+    // Seeded once when the auto-advance loop starts and updated live by SetSpeed, so the
+    // loop reads the delay from memory instead of opening a scope + querying every tick.
+    private static readonly ConcurrentDictionary<int, int> SessionSpeeds = new();
+
     // Base delay in milliseconds between candle advances at x1 speed
     private const int BaseDelayMs = 1000;
 
@@ -63,6 +72,7 @@ public sealed class BacktestHub(
 
         CancellationTokenSource cts = new();
         PlayingSessions[sessionId] = cts;
+        SessionPlayers[sessionId] = Context.ConnectionId;
 
         // Notify clients
         await Clients.Group($"backtest-{sessionId}")
@@ -110,6 +120,12 @@ public sealed class BacktestHub(
         IPlaybackEngine engine = scope.ServiceProvider.GetRequiredService<IPlaybackEngine>();
         await engine.UpdatePlaybackSpeedAsync(sessionId, speed);
 
+        // Push the new speed to a running auto-advance loop so it takes effect on the
+        // next tick without a DB read. If nothing is playing, the loop reseeds from the
+        // persisted value next time Play is called, so there's no entry to update.
+        if (PlayingSessions.ContainsKey(sessionId))
+            SessionSpeeds[sessionId] = speed;
+
         await Clients.Group($"backtest-{sessionId}")
             .SendAsync("PlaybackStateChanged", new { SessionId = sessionId, Speed = speed });
 
@@ -144,8 +160,20 @@ public sealed class BacktestHub(
 
     public override Task OnDisconnectedAsync(Exception? exception)
     {
-        // Clean up any playing sessions for this connection
-        // Note: In production, track which connection started which session
+        // Stop any auto-advance loops this connection started so they don't keep
+        // advancing candles and hammering the DB after the client is gone.
+        foreach ((int sessionId, string connectionId) in SessionPlayers)
+        {
+            if (connectionId == Context.ConnectionId)
+            {
+                StopPlaying(sessionId);
+                logger.LogInformation(
+                    "Stopped playback for session {SessionId} on disconnect of connection {ConnectionId}",
+                    sessionId,
+                    Context.ConnectionId);
+            }
+        }
+
         return base.OnDisconnectedAsync(exception);
     }
 
@@ -154,6 +182,9 @@ public sealed class BacktestHub(
     private async Task AutoAdvanceLoop(int sessionId, CancellationToken ct)
     {
         logger.LogInformation("Auto-advance started for session {SessionId}", sessionId);
+
+        // Read the persisted speed once; SetSpeed updates the cached value live thereafter.
+        SessionSpeeds[sessionId] = await LoadPlaybackSpeed(sessionId, ct);
 
         try
         {
@@ -167,9 +198,7 @@ public sealed class BacktestHub(
                     break;
                 }
 
-                // Get current speed from DB
-                int delayMs = await GetDelayMs(sessionId, ct);
-                await Task.Delay(delayMs, ct);
+                await Task.Delay(GetDelayMs(sessionId), ct);
             }
         }
         catch (OperationCanceledException)
@@ -235,7 +264,10 @@ public sealed class BacktestHub(
         return result.IsSessionEnded;
     }
 
-    private async Task<int> GetDelayMs(int sessionId, CancellationToken ct)
+    /// <summary>
+    /// Reads the persisted playback speed for a session once (loop startup).
+    /// </summary>
+    private async Task<int> LoadPlaybackSpeed(int sessionId, CancellationToken ct)
     {
         using IServiceScope scope = scopeFactory.CreateScope();
         IBacktestDbContext db = scope.ServiceProvider.GetRequiredService<IBacktestDbContext>();
@@ -245,14 +277,24 @@ public sealed class BacktestHub(
             .Select(s => s.PlaybackSpeed)
             .FirstOrDefaultAsync(ct);
 
-        if (speed <= 0) speed = 1;
+        return speed > 0 ? speed : 1;
+    }
 
-        // x1 = 1000ms, x2 = 500ms, x5 = 200ms, x10 = 100ms
+    /// <summary>
+    /// Delay between auto-advance ticks from the cached speed — no scope or DB round trip.
+    /// x1 = 1000ms, x2 = 500ms, x5 = 200ms, x10 = 100ms.
+    /// </summary>
+    private static int GetDelayMs(int sessionId)
+    {
+        int speed = SessionSpeeds.TryGetValue(sessionId, out int cached) && cached > 0 ? cached : 1;
         return BaseDelayMs / speed;
     }
 
     private static void StopPlaying(int sessionId)
     {
+        SessionPlayers.TryRemove(sessionId, out _);
+        SessionSpeeds.TryRemove(sessionId, out _);
+
         if (PlayingSessions.TryRemove(sessionId, out CancellationTokenSource? cts))
         {
             cts.Cancel();

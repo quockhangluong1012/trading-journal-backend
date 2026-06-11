@@ -34,20 +34,13 @@ public sealed class AdvanceCandle
                     advanceResult.Candle.Volume)
                 : null;
 
-            // Map filled and closed orders
-            List<OrderDto> filledOrders = advanceResult.MatchingResult?.Fills
-                .Select(f =>
-                {
-                    BacktestOrder order = context.BacktestOrders.Find(f.OrderId)!;
-                    return MapOrderToDto(order);
-                }).ToList() ?? [];
+            // Map filled and closed orders. The engine already mutated and returned the
+            // affected order entities, so map those directly instead of re-fetching each by id.
+            List<OrderDto> filledOrders = (advanceResult.FilledOrders ?? [])
+                .Select(MapOrderToDto).ToList();
 
-            List<OrderDto> closedPositions = advanceResult.MatchingResult?.Closes
-                .Select(c =>
-                {
-                    BacktestOrder order = context.BacktestOrders.Find(c.OrderId)!;
-                    return MapOrderToDto(order);
-                }).ToList() ?? [];
+            List<OrderDto> closedPositions = (advanceResult.ClosedOrders ?? [])
+                .Select(MapOrderToDto).ToList();
 
             AdvanceCandleResponseDto response = new(
                 candle,
