@@ -8,7 +8,7 @@ public sealed class GenerateMorningBriefing
     public sealed record Request(
         int UserId = 0) : ICommand<Result<MorningBriefingResultDto>>;
 
-    public sealed class Handler(IOpenRouterAiService aiService, IAiInsightsDbContext db) : ICommandHandler<Request, Result<MorningBriefingResultDto>>
+    public sealed class Handler(IDeepSeekAiService aiService, IAiInsightsDbContext db) : ICommandHandler<Request, Result<MorningBriefingResultDto>>
     {
         public async Task<Result<MorningBriefingResultDto>> Handle(Request request, CancellationToken cancellationToken)
         {

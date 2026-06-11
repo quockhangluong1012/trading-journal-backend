@@ -14,7 +14,7 @@ public sealed class TiltSnapshotUpdatedAiHandlerTests
     [Fact]
     public async Task Handle_WhenAiRequestsNotification_PublishesAiTiltEvent()
     {
-        var aiService = new Mock<IOpenRouterAiService>();
+        var aiService = new Mock<IDeepSeekAiService>();
         var eventBus = new Mock<IEventBus>();
 
         aiService
@@ -49,7 +49,7 @@ public sealed class TiltSnapshotUpdatedAiHandlerTests
     [Fact]
     public async Task Handle_WhenAiRiskLevelUsesDifferentCasing_PublishesAiTiltEvent()
     {
-        var aiService = new Mock<IOpenRouterAiService>();
+        var aiService = new Mock<IDeepSeekAiService>();
         var eventBus = new Mock<IEventBus>();
 
         aiService
@@ -84,12 +84,12 @@ public sealed class TiltSnapshotUpdatedAiHandlerTests
     [Fact]
     public async Task Handle_WhenAiThrows_DoesNotPublishEvent()
     {
-        var aiService = new Mock<IOpenRouterAiService>();
+        var aiService = new Mock<IDeepSeekAiService>();
         var eventBus = new Mock<IEventBus>();
 
         aiService
             .Setup(service => service.AnalyzeTiltInterventionAsync(It.IsAny<AiTiltInterventionRequestDto>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("OpenRouter unavailable"));
+            .ThrowsAsync(new InvalidOperationException("DeepSeek unavailable"));
 
         var handler = new TiltSnapshotUpdatedAiHandler(
             aiService.Object,

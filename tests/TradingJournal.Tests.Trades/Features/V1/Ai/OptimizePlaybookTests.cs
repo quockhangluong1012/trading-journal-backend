@@ -24,7 +24,7 @@ public sealed class OptimizePlaybookValidatorTests
 
 public sealed class OptimizePlaybookHandlerTests
 {
-    private readonly Mock<IOpenRouterAiService> _aiService = new();
+    private readonly Mock<IDeepSeekAiService> _aiService = new();
 
     [Fact]
     public async Task Handle_WhenAiReturnsRecommendations_ReturnsSuccess()

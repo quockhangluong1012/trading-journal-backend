@@ -21,7 +21,7 @@ public sealed class NaturalLanguageTradeSearchValidatorTests
 
 public sealed class NaturalLanguageTradeSearchHandlerTests
 {
-    private readonly Mock<IOpenRouterAiService> _aiService = new();
+    private readonly Mock<IDeepSeekAiService> _aiService = new();
 
     [Fact]
     public async Task Handle_WhenAiReturnsStructuredFilters_ReturnsSuccess()

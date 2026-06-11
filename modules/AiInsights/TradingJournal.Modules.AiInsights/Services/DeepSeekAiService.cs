@@ -13,7 +13,7 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Modules.AiInsights.Services;
 
-internal sealed partial class OpenRouterAiService(
+internal sealed partial class DeepSeekAiService(
     IPromptService promptService,
     IAiTradeDataProvider tradeDataProvider,
     ITradeAiContextService tradeAiContextService,
@@ -24,8 +24,7 @@ internal sealed partial class OpenRouterAiService(
     ISetupProvider setupProvider,
     HttpClient httpClient,
     IImageHelper imageHelper,
-    IOptions<OpenRouterOptions> options,
-    IHttpContextAccessor httpContextAccessor) : IOpenRouterAiService
+    IOptions<DeepSeekOptions> options) : IDeepSeekAiService
 {
     private const int MaxChartAnalysisImages = 3;
     private const int MaxInlineImageBytes = 5 * 1024 * 1024;

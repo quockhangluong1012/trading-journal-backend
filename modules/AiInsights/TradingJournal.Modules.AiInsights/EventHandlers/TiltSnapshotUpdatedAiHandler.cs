@@ -7,7 +7,7 @@ using TradingJournal.Modules.AiInsights.Services;
 namespace TradingJournal.Modules.AiInsights.EventHandlers;
 
 internal sealed class TiltSnapshotUpdatedAiHandler(
-    IOpenRouterAiService aiService,
+    IDeepSeekAiService aiService,
     IEventBus eventBus,
     ILogger<TiltSnapshotUpdatedAiHandler> logger) : INotificationHandler<TiltSnapshotUpdatedEvent>
 {

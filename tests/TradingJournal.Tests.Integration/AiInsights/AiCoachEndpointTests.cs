@@ -11,7 +11,7 @@ public sealed class AiCoachEndpointTests(ValidationOnlyWebFactory factory)
     public async Task ChatWithCoach_WithoutMode_DefaultsToCoach()
     {
         // Arrange
-        factory.FakeOpenRouterAiService.Reset();
+        factory.FakeDeepSeekAiService.Reset();
         HttpClient client = factory.CreateAuthenticatedClient();
         var payload = new
         {
@@ -26,15 +26,15 @@ public sealed class AiCoachEndpointTests(ValidationOnlyWebFactory factory)
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(1, factory.FakeOpenRouterAiService.ChatWithCoachCalls);
-        Assert.Equal("coach", factory.FakeOpenRouterAiService.LastCoachRequest?.Mode);
+        Assert.Equal(1, factory.FakeDeepSeekAiService.ChatWithCoachCalls);
+        Assert.Equal("coach", factory.FakeDeepSeekAiService.LastCoachRequest?.Mode);
     }
 
     [Fact]
     public async Task ChatWithCoach_WithResearchMode_ReturnsSuccess_AndPassesModeToService()
     {
         // Arrange
-        factory.FakeOpenRouterAiService.Reset();
+        factory.FakeDeepSeekAiService.Reset();
         HttpClient client = factory.CreateAuthenticatedClient();
         var payload = new
         {
@@ -50,15 +50,15 @@ public sealed class AiCoachEndpointTests(ValidationOnlyWebFactory factory)
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(1, factory.FakeOpenRouterAiService.ChatWithCoachCalls);
-        Assert.Equal("research", factory.FakeOpenRouterAiService.LastCoachRequest?.Mode);
+        Assert.Equal(1, factory.FakeDeepSeekAiService.ChatWithCoachCalls);
+        Assert.Equal("research", factory.FakeDeepSeekAiService.LastCoachRequest?.Mode);
     }
 
     [Fact]
     public async Task ChatWithCoachStream_WithResearchMode_StreamsChunkEvents_AndPassesModeToService()
     {
         // Arrange
-        factory.FakeOpenRouterAiService.Reset();
+        factory.FakeDeepSeekAiService.Reset();
         HttpClient client = factory.CreateAuthenticatedClient();
         var payload = new
         {
@@ -85,15 +85,15 @@ public sealed class AiCoachEndpointTests(ValidationOnlyWebFactory factory)
         Assert.Contains("\"type\":\"done\"", streamContent, StringComparison.Ordinal);
         Assert.Contains("\"content\":\"fake-\"", streamContent, StringComparison.Ordinal);
         Assert.Contains("\"content\":\"response\"", streamContent, StringComparison.Ordinal);
-        Assert.Equal(1, factory.FakeOpenRouterAiService.StreamChatWithCoachCalls);
-        Assert.Equal("research", factory.FakeOpenRouterAiService.LastCoachRequest?.Mode);
+        Assert.Equal(1, factory.FakeDeepSeekAiService.StreamChatWithCoachCalls);
+        Assert.Equal("research", factory.FakeDeepSeekAiService.LastCoachRequest?.Mode);
     }
 
     [Fact]
     public async Task ChatWithCoach_NormalizesAcceptedRoles_BeforeInvokingAiService()
     {
         // Arrange
-        factory.FakeOpenRouterAiService.Reset();
+        factory.FakeDeepSeekAiService.Reset();
         HttpClient client = factory.CreateAuthenticatedClient();
         var payload = new
         {
@@ -109,15 +109,15 @@ public sealed class AiCoachEndpointTests(ValidationOnlyWebFactory factory)
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(1, factory.FakeOpenRouterAiService.ChatWithCoachCalls);
-        Assert.Equal(["user", "assistant"], factory.FakeOpenRouterAiService.LastCoachRequest?.Messages.Select(message => message.Role));
+        Assert.Equal(1, factory.FakeDeepSeekAiService.ChatWithCoachCalls);
+        Assert.Equal(["user", "assistant"], factory.FakeDeepSeekAiService.LastCoachRequest?.Messages.Select(message => message.Role));
     }
 
     [Fact]
     public async Task ChatWithCoach_WithInvalidMode_ReturnsBadRequest_WithoutInvokingAiService()
     {
         // Arrange
-        factory.FakeOpenRouterAiService.Reset();
+        factory.FakeDeepSeekAiService.Reset();
         HttpClient client = factory.CreateAuthenticatedClient();
         var payload = new
         {
@@ -133,15 +133,15 @@ public sealed class AiCoachEndpointTests(ValidationOnlyWebFactory factory)
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(0, factory.FakeOpenRouterAiService.ChatWithCoachCalls);
-        Assert.Null(factory.FakeOpenRouterAiService.LastCoachRequest);
+        Assert.Equal(0, factory.FakeDeepSeekAiService.ChatWithCoachCalls);
+        Assert.Null(factory.FakeDeepSeekAiService.LastCoachRequest);
     }
 
     [Fact]
     public async Task ChatWithCoach_WithSystemRole_ReturnsBadRequest_WithoutInvokingAiService()
     {
         // Arrange
-        factory.FakeOpenRouterAiService.Reset();
+        factory.FakeDeepSeekAiService.Reset();
         HttpClient client = factory.CreateAuthenticatedClient();
         var payload = new
         {
@@ -156,15 +156,15 @@ public sealed class AiCoachEndpointTests(ValidationOnlyWebFactory factory)
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(0, factory.FakeOpenRouterAiService.ChatWithCoachCalls);
-        Assert.Null(factory.FakeOpenRouterAiService.LastCoachRequest);
+        Assert.Equal(0, factory.FakeDeepSeekAiService.ChatWithCoachCalls);
+        Assert.Null(factory.FakeDeepSeekAiService.LastCoachRequest);
     }
 
     [Fact]
     public async Task ChatWithCoach_WithNullMessages_ReturnsBadRequest_WithoutInvokingAiService()
     {
         // Arrange
-        factory.FakeOpenRouterAiService.Reset();
+        factory.FakeDeepSeekAiService.Reset();
         HttpClient client = factory.CreateAuthenticatedClient();
         var payload = new
         {
@@ -177,7 +177,7 @@ public sealed class AiCoachEndpointTests(ValidationOnlyWebFactory factory)
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(0, factory.FakeOpenRouterAiService.ChatWithCoachCalls);
-        Assert.Null(factory.FakeOpenRouterAiService.LastCoachRequest);
+        Assert.Equal(0, factory.FakeDeepSeekAiService.ChatWithCoachCalls);
+        Assert.Null(factory.FakeDeepSeekAiService.LastCoachRequest);
     }
 }

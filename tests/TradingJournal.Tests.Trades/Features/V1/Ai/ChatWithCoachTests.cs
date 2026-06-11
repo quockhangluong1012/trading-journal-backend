@@ -18,7 +18,7 @@ public sealed class ChatWithCoachHandlerTests
         PropertyNameCaseInsensitive = true,
     };
 
-    private readonly Mock<IOpenRouterAiService> _aiService = new();
+    private readonly Mock<IDeepSeekAiService> _aiService = new();
     private readonly Mock<IAiInsightsDbContext> _context = new();
     private readonly Mock<DbSet<AiCoachConversation>> _conversationSet;
     private readonly NullLogger<ChatWithCoach.Handler> _logger = NullLogger<ChatWithCoach.Handler>.Instance;
@@ -133,7 +133,7 @@ public sealed class ChatWithCoachHandlerTests
 
         _aiService
             .Setup(service => service.ChatWithCoachAsync(It.IsAny<AiCoachRequestDto>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("OpenRouter failed."));
+            .ThrowsAsync(new InvalidOperationException("DeepSeek failed."));
 
         var handler = new ChatWithCoach.Handler(_aiService.Object, _context.Object, _logger);
 

@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Moq;
 using TradingJournal.Modules.AiInsights.Dto;
@@ -13,7 +12,7 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Tests.Trades.Features.V1.Ai;
 
-public sealed class OpenRouterAiServiceKnowledgeTests
+public sealed class DeepSeekAiServiceKnowledgeTests
 {
     [Fact]
     public async Task ChatWithCoachAsync_WhenResearchMode_SendsSavedKnowledgeLibraryAsReferenceContext()
@@ -82,18 +81,18 @@ public sealed class OpenRouterAiServiceKnowledgeTests
         CaptureHttpMessageHandler captureHandler = new();
         HttpClient httpClient = new(captureHandler)
         {
-            BaseAddress = new Uri("https://openrouter.ai/")
+            BaseAddress = new Uri("https://api.deepseek.com/")
         };
 
-        OpenRouterOptions options = new()
+        DeepSeekOptions options = new()
         {
             ApiKey = "test-api-key",
-            Model = "openrouter/default-model",
-            AiCoachResearchModel = "openrouter/research-model",
-            BaseUrl = "https://openrouter.ai/api/v1"
+            Model = "deepseek-chat",
+            AiCoachResearchModel = "deepseek-reasoner",
+            BaseUrl = "https://api.deepseek.com"
         };
 
-        OpenRouterAiService service = new(
+        DeepSeekAiService service = new(
             promptService.Object,
             tradeDataProvider.Object,
             Mock.Of<ITradeAiContextService>(),
@@ -104,8 +103,7 @@ public sealed class OpenRouterAiServiceKnowledgeTests
             Mock.Of<ISetupProvider>(),
             httpClient,
             Mock.Of<IImageHelper>(),
-            Options.Create(options),
-            new HttpContextAccessor());
+            Options.Create(options));
 
         AiCoachResponseDto response = await service.ChatWithCoachAsync(
             new AiCoachRequestDto(
@@ -117,7 +115,7 @@ public sealed class OpenRouterAiServiceKnowledgeTests
         Assert.Equal("stubbed-reply", response.Reply);
 
         using JsonDocument requestJson = JsonDocument.Parse(captureHandler.LastRequestBody);
-        Assert.Equal("openrouter/research-model", requestJson.RootElement.GetProperty("model").GetString());
+        Assert.Equal("deepseek-reasoner", requestJson.RootElement.GetProperty("model").GetString());
         JsonElement messages = requestJson.RootElement.GetProperty("messages");
         string systemPrompt = messages[0].GetProperty("content").GetString()!;
         string referenceContext = messages[1].GetProperty("content").GetString()!;
@@ -158,18 +156,18 @@ public sealed class OpenRouterAiServiceKnowledgeTests
         CaptureHttpMessageHandler captureHandler = new();
         HttpClient httpClient = new(captureHandler)
         {
-            BaseAddress = new Uri("https://openrouter.ai/")
+            BaseAddress = new Uri("https://api.deepseek.com/")
         };
 
-        OpenRouterOptions options = new()
+        DeepSeekOptions options = new()
         {
             ApiKey = "test-api-key",
-            Model = "openrouter/default-model",
-            DeepResearchModel = "openrouter/legacy-research-model",
-            BaseUrl = "https://openrouter.ai/api/v1"
+            Model = "deepseek-chat",
+            DeepResearchModel = "deepseek-legacy-research",
+            BaseUrl = "https://api.deepseek.com"
         };
 
-        OpenRouterAiService service = new(
+        DeepSeekAiService service = new(
             promptService.Object,
             tradeDataProvider.Object,
             Mock.Of<ITradeAiContextService>(),
@@ -180,8 +178,7 @@ public sealed class OpenRouterAiServiceKnowledgeTests
             Mock.Of<ISetupProvider>(),
             httpClient,
             Mock.Of<IImageHelper>(),
-            Options.Create(options),
-            new HttpContextAccessor());
+            Options.Create(options));
 
         await service.ChatWithCoachAsync(
             new AiCoachRequestDto(
@@ -191,7 +188,7 @@ public sealed class OpenRouterAiServiceKnowledgeTests
             CancellationToken.None);
 
         using JsonDocument requestJson = JsonDocument.Parse(captureHandler.LastRequestBody);
-        Assert.Equal("openrouter/legacy-research-model", requestJson.RootElement.GetProperty("model").GetString());
+        Assert.Equal("deepseek-legacy-research", requestJson.RootElement.GetProperty("model").GetString());
     }
 
     private sealed class CaptureHttpMessageHandler : HttpMessageHandler

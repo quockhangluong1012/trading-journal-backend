@@ -58,7 +58,12 @@
       "Bash(tee /tmp/gw_files.txt)",
       "Bash(xargs sed -i 's/GateWay/Gateway/g')",
       "Read(//tmp/**)",
-      "PowerShell(Get-CimInstance *)"
+      "PowerShell(Get-CimInstance *)",
+      "Bash(mv \"TradingJournal.ApiGateWay.csproj.user\" \"TradingJournal.ApiGateway.csproj.user\")",
+      "Bash(ls *.user)",
+      "Bash(git -c core.renames=true status --short --find-renames=40%)",
+      "Bash(echo \"exit_grep=$? \\(1=no matches=good\\)\")",
+      "Bash(dotnet --version)"
     ]
   }
 }

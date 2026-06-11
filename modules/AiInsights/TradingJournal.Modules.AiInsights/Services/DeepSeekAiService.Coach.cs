@@ -13,7 +13,7 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Modules.AiInsights.Services;
 
-internal sealed partial class OpenRouterAiService
+internal sealed partial class DeepSeekAiService
 {
     public async Task<AiCoachResponseDto> ChatWithCoachAsync(AiCoachRequestDto request, CancellationToken cancellationToken)
     {
@@ -275,15 +275,8 @@ internal sealed partial class OpenRouterAiService
 
     private HttpRequestMessage CreateChatCompletionRequest(Dictionary<string, object> requestBody)
     {
-        HttpRequestMessage request = new(HttpMethod.Post, "api/v1/chat/completions");
+        HttpRequestMessage request = new(HttpMethod.Post, "chat/completions");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", options.Value.ApiKey);
-
-        HttpContext? httpContext = httpContextAccessor.HttpContext;
-        string referer = httpContext is not null
-            ? $"{httpContext.Request.Scheme}://{httpContext.Request.Host}"
-            : "http://localhost:3000";
-        request.Headers.Add("HTTP-Referer", referer);
-        request.Headers.Add("X-Title", "TradingJournal");
 
         string jsonBody = JsonSerializer.Serialize(requestBody);
         request.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
@@ -433,7 +426,7 @@ internal sealed partial class OpenRouterAiService
     }
 
     /// <summary>
-    /// Shared HTTP request method for all OpenRouter chat completions.
+    /// Shared HTTP request method for all DeepSeek chat completions.
     /// Eliminates duplicated auth, header, serialization, and response parsing logic.
     /// </summary>
     private async Task<string> SendChatCompletionAsync(
@@ -453,7 +446,7 @@ internal sealed partial class OpenRouterAiService
         {
             string errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
             throw new InvalidOperationException(
-                $"OpenRouter API failed with status {response.StatusCode}: {errorContent}");
+                $"DeepSeek API failed with status {response.StatusCode}: {errorContent}");
         }
 
         string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -470,7 +463,7 @@ internal sealed partial class OpenRouterAiService
             }
         }
 
-        throw new InvalidOperationException("OpenRouter returned an empty or invalid response.");
+        throw new InvalidOperationException("DeepSeek returned an empty or invalid response.");
     }
 
     private async IAsyncEnumerable<string> StreamChatCompletionAsync(
@@ -511,7 +504,7 @@ internal sealed partial class OpenRouterAiService
             {
                 string errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
                 throw new InvalidOperationException(
-                    $"OpenRouter API failed with status {response.StatusCode}: {errorContent}");
+                    $"DeepSeek API failed with status {response.StatusCode}: {errorContent}");
             }
 
             Stream responseStream;

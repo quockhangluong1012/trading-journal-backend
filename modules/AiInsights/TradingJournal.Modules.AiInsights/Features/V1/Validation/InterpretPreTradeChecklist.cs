@@ -29,7 +29,7 @@ public sealed class InterpretPreTradeChecklist
         }
     }
 
-    public sealed class Handler(IOpenRouterAiService aiService)
+    public sealed class Handler(IDeepSeekAiService aiService)
         : ICommandHandler<Request, Result<PreTradeChecklistInterpretationResultDto>>
     {
         public async Task<Result<PreTradeChecklistInterpretationResultDto>> Handle(Request request, CancellationToken cancellationToken)

@@ -13,7 +13,7 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Modules.AiInsights.Services;
 
-internal sealed partial class OpenRouterAiService
+internal sealed partial class DeepSeekAiService
 {
     private static T? ParseJsonResponse<T>(string responseText)
     {

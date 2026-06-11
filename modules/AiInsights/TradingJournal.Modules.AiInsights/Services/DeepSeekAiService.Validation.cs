@@ -13,7 +13,7 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Modules.AiInsights.Services;
 
-internal sealed partial class OpenRouterAiService
+internal sealed partial class DeepSeekAiService
 {
     public async Task<PreTradeValidationResultDto?> ValidateTradeSetupAsync(
         PreTradeValidationRequestDto request, CancellationToken cancellationToken)
@@ -68,7 +68,7 @@ internal sealed partial class OpenRouterAiService
         };
 
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
-        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        string responseText = await SendDeepSeekRequest(finalPrompt, [], cancellationToken);
         return ParseJsonResponse<PreTradeValidationResultDto>(responseText);
     }
 
@@ -103,7 +103,7 @@ internal sealed partial class OpenRouterAiService
         };
 
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
-        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        string responseText = await SendDeepSeekRequest(finalPrompt, [], cancellationToken);
         PreTradeChecklistInterpretationResultDto? response = ParseJsonResponse<PreTradeChecklistInterpretationResultDto>(responseText);
 
         if (response is null)
@@ -145,7 +145,7 @@ internal sealed partial class OpenRouterAiService
         };
 
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
-        string responseText = await SendOpenRouterRequest(finalPrompt, imageContents, cancellationToken);
+        string responseText = await SendDeepSeekRequest(finalPrompt, imageContents, cancellationToken);
         ChartScreenshotAnalysisResultDto? response = ParseJsonResponse<ChartScreenshotAnalysisResultDto>(responseText);
 
         if (response is null)

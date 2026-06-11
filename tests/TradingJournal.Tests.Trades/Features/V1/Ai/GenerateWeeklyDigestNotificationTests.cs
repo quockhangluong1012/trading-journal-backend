@@ -9,7 +9,7 @@ namespace TradingJournal.Tests.Trades.Features.V1.Ai;
 
 public sealed class GenerateWeeklyDigestNotificationHandlerTests
 {
-    private readonly Mock<IOpenRouterAiService> _aiService = new();
+    private readonly Mock<IDeepSeekAiService> _aiService = new();
     private readonly Mock<IEventBus> _eventBus = new();
 
     [Fact]

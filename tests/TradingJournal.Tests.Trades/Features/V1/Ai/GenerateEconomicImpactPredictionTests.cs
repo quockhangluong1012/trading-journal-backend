@@ -20,7 +20,7 @@ public sealed class GenerateEconomicImpactPredictionValidatorTests
 
 public sealed class GenerateEconomicImpactPredictionHandlerTests
 {
-    private readonly Mock<IOpenRouterAiService> _aiService = new();
+    private readonly Mock<IDeepSeekAiService> _aiService = new();
 
     [Fact]
     public async Task Handle_WhenAiReturnsPrediction_ReturnsSuccess()

@@ -21,7 +21,7 @@ public sealed class OptimizePlaybook
         }
     }
 
-    public sealed class Handler(IOpenRouterAiService aiService)
+    public sealed class Handler(IDeepSeekAiService aiService)
         : ICommandHandler<Request, Result<PlaybookOptimizationResultDto>>
     {
         public async Task<Result<PlaybookOptimizationResultDto>> Handle(Request request, CancellationToken cancellationToken)

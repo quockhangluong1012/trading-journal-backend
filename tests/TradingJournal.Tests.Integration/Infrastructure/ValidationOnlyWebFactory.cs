@@ -10,7 +10,7 @@ namespace TradingJournal.Tests.Integration.Infrastructure;
 
 public sealed class ValidationOnlyWebFactory : WebApplicationFactory<Program>
 {
-    public FakeOpenRouterAiService FakeOpenRouterAiService { get; } = new();
+    public FakeDeepSeekAiService FakeDeepSeekAiService { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -26,9 +26,9 @@ public sealed class ValidationOnlyWebFactory : WebApplicationFactory<Program>
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<IHostedService>();
-            services.RemoveAll<IOpenRouterAiService>();
-            services.AddSingleton(FakeOpenRouterAiService);
-            services.AddScoped<IOpenRouterAiService>(sp => sp.GetRequiredService<FakeOpenRouterAiService>());
+            services.RemoveAll<IDeepSeekAiService>();
+            services.AddSingleton(FakeDeepSeekAiService);
+            services.AddScoped<IDeepSeekAiService>(sp => sp.GetRequiredService<FakeDeepSeekAiService>());
         });
     }
 

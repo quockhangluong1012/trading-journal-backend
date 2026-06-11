@@ -28,8 +28,8 @@ public static class DependencyInjection
             sp.GetRequiredService<AiInsightsDbContext>());
 
         // AI services
-        services.AddOptions<OpenRouterOptions>()
-            .Bind(configuration.GetSection(OpenRouterOptions.BindLocator))
+        services.AddOptions<DeepSeekOptions>()
+            .Bind(configuration.GetSection(DeepSeekOptions.BindLocator))
             .ValidateDataAnnotations()
             .ValidateOnStart();
         services.AddScoped<IPromptService, PromptService>();
@@ -40,13 +40,13 @@ public static class DependencyInjection
         .AddStandardResilienceHandler();
         services.AddScoped<ITradeAiContextService, TradeAiContextService>();
 
-        services.AddHttpClient<IOpenRouterAiService, OpenRouterAiService>((sp, client) =>
+        services.AddHttpClient<IDeepSeekAiService, DeepSeekAiService>((sp, client) =>
         {
-            OpenRouterOptions openRouterOptions = configuration
-                .GetSection(OpenRouterOptions.BindLocator)
-                .Get<OpenRouterOptions>()!;
+            DeepSeekOptions deepSeekOptions = configuration
+                .GetSection(DeepSeekOptions.BindLocator)
+                .Get<DeepSeekOptions>()!;
 
-            client.BaseAddress = new Uri(openRouterOptions.BaseUrl);
+            client.BaseAddress = new Uri(deepSeekOptions.BaseUrl);
             client.Timeout = TimeSpan.FromMinutes(5);
         })
         .AddStandardResilienceHandler();

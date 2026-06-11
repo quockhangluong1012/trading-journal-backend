@@ -83,7 +83,7 @@ public sealed class ChatWithCoach
             {
                 string role = AiCoachRoles.Normalize(message.Role);
                 string content = string.Equals(role, AiCoachRoles.User, StringComparison.Ordinal)
-                    ? OpenRouterAiService.SanitizePromptInput(message.Content)
+                    ? DeepSeekAiService.SanitizePromptInput(message.Content)
                     : message.Content;
 
                 return new AiCoachMessageDto(role, content);
@@ -145,7 +145,7 @@ public sealed class ChatWithCoach
     }
 
     public sealed class Handler(
-        IOpenRouterAiService aiService,
+        IDeepSeekAiService aiService,
         IAiInsightsDbContext context,
         ILogger<Handler>? logger = null) : ICommandHandler<Request, Result<AiCoachResponseDto>>
     {
@@ -193,7 +193,7 @@ public sealed class ChatWithCoach
             group.MapPost("/chat/stream", async (
                 HttpContext httpContext,
                 IValidator<Request> validator,
-                IOpenRouterAiService aiService,
+                IDeepSeekAiService aiService,
                 IAiInsightsDbContext context,
                 ILogger<Endpoint> logger,
                 [FromBody] Request request,

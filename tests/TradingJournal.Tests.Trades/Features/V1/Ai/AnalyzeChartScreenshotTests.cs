@@ -50,7 +50,7 @@ public sealed class AnalyzeChartScreenshotValidatorTests
 
 public sealed class AnalyzeChartScreenshotHandlerTests
 {
-    private readonly Mock<IOpenRouterAiService> _aiService = new();
+    private readonly Mock<IDeepSeekAiService> _aiService = new();
 
     [Fact]
     public async Task Handle_WhenAiReturnsAnalysis_ReturnsSuccess()

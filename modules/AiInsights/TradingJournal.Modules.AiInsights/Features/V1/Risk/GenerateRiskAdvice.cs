@@ -7,7 +7,7 @@ public sealed class GenerateRiskAdvice
 {
     public sealed record Request(int UserId = 0) : ICommand<Result<AiRiskAdvisorResultDto>>;
 
-    public sealed class Handler(IOpenRouterAiService aiService)
+    public sealed class Handler(IDeepSeekAiService aiService)
         : ICommandHandler<Request, Result<AiRiskAdvisorResultDto>>
     {
         public async Task<Result<AiRiskAdvisorResultDto>> Handle(Request request, CancellationToken cancellationToken)

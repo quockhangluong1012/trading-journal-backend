@@ -65,7 +65,7 @@ public sealed class AnalyzeChartScreenshot
         }
     }
 
-    public sealed class Handler(IOpenRouterAiService aiService)
+    public sealed class Handler(IDeepSeekAiService aiService)
         : ICommandHandler<Request, Result<ChartScreenshotAnalysisResultDto>>
     {
         public async Task<Result<ChartScreenshotAnalysisResultDto>> Handle(Request request, CancellationToken cancellationToken)

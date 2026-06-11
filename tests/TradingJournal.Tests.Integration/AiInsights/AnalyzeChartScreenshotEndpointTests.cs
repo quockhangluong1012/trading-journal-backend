@@ -11,7 +11,7 @@ public sealed class AnalyzeChartScreenshotEndpointTests(ValidationOnlyWebFactory
     public async Task AnalyzeChartScreenshot_WithInvalidScreenshotUrl_ReturnsBadRequest_WithoutInvokingAiService()
     {
         // Arrange
-        factory.FakeOpenRouterAiService.Reset();
+        factory.FakeDeepSeekAiService.Reset();
         HttpClient client = factory.CreateAuthenticatedClient();
         var payload = new
         {
@@ -30,6 +30,6 @@ public sealed class AnalyzeChartScreenshotEndpointTests(ValidationOnlyWebFactory
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(0, factory.FakeOpenRouterAiService.AnalyzeChartScreenshotCalls);
+        Assert.Equal(0, factory.FakeDeepSeekAiService.AnalyzeChartScreenshotCalls);
     }
 }

@@ -5,7 +5,7 @@ using TradingJournal.Modules.AiInsights.Services;
 
 namespace TradingJournal.Tests.Integration.Infrastructure;
 
-public sealed class FakeOpenRouterAiService : IOpenRouterAiService
+public sealed class FakeDeepSeekAiService : IDeepSeekAiService
 {
     private int _analyzeChartScreenshotCalls;
     private int _chatWithCoachCalls;

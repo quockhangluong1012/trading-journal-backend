@@ -13,7 +13,7 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Modules.AiInsights.Services;
 
-internal sealed partial class OpenRouterAiService
+internal sealed partial class DeepSeekAiService
 {
     public async Task<EmotionDetectionResultDto?> DetectEmotionsAsync(
         EmotionDetectionRequestDto request, CancellationToken cancellationToken)
@@ -47,7 +47,7 @@ internal sealed partial class OpenRouterAiService
         };
 
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
-        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        string responseText = await SendDeepSeekRequest(finalPrompt, [], cancellationToken);
         return ParseJsonResponse<EmotionDetectionResultDto>(responseText);
     }
 
@@ -94,7 +94,7 @@ internal sealed partial class OpenRouterAiService
         };
 
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
-        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        string responseText = await SendDeepSeekRequest(finalPrompt, [], cancellationToken);
         AiRiskAdvisorResultDto? response = ParseJsonResponse<AiRiskAdvisorResultDto>(responseText);
 
         if (response is null)
@@ -153,7 +153,7 @@ internal sealed partial class OpenRouterAiService
         };
 
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
-        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        string responseText = await SendDeepSeekRequest(finalPrompt, [], cancellationToken);
         AiWeeklyDigestResultDto? response = ParseJsonResponse<AiWeeklyDigestResultDto>(responseText);
 
         if (response is null)
@@ -206,7 +206,7 @@ internal sealed partial class OpenRouterAiService
         };
 
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
-        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        string responseText = await SendDeepSeekRequest(finalPrompt, [], cancellationToken);
         AiEconomicImpactPredictorResultDto? response = ParseJsonResponse<AiEconomicImpactPredictorResultDto>(responseText);
 
         if (response is null)
@@ -293,7 +293,7 @@ internal sealed partial class OpenRouterAiService
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
         try
         {
-            string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+            string responseText = await SendDeepSeekRequest(finalPrompt, [], cancellationToken);
             return ParseJsonResponse<MorningBriefingResultDto>(responseText);
         }
         catch (Exception ex)
@@ -320,7 +320,7 @@ internal sealed partial class OpenRouterAiService
         };
 
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
-        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        string responseText = await SendDeepSeekRequest(finalPrompt, [], cancellationToken);
 
         return ParseJsonResponse<NaturalLanguageTradeSearchResultDto>(responseText);
     }
@@ -361,7 +361,7 @@ internal sealed partial class OpenRouterAiService
         };
 
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
-        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        string responseText = await SendDeepSeekRequest(finalPrompt, [], cancellationToken);
 
         TradePatternDiscoveryResultDto? response = ParseJsonResponse<TradePatternDiscoveryResultDto>(responseText);
 

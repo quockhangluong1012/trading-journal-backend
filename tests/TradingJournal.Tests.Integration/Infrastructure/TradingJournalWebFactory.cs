@@ -21,7 +21,7 @@ public sealed class TradingJournalWebFactory : WebApplicationFactory<Program>, I
         .WithPassword("Test@Strong!Password123")
         .Build();
 
-    public FakeOpenRouterAiService FakeOpenRouterAiService { get; } = new();
+    public FakeDeepSeekAiService FakeDeepSeekAiService { get; } = new();
 
     public string ConnectionString => _sqlContainer.GetConnectionString();
 
@@ -36,9 +36,9 @@ public sealed class TradingJournalWebFactory : WebApplicationFactory<Program>, I
 
         builder.ConfigureTestServices(services =>
         {
-            services.RemoveAll<IOpenRouterAiService>();
-            services.AddSingleton(FakeOpenRouterAiService);
-            services.AddScoped<IOpenRouterAiService>(sp => sp.GetRequiredService<FakeOpenRouterAiService>());
+            services.RemoveAll<IDeepSeekAiService>();
+            services.AddSingleton(FakeDeepSeekAiService);
+            services.AddScoped<IDeepSeekAiService>(sp => sp.GetRequiredService<FakeDeepSeekAiService>());
         });
     }
 

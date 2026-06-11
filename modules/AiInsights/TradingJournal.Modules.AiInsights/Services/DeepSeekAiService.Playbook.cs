@@ -13,7 +13,7 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Modules.AiInsights.Services;
 
-internal sealed partial class OpenRouterAiService
+internal sealed partial class DeepSeekAiService
 {
     public async Task<SuggestedLessonsResultDto?> SuggestLessonsAsync(
         SuggestLessonsRequestDto request,
@@ -52,7 +52,7 @@ internal sealed partial class OpenRouterAiService
         };
 
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
-        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        string responseText = await SendDeepSeekRequest(finalPrompt, [], cancellationToken);
 
         SuggestedLessonsResultDto? response = ParseJsonResponse<SuggestedLessonsResultDto>(responseText);
 
@@ -123,7 +123,7 @@ internal sealed partial class OpenRouterAiService
         };
 
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
-        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        string responseText = await SendDeepSeekRequest(finalPrompt, [], cancellationToken);
 
         PlaybookOptimizationResultDto? response = ParseJsonResponse<PlaybookOptimizationResultDto>(responseText);
 
@@ -161,7 +161,7 @@ internal sealed partial class OpenRouterAiService
         };
 
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
-        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        string responseText = await SendDeepSeekRequest(finalPrompt, [], cancellationToken);
         TradingSetupGenerationResultDto? response = ParseJsonResponse<TradingSetupGenerationResultDto>(responseText);
 
         return response is null ? null : SanitizeTradingSetupGenerationResult(response, request.MaxNodes);
@@ -196,7 +196,7 @@ internal sealed partial class OpenRouterAiService
         };
 
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
-        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        string responseText = await SendDeepSeekRequest(finalPrompt, [], cancellationToken);
 
         AiTiltInterventionResultDto? response = ParseJsonResponse<AiTiltInterventionResultDto>(responseText);
 

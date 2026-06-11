@@ -13,7 +13,7 @@ using TradingJournal.Shared.Interfaces;
 
 namespace TradingJournal.Modules.AiInsights.Services;
 
-internal sealed partial class OpenRouterAiService
+internal sealed partial class DeepSeekAiService
 {
     public async Task<ReviewSummaryResultDto?> GenerateReviewSummary(ReviewSummaryRequestDto request, CancellationToken cancellationToken)
     {
@@ -62,7 +62,7 @@ internal sealed partial class OpenRouterAiService
 
         string finalPrompt = ReplacePlaceholders(promptTemplate, replacements);
 
-        string responseText = await SendOpenRouterRequest(finalPrompt, [], cancellationToken);
+        string responseText = await SendDeepSeekRequest(finalPrompt, [], cancellationToken);
 
         return ParseReviewAiResponse(responseText);
     }

@@ -25,7 +25,7 @@ public sealed class SearchTradesNaturalLanguage
         }
     }
 
-    public sealed class Handler(IOpenRouterAiService aiService)
+    public sealed class Handler(IDeepSeekAiService aiService)
         : ICommandHandler<Request, Result<NaturalLanguageTradeSearchResultDto>>
     {
         public async Task<Result<NaturalLanguageTradeSearchResultDto>> Handle(Request request, CancellationToken cancellationToken)
