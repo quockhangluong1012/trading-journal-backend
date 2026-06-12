@@ -12,34 +12,21 @@ public sealed class GetTradingStatistic
         {
             DateTime fromDate = DashboardFilterHelper.GetFromDate(request.Filter);
 
-            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
+            TradeStatisticsDto stats = await tradeProvider.GetTradeStatisticsAsync(request.UserId, fromDate, cancellationToken);
 
-            List<TradeCacheDto> trades = [.. allTrades.Where(t => t.Date >= fromDate)];
-
-            if (trades.Count == 0)
+            if (stats.ClosedTrades == 0)
             {
                 return Result<TradingStatisticViewModel>.Success(new TradingStatisticViewModel());
             }
 
-            List<TradeCacheDto> closedTrades = [.. trades.Where(t => t.Status == TradeStatus.Closed)];
-
-            decimal totalPnL = closedTrades.Where(t => t.Pnl.HasValue).Sum(t => t.Pnl ?? 0);
-
-            int totalWin = closedTrades.Count(t => t.Pnl is > 0);
-            int totalLoss = closedTrades.Count(t => t.Pnl is < 0);
-
-            decimal winRate = closedTrades.Count == 0 ? 0 : (decimal)totalWin / (totalWin + totalLoss) * 100;
-
-            int totalTrades = trades.Count;
-
-            int openPositions = trades.Count(t => t.Status == TradeStatus.Open && !t.Pnl.HasValue);
+            decimal winRate = stats.ClosedTrades == 0 ? 0 : (decimal)stats.WinCount / stats.ClosedTrades * 100;
 
             TradingStatisticViewModel statistic = new()
             {
-                TotalPnL = totalPnL,
+                TotalPnL = stats.TotalPnl,
                 WinRate = winRate,
-                TotalTrades = totalTrades,
-                OpenPositions = openPositions
+                TotalTrades = stats.TotalTrades,
+                OpenPositions = stats.OpenPositions
             };
 
             return Result<TradingStatisticViewModel>.Success(statistic);

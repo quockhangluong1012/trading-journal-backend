@@ -23,20 +23,16 @@ public sealed class GetAssetBreakdown
     {
         public async Task<Result<IReadOnlyCollection<AssetBreakdownViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
             DateTime fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
 
-            List<TradeCacheDto> closed = [.. trades
-                .Where(t => t.Status == TradeStatus.Closed && t.Pnl.HasValue)
-                .Where(t => fromDate == DateTime.MinValue || (t.ClosedDate.HasValue && t.ClosedDate.Value >= fromDate))];
+            List<AssetBreakdownDto> breakdowns = await tradeProvider.GetAssetBreakdownsAsync(request.UserId, fromDate, cancellationToken);
 
-            var assetGroups = closed
-                .GroupBy(t => t.Asset)
-                .Select(g => new AssetBreakdownViewModel(
-                    g.Key,
-                    Math.Round(g.Sum(t => (decimal)t.Pnl!.Value), 2),
-                    g.Count(),
-                    Math.Round((decimal)g.Count(t => t.Pnl > 0) / g.Count() * 100, 1)))
+            var assetGroups = breakdowns
+                .Select(b => new AssetBreakdownViewModel(
+                    b.Asset,
+                    Math.Round(b.TotalPnl, 2),
+                    b.TradeCount,
+                    Math.Round((decimal)b.WinCount / b.TradeCount * 100, 1)))
                 .OrderByDescending(a => a.Pnl)
                 .ToList();
 

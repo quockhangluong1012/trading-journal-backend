@@ -28,10 +28,9 @@ public sealed class GetProfitTrajectory
         {
             DateTime fromDate = DashboardFilterHelper.GetFromDate(request.Filter);
 
-            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
+            List<TradeCacheDto> closedTrades = await tradeProvider.GetTradesInRangeAsync(request.UserId, fromDate, cancellationToken);
 
-            List<ProfitTrajectoryViewModel> trajectory = [.. allTrades
-                .Where(t => t.Status == TradeStatus.Closed && t.ClosedDate != null && t.ClosedDate >= fromDate && t.Pnl.HasValue)
+            List<ProfitTrajectoryViewModel> trajectory = [.. closedTrades
                 .OrderBy(t => t.ClosedDate)
                 .Select(t => new ProfitTrajectoryViewModel(t.ClosedDate!.Value, t.Pnl!.Value))];
 

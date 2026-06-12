@@ -25,21 +25,14 @@ public sealed class GetAssetBreakdown
         {
             DateTime fromDate = DashboardFilterHelper.GetFromDate(request.Filter);
 
-            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
+            List<AssetBreakdownDto> breakdowns = await tradeProvider.GetAssetBreakdownsAsync(request.UserId, fromDate, cancellationToken);
 
-            List<AssetBreakdownViewModel> assetGroups = [.. allTrades
-                .Where(trade => trade.Status == TradeStatus.Closed && trade.Pnl.HasValue)
-                .Where(trade => fromDate == DateTime.MinValue || (trade.ClosedDate.HasValue && trade.ClosedDate.Value >= fromDate))
-                .Where(trade => !string.IsNullOrWhiteSpace(trade.Asset))
-                .GroupBy(trade => trade.Asset)
-                .Select(group => new AssetBreakdownViewModel(
-                    group.Key,
-                    Math.Round(group.Sum(trade => (decimal)trade.Pnl!.Value), 2),
-                    group.Count(),
-                    Math.Round((decimal)group.Count(trade => trade.Pnl > 0) / group.Count() * 100, 1)))
-                .OrderByDescending(asset => Math.Abs(asset.Pnl))
-                .ThenByDescending(asset => asset.Count)
-                .ThenBy(asset => asset.Asset)];
+            List<AssetBreakdownViewModel> assetGroups = [.. breakdowns
+                .Select(b => new AssetBreakdownViewModel(
+                    b.Asset,
+                    Math.Round(b.TotalPnl, 2),
+                    b.TradeCount,
+                    Math.Round((decimal)b.WinCount / b.TradeCount * 100, 1)))];
 
             return Result<IReadOnlyCollection<AssetBreakdownViewModel>>.Success(assetGroups);
         }

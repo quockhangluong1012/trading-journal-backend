@@ -10,6 +10,7 @@ public sealed class Goal : EntityBase<int>, ITrackableGoalItem
     public DateTime? StartDate { get; set; }
     public DateTime? DueDate { get; set; }
     public TrackingMode TrackingMode { get; set; } = TrackingMode.Manual;
+    public GoalMetricSource? MetricSource { get; set; }
     public string? MetricName { get; set; }
     public string? MetricUnit { get; set; }
     public MetricDirection? MetricDirection { get; set; }
@@ -21,4 +22,5 @@ public sealed class Goal : EntityBase<int>, ITrackableGoalItem
     public ICollection<GoalMilestone> Milestones { get; set; } = [];
     public ICollection<GoalTask> Tasks { get; set; } = [];
     public ICollection<GoalProgressEntry> ProgressEntries { get; set; } = [];
+    public ICollection<GoalActivityLink> ActivityLinks { get; set; } = [];
 }

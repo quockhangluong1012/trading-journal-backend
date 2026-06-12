@@ -32,6 +32,15 @@ public enum KarmaActionType
     /// <summary>Writing a daily pre-market note (+6)</summary>
     DailyNoteWritten = 9,
 
+    /// <summary>Completing a goal task (+10)</summary>
+    GoalTaskCompleted = 10,
+
+    /// <summary>Completing a goal milestone (+25)</summary>
+    GoalMilestoneCompleted = 11,
+
+    /// <summary>Completing a goal (+50)</summary>
+    GoalCompleted = 12,
+
     /// <summary>System recalculation adjustment (±N)</summary>
     SystemAdjustment = 99
 }

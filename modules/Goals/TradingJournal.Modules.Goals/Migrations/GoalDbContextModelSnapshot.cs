@@ -63,6 +63,9 @@ namespace TradingJournal.Modules.Goals.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("MetricSource")
+                        .HasColumnType("int");
+
                     b.Property<string>("MetricUnit")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -97,6 +100,72 @@ namespace TradingJournal.Modules.Goals.Migrations
                     b.HasIndex("CreatedBy", "IsCompleted", "DueDate");
 
                     b.ToTable("Goals", "Goals");
+                });
+
+            modelBuilder.Entity("TradingJournal.Modules.Goals.Domain.GoalActivityLink", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("CompletedItem")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Delta")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<int>("GoalId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDisabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ItemType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MetricSource")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("SourceEventId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SourceId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SourceType")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GoalId", "RecordedAt");
+
+                    b.HasIndex("SourceType", "SourceId");
+
+                    b.HasIndex("SourceEventId", "ItemType", "ItemId")
+                        .IsUnique();
+
+                    b.ToTable("GoalActivityLinks", "Goals");
                 });
 
             modelBuilder.Entity("TradingJournal.Modules.Goals.Domain.GoalMilestone", b =>
@@ -142,6 +211,9 @@ namespace TradingJournal.Modules.Goals.Migrations
                     b.Property<string>("MetricName")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("MetricSource")
+                        .HasColumnType("int");
 
                     b.Property<string>("MetricUnit")
                         .HasMaxLength(50)
@@ -289,6 +361,9 @@ namespace TradingJournal.Modules.Goals.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("MetricSource")
+                        .HasColumnType("int");
+
                     b.Property<string>("MetricUnit")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -330,6 +405,17 @@ namespace TradingJournal.Modules.Goals.Migrations
                     b.HasIndex("GoalId", "MilestoneId", "SortOrder");
 
                     b.ToTable("GoalTasks", "Goals");
+                });
+
+            modelBuilder.Entity("TradingJournal.Modules.Goals.Domain.GoalActivityLink", b =>
+                {
+                    b.HasOne("TradingJournal.Modules.Goals.Domain.Goal", "Goal")
+                        .WithMany("ActivityLinks")
+                        .HasForeignKey("GoalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Goal");
                 });
 
             modelBuilder.Entity("TradingJournal.Modules.Goals.Domain.GoalMilestone", b =>
@@ -388,6 +474,8 @@ namespace TradingJournal.Modules.Goals.Migrations
 
             modelBuilder.Entity("TradingJournal.Modules.Goals.Domain.Goal", b =>
                 {
+                    b.Navigation("ActivityLinks");
+
                     b.Navigation("Milestones");
 
                     b.Navigation("ProgressEntries");

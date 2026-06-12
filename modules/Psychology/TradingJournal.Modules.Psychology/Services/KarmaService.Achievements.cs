@@ -146,6 +146,16 @@ internal sealed partial class KarmaService
             .Where(k => k.CreatedBy == userId && k.ActionType == KarmaActionType.PsychologyJournalEntry)
             .CountAsync(ct);
 
+        int completedTaskCount = await psychologyDb.KarmaRecords
+            .AsNoTracking()
+            .CountAsync(k => k.CreatedBy == userId && k.ActionType == KarmaActionType.GoalTaskCompleted, ct);
+        int completedMilestoneCount = await psychologyDb.KarmaRecords
+            .AsNoTracking()
+            .CountAsync(k => k.CreatedBy == userId && k.ActionType == KarmaActionType.GoalMilestoneCompleted, ct);
+        int completedGoalCount = await psychologyDb.KarmaRecords
+            .AsNoTracking()
+            .CountAsync(k => k.CreatedBy == userId && k.ActionType == KarmaActionType.GoalCompleted, ct);
+
         // ── New: Daily note streak ──
         int dailyNoteStreak = await CalculateDailyNoteStreakAsync(userId, ct);
 
@@ -386,6 +396,18 @@ internal sealed partial class KarmaService
                 AchievementType.LegendaryTrader => hardMetrics.IsLegendaryTrader,
                 AchievementType.PropFirmGod => hardMetrics.IsPropFirmGod,
 
+                // Goal progress
+                AchievementType.FirstGoalTaskCompleted => completedTaskCount >= 1,
+                AchievementType.TenGoalTasksCompleted => completedTaskCount >= 10,
+                AchievementType.TwentyFiveGoalTasksCompleted => completedTaskCount >= 25,
+                AchievementType.FirstGoalMilestoneCompleted => completedMilestoneCount >= 1,
+                AchievementType.FiveGoalMilestonesCompleted => completedMilestoneCount >= 5,
+                AchievementType.TenGoalMilestonesCompleted => completedMilestoneCount >= 10,
+                AchievementType.FirstGoalCompleted => completedGoalCount >= 1,
+                AchievementType.FiveGoalsCompleted => completedGoalCount >= 5,
+                AchievementType.TenGoalsCompleted => completedGoalCount >= 10,
+                AchievementType.GoalMaster => completedGoalCount >= 25,
+
                 _ => false
             };
 
@@ -402,7 +424,8 @@ internal sealed partial class KarmaService
             {
                 Id = 0,
                 AchievementType = type,
-                UnlockedAt = DateTime.UtcNow
+                UnlockedAt = DateTime.UtcNow,
+                CreatedBy = userId,
             };
 
             psychologyDb.Achievements.Add(achievement);

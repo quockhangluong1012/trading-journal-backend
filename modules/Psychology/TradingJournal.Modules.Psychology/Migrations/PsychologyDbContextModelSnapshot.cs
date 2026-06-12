@@ -53,7 +53,8 @@ namespace TradingJournal.Modules.Psychology.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedBy", "UnlockedAt");
+                    b.HasIndex("CreatedBy", "AchievementType")
+                        .IsUnique();
 
                     b.ToTable("Achievements", "Psychology");
                 });
@@ -203,6 +204,10 @@ namespace TradingJournal.Modules.Psychology.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedBy", "RecordedAt");
+
+                    b.HasIndex("CreatedBy", "ActionType", "ReferenceId")
+                        .IsUnique()
+                        .HasFilter("[ReferenceId] IS NOT NULL");
 
                     b.ToTable("KarmaRecords", "Psychology");
                 });

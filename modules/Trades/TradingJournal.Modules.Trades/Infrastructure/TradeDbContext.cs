@@ -62,6 +62,7 @@ internal sealed class TradeDbContext(DbContextOptions<TradeDbContext> options, I
             trade.Property(t => t.TargetTier1).HasPrecision(TradePricePrecision, TradePriceScale);
             trade.Property(t => t.TargetTier2).HasPrecision(TradePricePrecision, TradePriceScale);
             trade.Property(t => t.TargetTier3).HasPrecision(TradePricePrecision, TradePriceScale);
+            trade.Property(t => t.Pnl).HasPrecision(TradePricePrecision, TradePriceScale);
             trade.Property(t => t.AccountBalanceAtEntry).HasPrecision(18, 2);
             trade.Property(t => t.RiskAmountAtEntry).HasPrecision(18, 2);
             trade.Property(t => t.SuggestedPositionUnits).HasPrecision(18, 5);

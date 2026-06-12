@@ -217,6 +217,17 @@ internal sealed partial class KarmaService
         new(AchievementType.EliteStatus, "Elite Status", "Karma level 20+ with 60% WR and 100+ trades", "👁️", "Elite"),
         new(AchievementType.LegendaryTrader, "Legendary Trader", "1000+ trades, 55% WR, karma level 15+", "🐉", "Elite"),
         new(AchievementType.PropFirmGod, "Prop Firm God", "Phase 1 + Phase 2 passed + Funded Ready", "🔱", "Elite"),
+        // Goal progress medals
+        new(AchievementType.FirstGoalTaskCompleted, "First Step", "Complete your first goal task", "Bronze", "Goals", "Bronze"),
+        new(AchievementType.TenGoalTasksCompleted, "Task Builder", "Complete 10 goal tasks", "Silver", "Goals", "Silver"),
+        new(AchievementType.TwentyFiveGoalTasksCompleted, "Task Finisher", "Complete 25 goal tasks", "Gold", "Goals", "Gold"),
+        new(AchievementType.FirstGoalMilestoneCompleted, "Milestone Reached", "Complete your first goal milestone", "Bronze", "Goals", "Bronze"),
+        new(AchievementType.FiveGoalMilestonesCompleted, "Momentum", "Complete 5 goal milestones", "Silver", "Goals", "Silver"),
+        new(AchievementType.TenGoalMilestonesCompleted, "Milestone Master", "Complete 10 goal milestones", "Gold", "Goals", "Gold"),
+        new(AchievementType.FirstGoalCompleted, "Goal Getter", "Complete your first goal", "Bronze", "Goals", "Bronze"),
+        new(AchievementType.FiveGoalsCompleted, "Focused Trader", "Complete 5 goals", "Silver", "Goals", "Silver"),
+        new(AchievementType.TenGoalsCompleted, "Achievement Hunter", "Complete 10 goals", "Gold", "Goals", "Gold"),
+        new(AchievementType.GoalMaster, "Goal Master", "Complete 25 goals", "Trophy", "Goals", "Platinum"),
     ];
 
 }

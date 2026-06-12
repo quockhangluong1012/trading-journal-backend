@@ -221,7 +221,7 @@ public sealed class UpdateProgressHandlerTests
         context.Setup(c => c.ProgressEntries).Returns(entriesMock.Object);
         context.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var handler = new UpdateProgress.GoalHandler(context.Object);
+        var handler = new UpdateProgress.GoalHandler(context.Object, Mock.Of<IEventBus>());
         var request = new UpdateProgress.GoalRequest(7, 100m, null, "Reached target", 42);
 
         Result<ProgressResult> result = await handler.Handle(request, CancellationToken.None);
@@ -251,7 +251,7 @@ public sealed class UpdateProgressHandlerTests
             .Returns(DbSetMockHelper.CreateMockDbSet(Array.Empty<GoalProgressEntry>()).Object);
         context.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var handler = new UpdateProgress.GoalHandler(context.Object);
+        var handler = new UpdateProgress.GoalHandler(context.Object, Mock.Of<IEventBus>());
 
         Result<ProgressResult> invalid = await handler.Handle(
             new UpdateProgress.GoalRequest(7, 1m, null, null, 42),
@@ -288,7 +288,7 @@ public sealed class UpdateProgressHandlerTests
             .Returns(DbSetMockHelper.CreateMockDbSet(Array.Empty<GoalProgressEntry>()).Object);
         context.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var handler = new UpdateProgress.TaskHandler(context.Object);
+        var handler = new UpdateProgress.TaskHandler(context.Object, Mock.Of<IEventBus>());
         Result<ProgressResult> result = await handler.Handle(
             new UpdateProgress.TaskRequest(7, 5, 5m, null, "Target reached", 42),
             CancellationToken.None);
@@ -305,7 +305,7 @@ public sealed class UpdateProgressHandlerTests
         var context = new Mock<IGoalDbContext>();
         context.Setup(c => c.Milestones).Returns(DbSetMockHelper.CreateMockDbSet(new[] { milestone }).Object);
 
-        var handler = new UpdateProgress.MilestoneHandler(context.Object);
+        var handler = new UpdateProgress.MilestoneHandler(context.Object, Mock.Of<IEventBus>());
         Result<ProgressResult> result = await handler.Handle(
             new UpdateProgress.MilestoneRequest(7, 3, null, true, null, 42),
             CancellationToken.None);

@@ -23,24 +23,12 @@ public sealed class GetMonthlyReturns
     {
         public async Task<Result<IReadOnlyCollection<MonthlyReturnViewModel>>> Handle(Request request, CancellationToken cancellationToken)
         {
-            List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
             DateTime fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
 
-            List<TradeCacheDto> closed = [.. trades
-                .Where(t => t.Status == TradeStatus.Closed && t.Pnl.HasValue && t.ClosedDate.HasValue)
-                .Where(t => fromDate == DateTime.MinValue || t.ClosedDate!.Value >= fromDate)];
-
-            Dictionary<string, decimal> monthly = [];
-            foreach (TradeCacheDto t in closed)
-            {
-                string key = $"{t.ClosedDate!.Value.Year}-{t.ClosedDate.Value.Month:D2}";
-                monthly.TryAdd(key, 0);
-                monthly[key] += (decimal)t.Pnl!.Value;
-            }
+            List<MonthlyPnlDto> monthly = await tradeProvider.GetMonthlyPnlAsync(request.UserId, fromDate, cancellationToken);
 
             List<MonthlyReturnViewModel> result = monthly
-                .OrderBy(kvp => kvp.Key)
-                .Select(kvp => new MonthlyReturnViewModel(kvp.Key, Math.Round(kvp.Value, 2)))
+                .Select(m => new MonthlyReturnViewModel(m.Month, m.Pnl))
                 .ToList();
 
             return Result<IReadOnlyCollection<MonthlyReturnViewModel>>.Success(result);

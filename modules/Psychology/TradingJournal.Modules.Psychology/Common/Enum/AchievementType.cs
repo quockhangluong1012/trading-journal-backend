@@ -227,5 +227,17 @@ public enum AchievementType
     MarathonTrader = 276,
     EliteStatus = 277,
     LegendaryTrader = 278,
-    PropFirmGod = 279
+    PropFirmGod = 279,
+
+    // Goal progress and completion (300-329)
+    FirstGoalTaskCompleted = 300,
+    TenGoalTasksCompleted = 301,
+    TwentyFiveGoalTasksCompleted = 302,
+    FirstGoalMilestoneCompleted = 310,
+    FiveGoalMilestonesCompleted = 311,
+    TenGoalMilestonesCompleted = 312,
+    FirstGoalCompleted = 320,
+    FiveGoalsCompleted = 321,
+    TenGoalsCompleted = 322,
+    GoalMaster = 323,
 }

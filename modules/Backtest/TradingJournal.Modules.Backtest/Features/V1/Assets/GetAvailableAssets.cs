@@ -50,7 +50,8 @@ public static class GetAvailableAssets
             })
             .WithTags(Tags.BacktestAssets)
             .WithDescription("Get a list of available assets for backtesting.")
-            .Produces<Result<List<AssetDto>>>();
+            .Produces<Result<List<AssetDto>>>()
+            .RequireAuthorization();
         }
     }
 }

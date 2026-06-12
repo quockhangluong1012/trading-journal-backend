@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TradingJournal.Modules.Goals.Services;
 
 namespace TradingJournal.Modules.Goals;
 
@@ -17,6 +18,7 @@ public static class DependencyInjection
         string connectionString = configuration.GetConnectionString("TradeDatabase")!;
         services.AddModuleDbContext<GoalDbContext>(connectionString);
         services.AddScoped<IGoalDbContext, GoalDbContext>();
+        services.AddScoped<IGoalActivityService, GoalActivityService>();
 
         return services;
     }

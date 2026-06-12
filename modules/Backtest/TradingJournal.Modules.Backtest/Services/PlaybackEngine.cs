@@ -1,4 +1,6 @@
 using Microsoft.Extensions.Logging;
+using TradingJournal.Messaging.Shared.Abstractions;
+using TradingJournal.Messaging.Shared.Contracts;
 
 namespace TradingJournal.Modules.Backtest.Services;
 
@@ -23,6 +25,7 @@ internal sealed class PlaybackEngine(
     IBacktestDbContext context,
     IOrderMatchingEngine matchingEngine,
     ICandleAggregationService aggregationService,
+    IEventBus eventBus,
     ILogger<PlaybackEngine> logger) : IPlaybackEngine
 {
     public async Task<PlaybackAdvanceResult> AdvanceCandleAsync(int sessionId, CancellationToken cancellationToken = default)
@@ -82,7 +85,9 @@ internal sealed class PlaybackEngine(
         if (displayCandle is null)
         {
             session.Status = BacktestSessionStatus.Completed;
+            session.EndDate = session.CurrentTimestamp;
             await context.SaveChangesAsync(cancellationToken);
+            await PublishCompletionAsync(session, cancellationToken);
 
             logger.LogInformation("Session {SessionId} completed — no more candles.", sessionId);
             return new PlaybackAdvanceResult(null, null, session.CurrentBalance, session.CurrentTimestamp, true);
@@ -92,7 +97,9 @@ internal sealed class PlaybackEngine(
         if (session.EndDate.HasValue && displayCandle.Timestamp > session.EndDate.Value)
         {
             session.Status = BacktestSessionStatus.Completed;
+            session.EndDate ??= session.CurrentTimestamp;
             await context.SaveChangesAsync(cancellationToken);
+            await PublishCompletionAsync(session, cancellationToken);
             return new PlaybackAdvanceResult(null, null, session.CurrentBalance, session.CurrentTimestamp, true);
         }
 
@@ -265,5 +272,22 @@ internal sealed class PlaybackEngine(
         logger.LogInformation(
             "Session {SessionId} timeframe changed to {Timeframe}. Timestamp preserved at {Timestamp}.",
             sessionId, newTimeframe, session.CurrentTimestamp);
+    }
+
+    private async Task PublishCompletionAsync(BacktestSession session, CancellationToken cancellationToken)
+    {
+        List<BacktestTradeResult> results = await context.BacktestTradeResults
+            .AsNoTracking()
+            .Where(result => result.SessionId == session.Id)
+            .ToListAsync(cancellationToken);
+
+        await eventBus.PublishAsync(new BacktestSessionCompletedEvent(
+            Guid.NewGuid(),
+            session.CreatedBy,
+            session.Id,
+            session.EndDate ?? session.CurrentTimestamp,
+            results.Count,
+            results.Count(result => result.Pnl > 0m),
+            session.CurrentBalance - session.InitialBalance), cancellationToken);
     }
 }

@@ -6,5 +6,6 @@ public interface IGoalDbContext
     DbSet<GoalMilestone> Milestones { get; set; }
     DbSet<GoalTask> GoalTasks { get; set; }
     DbSet<GoalProgressEntry> ProgressEntries { get; set; }
+    DbSet<GoalActivityLink> ActivityLinks { get; set; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

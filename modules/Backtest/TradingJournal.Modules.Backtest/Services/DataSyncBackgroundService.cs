@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -165,6 +166,11 @@ internal sealed class DataSyncBackgroundService(
                     List<OhlcvCandle> chunk = newCandles.Skip(i).Take(chunkSize).ToList();
                     await db.OhlcvCandles.AddRangeAsync(chunk, ct);
                     await db.SaveChangesAsync(ct);
+
+                    // Detach the just-persisted candles so the change tracker (and memory) stays
+                    // bounded and DetectChanges doesn't get slower with every chunk.
+                    foreach (var entry in db.ChangeTracker.Entries<OhlcvCandle>().ToList())
+                        entry.State = EntityState.Detached;
                 }
 
                 logger.LogInformation(

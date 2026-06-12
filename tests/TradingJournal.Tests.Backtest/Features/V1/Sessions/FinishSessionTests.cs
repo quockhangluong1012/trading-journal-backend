@@ -4,6 +4,8 @@ using TradingJournal.Modules.Backtest.Common.Enums;
 using TradingJournal.Modules.Backtest.Domain;
 using TradingJournal.Modules.Backtest.Features.V1.Sessions;
 using TradingJournal.Modules.Backtest.Infrastructure;
+using TradingJournal.Messaging.Shared.Abstractions;
+using TradingJournal.Messaging.Shared.Contracts;
 using TradingJournal.Tests.Backtest.Helpers;
 
 namespace TradingJournal.Tests.Backtest.Features.V1.Sessions;
@@ -11,11 +13,12 @@ namespace TradingJournal.Tests.Backtest.Features.V1.Sessions;
 public sealed class FinishSessionHandlerTests
 {
     private readonly Mock<IBacktestDbContext> _context = new();
+    private readonly Mock<IEventBus> _eventBus = new();
     private readonly FinishSession.Handler _handler;
 
     public FinishSessionHandlerTests()
     {
-        _handler = new FinishSession.Handler(_context.Object);
+        _handler = new FinishSession.Handler(_context.Object, _eventBus.Object);
     }
 
     private void SetupTransactionalContext(
@@ -100,6 +103,14 @@ public sealed class FinishSessionHandlerTests
         Assert.Equal(110m, tradeResults[0].ExitPrice);
         Assert.Equal("Session Finished", tradeResults[0].ExitReason);
         Assert.Equal(10_020m, tradeResults[0].BalanceAfter);
+        _eventBus.Verify(bus => bus.PublishAsync(
+            It.Is<BacktestSessionCompletedEvent>(evt =>
+                evt.UserId == 42 &&
+                evt.SessionId == 10 &&
+                evt.TradeCount == 1 &&
+                evt.WinningTradeCount == 1 &&
+                evt.Pnl == 20m),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

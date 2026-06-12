@@ -2,6 +2,7 @@ global using FluentValidation.TestHelper;
 global using Microsoft.EntityFrameworkCore;
 global using MockQueryable.Moq;
 global using Moq;
+global using TradingJournal.Messaging.Shared.Abstractions;
 global using TradingJournal.Modules.Goals.Common.Enum;
 global using TradingJournal.Modules.Goals.Domain;
 global using TradingJournal.Modules.Goals.Features.V1;

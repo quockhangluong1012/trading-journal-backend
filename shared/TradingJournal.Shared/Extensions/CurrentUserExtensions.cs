@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using TradingJournal.Shared.Exceptions;
 
 namespace TradingJournal.Shared.Extensions;
 
@@ -8,6 +9,12 @@ public static class CurrentUserExtensions
     {
         string? userIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? principal.FindFirst("UserId")?.Value;
-        return int.TryParse(userIdClaim, out var id) ? id : 0;
+
+        if (!int.TryParse(userIdClaim, out var id) || id <= 0)
+        {
+            throw new AccessDeniedException("Valid user identity could not be determined.");
+        }
+
+        return id;
     }
 }

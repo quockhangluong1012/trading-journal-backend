@@ -33,6 +33,10 @@ internal sealed class PsychologyDbContext(DbContextOptions<PsychologyDbContext> 
         modelBuilder.Entity<TiltSnapshot>().HasIndex(t => new { t.CreatedBy, t.RecordedAt });
         modelBuilder.Entity<StreakRecord>().HasIndex(s => new { s.CreatedBy, s.RecordedAt });
         modelBuilder.Entity<KarmaRecord>().HasIndex(k => new { k.CreatedBy, k.RecordedAt });
-        modelBuilder.Entity<Achievement>().HasIndex(a => new { a.CreatedBy, a.UnlockedAt });
+        modelBuilder.Entity<KarmaRecord>()
+            .HasIndex(k => new { k.CreatedBy, k.ActionType, k.ReferenceId })
+            .IsUnique()
+            .HasFilter("[ReferenceId] IS NOT NULL");
+        modelBuilder.Entity<Achievement>().HasIndex(a => new { a.CreatedBy, a.AchievementType }).IsUnique();
     }
 }

@@ -6,7 +6,8 @@ public sealed record TrackingInput(
     string? MetricUnit = null,
     MetricDirection? Direction = null,
     decimal? StartValue = null,
-    decimal? TargetValue = null)
+    decimal? TargetValue = null,
+    GoalMetricSource? Source = null)
 {
     public static TrackingInput Manual { get; } = new(TrackingMode.Manual);
 }
@@ -19,6 +20,7 @@ public sealed record ProgressResult(
 
 public sealed record TrackingSnapshot(
     TrackingMode Mode,
+    GoalMetricSource? Source,
     string? MetricName,
     string? MetricUnit,
     MetricDirection? Direction,
@@ -59,6 +61,17 @@ public sealed record ProgressEntryView(
     string? Note,
     DateTime RecordedAt);
 
+public sealed record GoalActivityView(
+    int Id,
+    GoalItemType ItemType,
+    int ItemId,
+    GoalMetricSource MetricSource,
+    GoalActivitySourceType SourceType,
+    int SourceId,
+    decimal Delta,
+    bool CompletedItem,
+    DateTime RecordedAt);
+
 public sealed record GoalSummary(
     int Id,
     string Title,
@@ -82,6 +95,7 @@ public sealed record GoalDetail(
     IReadOnlyList<GoalMilestoneView> Milestones,
     IReadOnlyList<GoalTaskView> Tasks,
     IReadOnlyList<ProgressEntryView> ProgressHistory,
+    IReadOnlyList<GoalActivityView> ActivityHistory,
     DateTime CreatedDate,
     DateTime? UpdatedDate);
 
@@ -110,6 +124,11 @@ internal sealed class TrackingInputValidator : AbstractValidator<TrackingInput>
                     : target < input.StartValue;
             }).WithMessage("Target value must move in the configured metric direction.");
         });
+
+        When(x => x.Mode == TrackingMode.Manual, () =>
+        {
+            RuleFor(x => x.Source).Null();
+        });
     }
 }
 
@@ -118,6 +137,7 @@ internal static class GoalTrackingMapper
     public static void Apply(ITrackableGoalItem item, TrackingInput tracking)
     {
         item.TrackingMode = tracking.Mode;
+        item.MetricSource = tracking.Mode == TrackingMode.Metric ? tracking.Source : null;
         item.MetricName = tracking.Mode == TrackingMode.Metric ? tracking.MetricName?.Trim() : null;
         item.MetricUnit = tracking.Mode == TrackingMode.Metric ? Normalize(tracking.MetricUnit) : null;
         item.MetricDirection = tracking.Mode == TrackingMode.Metric ? tracking.Direction : null;
@@ -132,6 +152,7 @@ internal static class GoalTrackingMapper
 
     public static TrackingSnapshot ToSnapshot(ITrackableGoalItem item) => new(
         item.TrackingMode,
+        item.MetricSource,
         item.MetricName,
         item.MetricUnit,
         item.MetricDirection,

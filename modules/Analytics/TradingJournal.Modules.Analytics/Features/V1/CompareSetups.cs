@@ -64,9 +64,9 @@ public sealed class CompareSetups
     {
         public async Task<Result<SetupComparisonViewModel>> Handle(Request request, CancellationToken cancellationToken)
         {
-            List<TradeCacheDto> trades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
-            List<SetupSummaryDto> setups = await setupProvider.GetSetupsAsync(request.UserId, cancellationToken);
             DateTime fromDate = AnalyticsFilterHelper.GetFromDate(request.Filter);
+            List<TradeCacheDto> closed = await tradeProvider.GetTradesInRangeAsync(request.UserId, fromDate, cancellationToken);
+            List<SetupSummaryDto> setups = await setupProvider.GetSetupsAsync(request.UserId, cancellationToken);
 
             Dictionary<int, string> setupNames = setups.ToDictionary(s => s.Id, s => s.Name);
 
@@ -75,9 +75,8 @@ public sealed class CompareSetups
                 return Result<SetupComparisonViewModel>.Failure(Error.Create("One or both setups not found."));
             }
 
-            List<TradeCacheDto> closed = [.. trades
-                .Where(t => t.Status == TradeStatus.Closed && t.Pnl.HasValue && t.TradingSetupId.HasValue)
-                .Where(t => fromDate == DateTime.MinValue || (t.ClosedDate.HasValue && t.ClosedDate.Value >= fromDate))];
+            // Filter further: only trades with a setup assigned
+            closed = [.. closed.Where(t => t.TradingSetupId.HasValue)];
 
             SetupMetrics metricsA = CalculateMetrics(request.SetupIdA, setupNames[request.SetupIdA], closed);
             SetupMetrics metricsB = CalculateMetrics(request.SetupIdB, setupNames[request.SetupIdB], closed);

@@ -8,15 +8,13 @@
     <Project Path="modules/Analytics/TradingJournal.Modules.Analytics/TradingJournal.Modules.Analytics.csproj" />
     <Project Path="modules/Auth/TradingJournal.Modules.Auth/TradingJournal.Modules.Auth.csproj" />
     <Project Path="modules/Backtest/TradingJournal.Modules.Backtest/TradingJournal.Modules.Backtest.csproj" />
+    <Project Path="modules/Goals/TradingJournal.Modules.Goals/TradingJournal.Modules.Goals.csproj" />
     <Project Path="modules/Notifications/TradingJournal.Modules.Notifications/TradingJournal.Modules.Notifications.csproj" />
     <Project Path="modules/Psychology/TradingJournal.Modules.Psychology/TradingJournal.Modules.Psychology.csproj" />
     <Project Path="modules/RiskManagement/TradingJournal.Modules.RiskManagement/TradingJournal.Modules.RiskManagement.csproj" />
     <Project Path="modules/Scanner/TradingJournal.Modules.Scanner/TradingJournal.Modules.Scanner.csproj" />
     <Project Path="modules/Trades/TradingJournal.Modules.Trades/TradingJournal.Modules.Trades.csproj" />
     <Project Path="modules/TradingSetup/TradingJournal.Modules.TradingSetup/TradingJournal.Modules.TradingSetup.csproj" />
-  </Folder>
-  <Folder Name="/modules/Goals/">
-    <Project Path="modules/Goals/TradingJournal.Modules.Goals/TradingJournal.Modules.Goals.csproj" />
   </Folder>
   <Folder Name="/shared/">
     <Project Path="shared/TradingJournal.Messaging.Shared/TradingJournal.Messaging.Shared.csproj" Id="96e200b6-2bea-42bb-8320-806a6773ac3c" />
@@ -32,8 +30,8 @@
     <Project Path="tests/TradingJournal.Tests.Psychology/TradingJournal.Tests.Psychology.csproj" />
     <Project Path="tests/TradingJournal.Tests.RiskManagement/TradingJournal.Tests.RiskManagement.csproj" />
     <Project Path="tests/TradingJournal.Tests.Scanner/TradingJournal.Tests.Scanner.csproj" />
-    <Project Path="tests/TradingJournal.Tests.TradingSetup/TradingJournal.Tests.TradingSetup.csproj" />
     <Project Path="tests/TradingJournal.Tests.Trades/TradingJournal.Tests.Trades.csproj" />
+    <Project Path="tests/TradingJournal.Tests.TradingSetup/TradingJournal.Tests.TradingSetup.csproj" />
   </Folder>
   <Folder Name="/workers/" />
 </Solution>

@@ -1,5 +1,8 @@
 namespace TradingJournal.Modules.Backtest.Features.V1.Sessions;
 
+using TradingJournal.Messaging.Shared.Abstractions;
+using TradingJournal.Messaging.Shared.Contracts;
+
 public sealed class FinishSession
 {
     public record Request(int SessionId, decimal? ExitPrice) : ICommand<Result>
@@ -20,7 +23,7 @@ public sealed class FinishSession
         }
     }
 
-    internal sealed class Handler(IBacktestDbContext context) : ICommandHandler<Request, Result>
+    internal sealed class Handler(IBacktestDbContext context, IEventBus eventBus) : ICommandHandler<Request, Result>
     {
         public async Task<Result> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -45,6 +48,11 @@ public sealed class FinishSession
 
             if (activeOrders.Count != 0 && request.ExitPrice is not > 0m)
                 return Result.Failure(Error.Create("Exit price is required to close active positions."));
+
+            List<BacktestTradeResult> sessionResults = await context.BacktestTradeResults
+                .AsNoTracking()
+                .Where(result => result.SessionId == session.Id)
+                .ToListAsync(cancellationToken);
 
             await context.BeginTransaction();
 
@@ -78,7 +86,7 @@ public sealed class FinishSession
 
                     session.CurrentBalance += pnl;
 
-                    context.BacktestTradeResults.Add(new BacktestTradeResult
+                    var tradeResult = new BacktestTradeResult
                     {
                         Id = 0,
                         SessionId = session.Id,
@@ -92,7 +100,9 @@ public sealed class FinishSession
                         EntryTime = activeOrder.FilledAt ?? activeOrder.OrderedAt,
                         ExitTime = session.CurrentTimestamp,
                         ExitReason = "Session Finished"
-                    });
+                    };
+                    context.BacktestTradeResults.Add(tradeResult);
+                    sessionResults.Add(tradeResult);
                 }
 
                 session.EndDate = session.CurrentTimestamp;
@@ -100,13 +110,23 @@ public sealed class FinishSession
 
                 await context.SaveChangesAsync(cancellationToken);
                 await context.CommitTransaction();
-                return Result.Success();
             }
             catch
             {
                 await context.RollbackTransaction();
                 throw;
             }
+
+            await eventBus.PublishAsync(new BacktestSessionCompletedEvent(
+                Guid.NewGuid(),
+                request.UserId,
+                session.Id,
+                session.EndDate ?? DateTime.UtcNow,
+                sessionResults.Count,
+                sessionResults.Count(result => result.Pnl > 0m),
+                session.CurrentBalance - session.InitialBalance), cancellationToken);
+
+            return Result.Success();
         }
     }
 

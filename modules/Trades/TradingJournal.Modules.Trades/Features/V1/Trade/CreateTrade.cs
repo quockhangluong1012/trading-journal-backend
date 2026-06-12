@@ -2,6 +2,8 @@ using Mapster;
 using TradingJournal.Modules.Trades.Services;
 using TradingJournal.Shared.CQRS;
 using TradingJournal.Shared.Extensions;
+using TradingJournal.Messaging.Shared.Abstractions;
+using TradingJournal.Messaging.Shared.Contracts;
 
 namespace TradingJournal.Modules.Trades.Features.V1.Trade;
 
@@ -132,7 +134,8 @@ public sealed class CreateTrade
         ITradeRiskAssessmentService tradeRiskAssessmentService,
         IHttpContextAccessor httpContextAccessor,
         ISetupProvider setupProvider,
-        ICacheRepository cacheRepository) : ICommandHandler<Request, Result<int>>
+        ICacheRepository cacheRepository,
+        IEventBus eventBus) : ICommandHandler<Request, Result<int>>
     {
         public async Task<Result<int>> Handle(Request request, CancellationToken cancellationToken)
         {
@@ -231,6 +234,11 @@ public sealed class CreateTrade
                 if (result.IsSuccess)
                 {
                     await cacheRepository.RemoveCache(CacheKeys.TradesForUser(userId), cancellationToken);
+                    await eventBus.PublishAsync(new TradeJournaledEvent(
+                        Guid.NewGuid(),
+                        userId,
+                        result.Value,
+                        DateTime.UtcNow), cancellationToken);
                 }
 
                 return result;

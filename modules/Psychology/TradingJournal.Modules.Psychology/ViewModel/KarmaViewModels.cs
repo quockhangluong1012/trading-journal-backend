@@ -31,4 +31,5 @@ public sealed class AchievementViewModel
     public bool IsUnlocked { get; set; }
     public DateTime? UnlockedAt { get; set; }
     public string Category { get; set; } = string.Empty;
+    public string? Medal { get; set; }
 }

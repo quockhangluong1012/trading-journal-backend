@@ -9,6 +9,8 @@ using System.Security.Claims;
 using TradingJournal.Shared.Abstractions;
 using TradingJournal.Shared.Dtos;
 using TradingJournal.Shared.Interfaces;
+using TradingJournal.Messaging.Shared.Abstractions;
+using TradingJournal.Messaging.Shared.Contracts;
 using IctEnums = TradingJournal.Modules.Trades.Common.Enum;
 using SharedEnums = TradingJournal.Shared.Common.Enum;
 
@@ -163,6 +165,7 @@ public sealed class CreateTradeHandlerTests
     private Mock<ITradeRiskAssessmentService> _tradeRiskAssessmentServiceMock = null!;
     private Mock<IHttpContextAccessor> _httpContextAccessorMock = null!;
     private Mock<ISetupProvider> _setupProviderMock = null!;
+    private Mock<IEventBus> _eventBusMock = null!;
     private CreateTrade.Handler _handler = null!;
 
     public CreateTradeHandlerTests()
@@ -173,10 +176,11 @@ public sealed class CreateTradeHandlerTests
         _tradeRiskAssessmentServiceMock = new Mock<ITradeRiskAssessmentService>();
         _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
         _setupProviderMock = new Mock<ISetupProvider>();
+        _eventBusMock = new Mock<IEventBus>();
         _tradeRiskAssessmentServiceMock
             .Setup(x => x.AssessAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<decimal>(), It.IsAny<SharedEnums.TradeStatus>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TradeRiskAssessmentDto(10000m, 1m, 100m, 20000m, 0.2m, 0.005m, 1m, 1, 1, true, []));
-        _handler = new CreateTrade.Handler(_contextMock.Object, _screenshotMock.Object, _disciplineMock.Object, _tradeRiskAssessmentServiceMock.Object, _httpContextAccessorMock.Object, _setupProviderMock.Object, new Mock<ICacheRepository>().Object);
+        _handler = new CreateTrade.Handler(_contextMock.Object, _screenshotMock.Object, _disciplineMock.Object, _tradeRiskAssessmentServiceMock.Object, _httpContextAccessorMock.Object, _setupProviderMock.Object, new Mock<ICacheRepository>().Object, _eventBusMock.Object);
     }
 
     private void SetupTransactionalExecution()
@@ -251,6 +255,9 @@ public sealed class CreateTradeHandlerTests
         var result = await _handler.Handle(request, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
+        _eventBusMock.Verify(bus => bus.PublishAsync(
+            It.Is<TradeJournaledEvent>(evt => evt.UserId == 42 && evt.TradeId == result.Value),
+            It.IsAny<CancellationToken>()), Times.Once);
         Assert.True(result.Value >= 0);
         Assert.NotNull(createdTrade);
         Assert.Equal(10000m, createdTrade!.AccountBalanceAtEntry);

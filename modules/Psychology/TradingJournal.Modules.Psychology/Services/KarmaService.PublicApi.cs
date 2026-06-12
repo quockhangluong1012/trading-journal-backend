@@ -13,6 +13,18 @@ internal sealed partial class KarmaService
     public async Task<KarmaRecord> AwardKarmaAsync(int userId, KarmaActionType actionType, string description,
         int? referenceId = null, int? overridePoints = null, CancellationToken ct = default)
     {
+        if (referenceId.HasValue)
+        {
+            KarmaRecord? existingRecord = await psychologyDb.KarmaRecords
+                .FirstOrDefaultAsync(record => record.CreatedBy == userId
+                    && record.ActionType == actionType
+                    && record.ReferenceId == referenceId.Value, ct);
+            if (existingRecord is not null)
+            {
+                return existingRecord;
+            }
+        }
+
         int points = overridePoints ?? DefaultPoints.GetValueOrDefault(actionType, 0);
 
         var record = new KarmaRecord
@@ -22,7 +34,8 @@ internal sealed partial class KarmaService
             Points = points,
             Description = description,
             ReferenceId = referenceId,
-            RecordedAt = DateTime.UtcNow
+            RecordedAt = DateTime.UtcNow,
+            CreatedBy = userId,
         };
 
         psychologyDb.KarmaRecords.Add(record);
@@ -119,6 +132,7 @@ internal sealed partial class KarmaService
             Description = def.Description,
             Emoji = def.Emoji,
             Category = def.Category,
+            Medal = def.Medal,
             IsUnlocked = unlockedSet.ContainsKey(def.Type),
             UnlockedAt = unlockedSet.GetValueOrDefault(def.Type)
         }).ToList();

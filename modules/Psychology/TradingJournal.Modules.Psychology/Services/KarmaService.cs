@@ -57,6 +57,9 @@ internal sealed partial class KarmaService(
         [KarmaActionType.RuleBrokenPenalty] = -10,
         [KarmaActionType.TiltRecovery] = 20,
         [KarmaActionType.DailyNoteWritten] = 6,
+        [KarmaActionType.GoalTaskCompleted] = 10,
+        [KarmaActionType.GoalMilestoneCompleted] = 25,
+        [KarmaActionType.GoalCompleted] = 50,
         [KarmaActionType.SystemAdjustment] = 0,
     };
 

@@ -488,7 +488,8 @@ namespace TradingJournal.Modules.Trades.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal?>("Pnl")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 5)
+                        .HasColumnType("decimal(18,5)");
 
                     b.Property<int>("Position")
                         .HasColumnType("int");

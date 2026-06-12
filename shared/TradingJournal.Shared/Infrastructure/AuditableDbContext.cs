@@ -81,11 +81,17 @@ public abstract class AuditableDbContext(DbContextOptions options, IHttpContextA
             {
                 case EntityState.Added:
                     entry.Entity.CreatedDate = DateTime.UtcNow;
-                    entry.Entity.CreatedBy = userId;
+                    if (userId > 0)
+                    {
+                        entry.Entity.CreatedBy = userId;
+                    }
                     break;
                 case EntityState.Modified:
                     entry.Entity.UpdatedDate = DateTime.UtcNow;
-                    entry.Entity.UpdatedBy = userId;
+                    if (userId > 0)
+                    {
+                        entry.Entity.UpdatedBy = userId;
+                    }
                     break;
             }
         }

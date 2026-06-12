@@ -31,13 +31,9 @@ public sealed class GetTradingCalendar
             DateTime startOfDay = targetDate.Date;
             DateTime endOfDay = targetDate.Date.AddDays(1).AddTicks(-1);
 
-            List<TradeCacheDto> allTrades = await tradeProvider.GetTradesAsync(request.UserId, cancellationToken);
-
-            // Filter to closed trades for the requested month
-            List<TradeCacheDto> trades = [.. allTrades
-                .Where(t => t.Status == TradeStatus.Closed && t.ClosedDate != null &&
-                    t.ClosedDate.Value.Month == request.Month && t.ClosedDate.Value.Year == request.Year &&
-                    t.ClosedDate.Value >= filterFromDate)];
+            // Fetch only closed trades from the requested month onward (SQL-filtered)
+            List<TradeCacheDto> trades = await tradeProvider.GetTradesInRangeAsync(
+                request.UserId, startOfMonth, cancellationToken);
 
             List<TradingCalendarViewModel> calendars = [];
 
@@ -54,19 +50,16 @@ public sealed class GetTradingCalendar
                 });
             }
 
-            // Compute monthly/weekly/daily PnL from the same cached data
-            List<TradeCacheDto> allClosedTrades = [.. allTrades
-                .Where(t => t.Status == TradeStatus.Closed && t.ClosedDate != null && t.ClosedDate.Value >= filterFromDate)];
-
-            decimal monthlyPnL = allClosedTrades
+            // Compute monthly/weekly/daily PnL from the same month data
+            decimal monthlyPnL = trades
                 .Where(t => t.ClosedDate!.Value >= startOfMonth && t.ClosedDate!.Value <= endOfMonth)
                 .Sum(t => t.Pnl ?? 0);
 
-            decimal weeklyPnL = allClosedTrades
+            decimal weeklyPnL = trades
                 .Where(t => t.ClosedDate!.Value >= startOfWeek && t.ClosedDate!.Value <= endOfWeek)
                 .Sum(t => t.Pnl ?? 0);
 
-            decimal dailyPnL = allClosedTrades
+            decimal dailyPnL = trades
                 .Where(t => t.ClosedDate!.Value >= startOfDay && t.ClosedDate!.Value <= endOfDay)
                 .Sum(t => t.Pnl ?? 0);
 

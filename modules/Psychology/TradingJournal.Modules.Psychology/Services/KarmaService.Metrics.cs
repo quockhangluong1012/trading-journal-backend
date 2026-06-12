@@ -399,5 +399,6 @@ internal sealed partial class KarmaService
         string Name,
         string Description,
         string Emoji,
-        string Category);
+        string Category,
+        string? Medal = null);
 }

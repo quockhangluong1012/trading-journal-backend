@@ -35,7 +35,8 @@ public sealed class GetEmotions
             .Produces(StatusCodes.Status500InternalServerError)
             .WithSummary("Get all emotion tags.")
             .WithDescription("Gets all emotion tags")
-            .WithTags(Tags.Emotions);
+            .WithTags(Tags.Emotions)
+            .RequireAuthorization();
         }
     }
 }

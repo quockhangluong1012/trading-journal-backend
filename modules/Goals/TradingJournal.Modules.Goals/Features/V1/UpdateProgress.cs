@@ -1,5 +1,8 @@
 namespace TradingJournal.Modules.Goals.Features.V1;
 
+using TradingJournal.Messaging.Shared.Abstractions;
+using TradingJournal.Messaging.Shared.Contracts;
+
 public sealed class UpdateProgress
 {
     public sealed record GoalRequest(
@@ -25,7 +28,7 @@ public sealed class UpdateProgress
         string? Note,
         int UserId = 0) : ICommand<Result<ProgressResult>>;
 
-    public sealed class GoalHandler(IGoalDbContext context) : ICommandHandler<GoalRequest, Result<ProgressResult>>
+    public sealed class GoalHandler(IGoalDbContext context, IEventBus eventBus) : ICommandHandler<GoalRequest, Result<ProgressResult>>
     {
         public async Task<Result<ProgressResult>> Handle(GoalRequest request, CancellationToken cancellationToken)
         {
@@ -39,7 +42,10 @@ public sealed class UpdateProgress
 
             return await ApplyAndSave(
                 context,
+                eventBus,
                 goal,
+                goal.Id,
+                goal.Title,
                 goal.Id,
                 GoalItemType.Goal,
                 null,
@@ -52,7 +58,7 @@ public sealed class UpdateProgress
         }
     }
 
-    public sealed class MilestoneHandler(IGoalDbContext context) : ICommandHandler<MilestoneRequest, Result<ProgressResult>>
+    public sealed class MilestoneHandler(IGoalDbContext context, IEventBus eventBus) : ICommandHandler<MilestoneRequest, Result<ProgressResult>>
     {
         public async Task<Result<ProgressResult>> Handle(MilestoneRequest request, CancellationToken cancellationToken)
         {
@@ -68,7 +74,10 @@ public sealed class UpdateProgress
 
             return await ApplyAndSave(
                 context,
+                eventBus,
                 milestone,
+                milestone.Id,
+                milestone.Title,
                 milestone.GoalId,
                 GoalItemType.Milestone,
                 milestone.Id,
@@ -81,7 +90,7 @@ public sealed class UpdateProgress
         }
     }
 
-    public sealed class TaskHandler(IGoalDbContext context) : ICommandHandler<TaskRequest, Result<ProgressResult>>
+    public sealed class TaskHandler(IGoalDbContext context, IEventBus eventBus) : ICommandHandler<TaskRequest, Result<ProgressResult>>
     {
         public async Task<Result<ProgressResult>> Handle(TaskRequest request, CancellationToken cancellationToken)
         {
@@ -97,7 +106,10 @@ public sealed class UpdateProgress
 
             return await ApplyAndSave(
                 context,
+                eventBus,
                 task,
+                task.Id,
+                task.Title,
                 task.GoalId,
                 GoalItemType.Task,
                 task.MilestoneId,
@@ -112,7 +124,10 @@ public sealed class UpdateProgress
 
     private static async Task<Result<ProgressResult>> ApplyAndSave(
         IGoalDbContext context,
+        IEventBus eventBus,
         ITrackableGoalItem item,
+        int itemId,
+        string title,
         int goalId,
         GoalItemType itemType,
         int? milestoneId,
@@ -138,6 +153,12 @@ public sealed class UpdateProgress
         }
         else
         {
+            if (item.MetricSource.HasValue)
+            {
+                return Result<ProgressResult>.Failure(
+                    Error.Create("Automatically tracked metrics cannot be updated manually."));
+            }
+
             if (!value.HasValue || isCompleted.HasValue || item.MetricDirection is null || item.TargetValue is null)
             {
                 return Result<ProgressResult>.Failure(
@@ -171,6 +192,24 @@ public sealed class UpdateProgress
         if (rows <= 0)
         {
             return Result<ProgressResult>.Failure(Error.Create("Failed to update progress."));
+        }
+
+        if (!previousIsCompleted && item.IsCompleted)
+        {
+            await eventBus.PublishAsync(new GoalItemCompletedEvent(
+                Guid.NewGuid(),
+                userId,
+                goalId,
+                itemId,
+                itemType switch
+                {
+                    GoalItemType.Goal => GoalItemKind.Goal,
+                    GoalItemType.Milestone => GoalItemKind.Milestone,
+                    GoalItemType.Task => GoalItemKind.Task,
+                    _ => throw new ArgumentOutOfRangeException(nameof(itemType), itemType, null),
+                },
+                title,
+                item.CompletedDate ?? DateTime.UtcNow), cancellationToken);
         }
 
         decimal progress = TrackingProgress.Calculate(

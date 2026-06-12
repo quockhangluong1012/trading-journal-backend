@@ -59,6 +59,19 @@ public sealed class GetGoalDetail
                 entry.Note,
                 entry.CreatedDate))
             .ToList(),
+        goal.ActivityLinks
+            .OrderByDescending(link => link.RecordedAt)
+            .Select(link => new GoalActivityView(
+                link.Id,
+                link.ItemType,
+                link.ItemId,
+                link.MetricSource,
+                link.SourceType,
+                link.SourceId,
+                link.Delta,
+                link.CompletedItem,
+                link.RecordedAt))
+            .ToList(),
         goal.CreatedDate,
         goal.UpdatedDate);
 
@@ -73,6 +86,7 @@ public sealed class GetGoalDetail
                     .ThenInclude(milestone => milestone.Tasks)
                 .Include(item => item.Tasks)
                 .Include(item => item.ProgressEntries)
+                .Include(item => item.ActivityLinks)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(cancellationToken);
 

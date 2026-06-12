@@ -14,6 +14,7 @@ public sealed class GoalTask : EntityBase<int>, ITrackableGoalItem
     public DateTime? DueDate { get; set; }
     public int SortOrder { get; set; }
     public TrackingMode TrackingMode { get; set; } = TrackingMode.Manual;
+    public GoalMetricSource? MetricSource { get; set; }
     public string? MetricName { get; set; }
     public string? MetricUnit { get; set; }
     public MetricDirection? MetricDirection { get; set; }

@@ -13,6 +13,7 @@ internal sealed class GoalDbContext(
     public DbSet<GoalMilestone> Milestones { get; set; } = null!;
     public DbSet<GoalTask> GoalTasks { get; set; } = null!;
     public DbSet<GoalProgressEntry> ProgressEntries { get; set; } = null!;
+    public DbSet<GoalActivityLink> ActivityLinks { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -38,6 +39,11 @@ internal sealed class GoalDbContext(
             builder.HasMany(goal => goal.ProgressEntries)
                 .WithOne(entry => entry.Goal)
                 .HasForeignKey(entry => entry.GoalId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(goal => goal.ActivityLinks)
+                .WithOne(link => link.Goal)
+                .HasForeignKey(link => link.GoalId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -82,6 +88,14 @@ internal sealed class GoalDbContext(
             builder.HasIndex(entry => new { entry.GoalId, entry.CreatedDate });
             builder.HasIndex(entry => entry.MilestoneId);
             builder.HasIndex(entry => entry.GoalTaskId);
+        });
+
+        modelBuilder.Entity<GoalActivityLink>(builder =>
+        {
+            builder.Property(link => link.Delta).HasPrecision(18, 4);
+            builder.HasIndex(link => new { link.SourceEventId, link.ItemType, link.ItemId }).IsUnique();
+            builder.HasIndex(link => new { link.GoalId, link.RecordedAt });
+            builder.HasIndex(link => new { link.SourceType, link.SourceId });
         });
     }
 
