@@ -96,6 +96,39 @@ public sealed class CreateGoalHandlerTests
 public sealed class AddMilestoneHandlerTests
 {
     [Fact]
+    public async Task Handle_CreatesMilestoneUnderOwnedGoal()
+    {
+        var goals = new List<Goal> { new() { Id = 7, CreatedBy = 42, Title = "My goal" } };
+        Mock<DbSet<GoalMilestone>> milestonesMock = DbSetMockHelper.CreateMockDbSet(Array.Empty<GoalMilestone>());
+        GoalMilestone? captured = null;
+        milestonesMock.Setup(set => set.Add(It.IsAny<GoalMilestone>()))
+            .Callback<GoalMilestone>(milestone => captured = milestone);
+
+        var context = new Mock<IGoalDbContext>();
+        context.Setup(c => c.Goals).Returns(DbSetMockHelper.CreateMockDbSet(goals).Object);
+        context.Setup(c => c.Milestones).Returns(milestonesMock.Object);
+        context.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var handler = new AddMilestone.Handler(context.Object);
+        var request = new AddMilestone.Request(
+            7,
+            "  First 25 trades  ",
+            null,
+            null,
+            1,
+            new TrackingInput(TrackingMode.Metric, "Trades", "trades", MetricDirection.AtLeast, 0m, 25m),
+            42);
+
+        Result<int> result = await handler.Handle(request, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(captured);
+        Assert.Equal(7, captured!.GoalId);
+        Assert.Equal("First 25 trades", captured.Title);
+        Assert.Equal(0m, captured.CurrentValue);
+    }
+
+    [Fact]
     public async Task Handle_RejectsGoalOwnedByAnotherUser()
     {
         var goals = new List<Goal> { new() { Id = 7, CreatedBy = 99, Title = "Private goal" } };
@@ -114,6 +147,31 @@ public sealed class AddMilestoneHandlerTests
 
 public sealed class AddGoalTaskHandlerTests
 {
+    [Fact]
+    public async Task Handle_CreatesDirectTaskUnderOwnedGoal()
+    {
+        var goals = new List<Goal> { new() { Id = 7, CreatedBy = 42, Title = "My goal" } };
+        Mock<DbSet<GoalTask>> tasksMock = DbSetMockHelper.CreateMockDbSet(Array.Empty<GoalTask>());
+        GoalTask? captured = null;
+        tasksMock.Setup(set => set.Add(It.IsAny<GoalTask>())).Callback<GoalTask>(task => captured = task);
+
+        var context = new Mock<IGoalDbContext>();
+        context.Setup(c => c.Goals).Returns(DbSetMockHelper.CreateMockDbSet(goals).Object);
+        context.Setup(c => c.GoalTasks).Returns(tasksMock.Object);
+        context.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var handler = new AddGoalTask.Handler(context.Object);
+        var request = new AddGoalTask.Request(7, null, "  Review journal  ", null, null, 0, TrackingInput.Manual, 42);
+
+        Result<int> result = await handler.Handle(request, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(captured);
+        Assert.Equal(7, captured!.GoalId);
+        Assert.Null(captured.MilestoneId);
+        Assert.Equal("Review journal", captured.Title);
+    }
+
     [Fact]
     public async Task Handle_RejectsMilestoneFromDifferentGoal()
     {
@@ -206,6 +264,54 @@ public sealed class UpdateProgressHandlerTests
         Assert.True(valid.IsSuccess);
         Assert.True(goal.IsCompleted);
         Assert.Equal(100m, valid.Value.ProgressPercent);
+    }
+
+    [Fact]
+    public async Task TaskMetricUpdate_UsesAtMostTarget()
+    {
+        var task = new GoalTask
+        {
+            Id = 5,
+            GoalId = 7,
+            MilestoneId = 3,
+            CreatedBy = 42,
+            Title = "Reduce mistakes",
+            TrackingMode = TrackingMode.Metric,
+            MetricDirection = MetricDirection.AtMost,
+            StartValue = 10m,
+            CurrentValue = 8m,
+            TargetValue = 5m,
+        };
+        var context = new Mock<IGoalDbContext>();
+        context.Setup(c => c.GoalTasks).Returns(DbSetMockHelper.CreateMockDbSet(new[] { task }).Object);
+        context.Setup(c => c.ProgressEntries)
+            .Returns(DbSetMockHelper.CreateMockDbSet(Array.Empty<GoalProgressEntry>()).Object);
+        context.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var handler = new UpdateProgress.TaskHandler(context.Object);
+        Result<ProgressResult> result = await handler.Handle(
+            new UpdateProgress.TaskRequest(7, 5, 5m, null, "Target reached", 42),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(task.IsCompleted);
+        Assert.Equal(100m, result.Value.ProgressPercent);
+    }
+
+    [Fact]
+    public async Task MilestoneUpdate_RejectsMilestoneOutsideOwnedGoal()
+    {
+        var milestone = new GoalMilestone { Id = 3, GoalId = 8, CreatedBy = 42, Title = "Other goal" };
+        var context = new Mock<IGoalDbContext>();
+        context.Setup(c => c.Milestones).Returns(DbSetMockHelper.CreateMockDbSet(new[] { milestone }).Object);
+
+        var handler = new UpdateProgress.MilestoneHandler(context.Object);
+        Result<ProgressResult> result = await handler.Handle(
+            new UpdateProgress.MilestoneRequest(7, 3, null, true, null, 42),
+            CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        context.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }
 

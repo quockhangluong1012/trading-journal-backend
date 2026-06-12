@@ -15,6 +15,9 @@
     <Project Path="modules/Trades/TradingJournal.Modules.Trades/TradingJournal.Modules.Trades.csproj" />
     <Project Path="modules/TradingSetup/TradingJournal.Modules.TradingSetup/TradingJournal.Modules.TradingSetup.csproj" />
   </Folder>
+  <Folder Name="/modules/Goals/">
+    <Project Path="modules/Goals/TradingJournal.Modules.Goals/TradingJournal.Modules.Goals.csproj" />
+  </Folder>
   <Folder Name="/shared/">
     <Project Path="shared/TradingJournal.Messaging.Shared/TradingJournal.Messaging.Shared.csproj" Id="96e200b6-2bea-42bb-8320-806a6773ac3c" />
     <Project Path="shared/TradingJournal.Shared/TradingJournal.Shared.csproj" />
@@ -23,6 +26,7 @@
     <Project Path="tests/TradingJournal.Tests.Analytics/TradingJournal.Tests.Analytics.csproj" />
     <Project Path="tests/TradingJournal.Tests.Auth/TradingJournal.Tests.Auth.csproj" />
     <Project Path="tests/TradingJournal.Tests.Backtest/TradingJournal.Tests.Backtest.csproj" />
+    <Project Path="tests/TradingJournal.Tests.Goals/TradingJournal.Tests.Goals.csproj" />
     <Project Path="tests/TradingJournal.Tests.Integration/TradingJournal.Tests.Integration.csproj" />
     <Project Path="tests/TradingJournal.Tests.Notifications/TradingJournal.Tests.Notifications.csproj" />
     <Project Path="tests/TradingJournal.Tests.Psychology/TradingJournal.Tests.Psychology.csproj" />

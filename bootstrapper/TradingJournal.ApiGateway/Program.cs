@@ -22,6 +22,7 @@ using TradingJournal.Modules.Notifications.Hubs;
 using TradingJournal.Modules.Scanner;
 using TradingJournal.Modules.Scanner.Hubs;
 using TradingJournal.Modules.RiskManagement;
+using TradingJournal.Modules.Goals;
 using TradingJournal.Messaging.Shared;
 using System.Security.Claims;
 using System.Net;
@@ -222,6 +223,7 @@ try
         .AddNotificationsModule(configuration, isDevelopment)
         .AddScannerModule(configuration, isDevelopment)
         .AddRiskManagementModule(configuration, isDevelopment)
+        .AddGoalsModule(configuration, isDevelopment)
         .AddInMemoryMessageQueue();
 
     builder.Services.AddOpenApi(options =>
@@ -246,6 +248,7 @@ try
         await app.MigrateNotificationDatabase();
         await app.MigrateScannerDatabase();
         await app.MigrateRiskManagementDatabase();
+        await app.MigrateGoalsDatabase();
     }
 
     if (!app.Environment.IsDevelopment())

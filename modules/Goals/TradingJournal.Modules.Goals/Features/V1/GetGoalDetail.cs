@@ -1,0 +1,106 @@
+namespace TradingJournal.Modules.Goals.Features.V1;
+
+public sealed class GetGoalDetail
+{
+    public sealed record Request(int GoalId, int UserId = 0) : IQuery<Result<GoalDetail>>;
+
+    internal static IQueryable<GoalDetail> BuildQuery(
+        IQueryable<Goal> goals,
+        int goalId,
+        int userId)
+    {
+        return goals
+            .Where(goal => goal.Id == goalId && goal.CreatedBy == userId && !goal.IsDisabled)
+            .AsEnumerable()
+            .Select(Map)
+            .AsQueryable();
+    }
+
+    internal static GoalDetail Map(Goal goal) => new(
+        goal.Id,
+        goal.Title,
+        goal.Description,
+        goal.StartDate,
+        goal.DueDate,
+        GoalTrackingMapper.ToSnapshot(goal),
+        goal.Milestones
+            .OrderBy(milestone => milestone.SortOrder)
+            .ThenBy(milestone => milestone.DueDate ?? DateTime.MaxValue)
+            .Select(milestone => new GoalMilestoneView(
+                milestone.Id,
+                milestone.Title,
+                milestone.Description,
+                milestone.DueDate,
+                milestone.SortOrder,
+                GoalTrackingMapper.ToSnapshot(milestone),
+                milestone.Tasks
+                    .OrderBy(task => task.SortOrder)
+                    .ThenBy(task => task.DueDate ?? DateTime.MaxValue)
+                    .Select(GoalTrackingMapper.ToView)
+                    .ToList()))
+            .ToList(),
+        goal.Tasks
+            .Where(task => task.MilestoneId == null)
+            .OrderBy(task => task.SortOrder)
+            .ThenBy(task => task.DueDate ?? DateTime.MaxValue)
+            .Select(GoalTrackingMapper.ToView)
+            .ToList(),
+        goal.ProgressEntries
+            .OrderByDescending(entry => entry.CreatedDate)
+            .Select(entry => new ProgressEntryView(
+                entry.Id,
+                entry.ItemType,
+                entry.MilestoneId,
+                entry.GoalTaskId,
+                entry.PreviousValue,
+                entry.CurrentValue,
+                entry.PreviousIsCompleted,
+                entry.CurrentIsCompleted,
+                entry.Note,
+                entry.CreatedDate))
+            .ToList(),
+        goal.CreatedDate,
+        goal.UpdatedDate);
+
+    public sealed class Handler(IGoalDbContext context) : IQueryHandler<Request, Result<GoalDetail>>
+    {
+        public async Task<Result<GoalDetail>> Handle(Request request, CancellationToken cancellationToken)
+        {
+            Goal? goal = await context.Goals
+                .AsNoTracking()
+                .Where(item => item.Id == request.GoalId && item.CreatedBy == request.UserId)
+                .Include(item => item.Milestones)
+                    .ThenInclude(milestone => milestone.Tasks)
+                .Include(item => item.Tasks)
+                .Include(item => item.ProgressEntries)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return goal is null
+                ? Result<GoalDetail>.Failure(Error.Create("Goal was not found."))
+                : Result<GoalDetail>.Success(Map(goal));
+        }
+    }
+
+    [ExcludeFromCodeCoverage]
+    public sealed class Endpoint : ICarterModule
+    {
+        public void AddRoutes(IEndpointRouteBuilder app)
+        {
+            app.MapGet($"{ApiGroup.V1.Goals}/{{goalId:int}}", async (
+                int goalId,
+                ClaimsPrincipal user,
+                ISender sender) =>
+            {
+                Result<GoalDetail> result = await sender.Send(
+                    new Request(goalId, user.GetCurrentUserId()));
+                return result.IsSuccess ? Results.Ok(result) : Results.NotFound(result);
+            })
+            .Produces<Result<GoalDetail>>()
+            .Produces(StatusCodes.Status404NotFound)
+            .WithSummary("Get a goal with milestones, tasks, progress, and history.")
+            .WithTags(Tags.Goals)
+            .RequireAuthorization();
+        }
+    }
+}
