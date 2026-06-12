@@ -37,6 +37,16 @@ public sealed class GoalDbContextModelTests
         Assert.Equal("Goals", metadata.GetSchema());
     }
 
+    [Fact]
+    public void MilestoneTaskRelationship_DoesNotCreateSecondCascadePath()
+    {
+        IEntityType task = GetContext().Model.FindEntityType(typeof(GoalTask))!;
+        IForeignKey milestoneForeignKey = task.GetForeignKeys()
+            .Single(key => key.PrincipalEntityType.ClrType == typeof(GoalMilestone));
+
+        Assert.Equal(DeleteBehavior.NoAction, milestoneForeignKey.DeleteBehavior);
+    }
+
     private static GoalDbContext GetContext()
     {
         DbContextOptions<GoalDbContext> options = new DbContextOptionsBuilder<GoalDbContext>()
