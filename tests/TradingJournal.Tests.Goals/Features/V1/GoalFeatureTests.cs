@@ -208,3 +208,96 @@ public sealed class UpdateProgressHandlerTests
         Assert.Equal(100m, valid.Value.ProgressPercent);
     }
 }
+
+public sealed class GetGoalsQueryTests
+{
+    [Fact]
+    public void BuildQuery_ReturnsOnlyCurrentUsersActiveGoalsWithProgress()
+    {
+        var goals = new List<Goal>
+        {
+            new()
+            {
+                Id = 1,
+                CreatedBy = 42,
+                Title = "Metric goal",
+                TrackingMode = TrackingMode.Metric,
+                MetricDirection = MetricDirection.AtLeast,
+                StartValue = 0m,
+                CurrentValue = 25m,
+                TargetValue = 100m,
+                Milestones = [new GoalMilestone { Id = 10 }],
+                Tasks = [new GoalTask { Id = 20, IsCompleted = true }],
+            },
+            new() { Id = 2, CreatedBy = 99, Title = "Another user's goal" },
+            new() { Id = 3, CreatedBy = 42, Title = "Deleted goal", IsDisabled = true },
+        };
+
+        GoalSummary result = GetGoals.BuildQuery(goals.AsQueryable(), 42, includeCompleted: true).Single();
+
+        Assert.Equal(1, result.Id);
+        Assert.Equal(25m, result.Tracking.ProgressPercent);
+        Assert.Equal(1, result.MilestoneCount);
+        Assert.Equal(1, result.CompletedTaskCount);
+    }
+
+    [Fact]
+    public void BuildQuery_ExcludesCompletedGoalsByDefault()
+    {
+        var goals = new List<Goal>
+        {
+            new() { Id = 1, CreatedBy = 42, Title = "Active" },
+            new() { Id = 2, CreatedBy = 42, Title = "Done", IsCompleted = true },
+        };
+
+        List<GoalSummary> result = GetGoals.BuildQuery(goals.AsQueryable(), 42, includeCompleted: false).ToList();
+
+        Assert.Single(result);
+        Assert.Equal("Active", result[0].Title);
+    }
+}
+
+public sealed class GetGoalDetailQueryTests
+{
+    [Fact]
+    public void BuildQuery_ReturnsHierarchyAndProgressHistory()
+    {
+        var goal = new Goal
+        {
+            Id = 7,
+            CreatedBy = 42,
+            Title = "Trading process",
+            Milestones =
+            [
+                new GoalMilestone
+                {
+                    Id = 3,
+                    GoalId = 7,
+                    CreatedBy = 42,
+                    Title = "First month",
+                    Tasks = [new GoalTask { Id = 5, GoalId = 7, MilestoneId = 3, Title = "Review weekly" }],
+                },
+            ],
+            Tasks = [new GoalTask { Id = 6, GoalId = 7, Title = "Define rules" }],
+            ProgressEntries =
+            [
+                new GoalProgressEntry
+                {
+                    Id = 9,
+                    GoalId = 7,
+                    ItemType = GoalItemType.Goal,
+                    PreviousIsCompleted = false,
+                    CurrentIsCompleted = true,
+                    Note = "Done",
+                },
+            ],
+        };
+
+        GoalDetail result = GetGoalDetail.BuildQuery(new[] { goal }.AsQueryable(), 7, 42).Single();
+
+        Assert.Single(result.Milestones);
+        Assert.Single(result.Tasks);
+        Assert.Single(result.ProgressHistory);
+        Assert.Equal("Review weekly", result.Milestones[0].Tasks[0].Title);
+    }
+}
