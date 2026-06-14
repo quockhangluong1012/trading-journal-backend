@@ -2,6 +2,13 @@ namespace TradingJournal.Modules.Goals.Features.V1;
 
 public sealed class GetGoalDetail
 {
+    /// <summary>
+    /// Auto-tracking can append thousands of progress/activity rows over a goal's
+    /// life. The detail endpoint only previews the most recent slice — the full
+    /// history is paginated through <see cref="GetGoalHistory"/>.
+    /// </summary>
+    internal const int HistoryPreviewLimit = 25;
+
     public sealed record Request(int GoalId, int UserId = 0) : IQuery<Result<GoalDetail>>;
 
     internal static IQueryable<GoalDetail> BuildQuery(
@@ -23,6 +30,7 @@ public sealed class GetGoalDetail
         goal.StartDate,
         goal.DueDate,
         GoalTrackingMapper.ToSnapshot(goal),
+        GoalRollup.ForGoal(goal),
         goal.Milestones
             .OrderBy(milestone => milestone.SortOrder)
             .ThenBy(milestone => milestone.DueDate ?? DateTime.MaxValue)
@@ -33,6 +41,7 @@ public sealed class GetGoalDetail
                 milestone.DueDate,
                 milestone.SortOrder,
                 GoalTrackingMapper.ToSnapshot(milestone),
+                GoalRollup.ForMilestone(milestone),
                 milestone.Tasks
                     .OrderBy(task => task.SortOrder)
                     .ThenBy(task => task.DueDate ?? DateTime.MaxValue)
@@ -85,14 +94,21 @@ public sealed class GetGoalDetail
                 .Include(item => item.Milestones)
                     .ThenInclude(milestone => milestone.Tasks)
                 .Include(item => item.Tasks)
-                .Include(item => item.ProgressEntries)
-                .Include(item => item.ActivityLinks)
+                .Include(item => item.ProgressEntries
+                    .OrderByDescending(entry => entry.CreatedDate)
+                    .Take(HistoryPreviewLimit))
+                .Include(item => item.ActivityLinks
+                    .OrderByDescending(link => link.RecordedAt)
+                    .Take(HistoryPreviewLimit))
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(cancellationToken);
 
+            // Map through the shared helper the query tests exercise so the production
+            // projection and the tested projection stay one and the same.
             return goal is null
                 ? Result<GoalDetail>.Failure(Error.Create("Goal was not found."))
-                : Result<GoalDetail>.Success(Map(goal));
+                : Result<GoalDetail>.Success(
+                    BuildQuery(new[] { goal }.AsQueryable(), request.GoalId, request.UserId).Single());
         }
     }
 

@@ -42,12 +42,15 @@ public sealed class CreateGoal
             };
             GoalTrackingMapper.Apply(goal, request.Tracking);
 
-            context.Goals.Add(goal);
-            int rows = await context.SaveChangesAsync(cancellationToken);
+            return await context.ExecuteInTransactionAsync(async ct =>
+            {
+                context.Goals.Add(goal);
+                int rows = await context.SaveChangesAsync(ct);
 
-            return rows > 0
-                ? Result<int>.Success(goal.Id)
-                : Result<int>.Failure(Error.Create("Failed to create goal."));
+                return rows > 0
+                    ? Result<int>.Success(goal.Id)
+                    : Result<int>.Failure(Error.Create("Failed to create goal."));
+            }, cancellationToken);
         }
     }
 

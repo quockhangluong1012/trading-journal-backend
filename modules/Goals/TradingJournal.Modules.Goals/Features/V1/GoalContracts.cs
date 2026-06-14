@@ -47,6 +47,7 @@ public sealed record GoalMilestoneView(
     DateTime? DueDate,
     int SortOrder,
     TrackingSnapshot Tracking,
+    decimal RollupProgressPercent,
     IReadOnlyList<GoalTaskView> Tasks);
 
 public sealed record ProgressEntryView(
@@ -79,11 +80,17 @@ public sealed record GoalSummary(
     DateTime? StartDate,
     DateTime? DueDate,
     TrackingSnapshot Tracking,
+    decimal RollupProgressPercent,
     int MilestoneCount,
     int TaskCount,
     int CompletedTaskCount,
     DateTime CreatedDate,
     DateTime? UpdatedDate);
+
+public sealed record GoalStats(
+    int ActiveCount,
+    int CompletedCount,
+    decimal AverageProgressPercent);
 
 public sealed record GoalDetail(
     int Id,
@@ -92,6 +99,7 @@ public sealed record GoalDetail(
     DateTime? StartDate,
     DateTime? DueDate,
     TrackingSnapshot Tracking,
+    decimal RollupProgressPercent,
     IReadOnlyList<GoalMilestoneView> Milestones,
     IReadOnlyList<GoalTaskView> Tasks,
     IReadOnlyList<ProgressEntryView> ProgressHistory,
@@ -146,6 +154,31 @@ internal static class GoalTrackingMapper
         item.TargetValue = tracking.Mode == TrackingMode.Metric ? tracking.TargetValue : null;
         item.IsCompleted = false;
         item.CompletedDate = null;
+    }
+
+    /// <summary>
+    /// Re-applies tracking config on an existing item. When the item stays in
+    /// Metric mode the recorded current value is preserved (so bumping a target
+    /// doesn't wipe progress) and completion is re-derived against the new target.
+    /// Switching modes resets progress, mirroring <see cref="Apply"/>.
+    /// </summary>
+    public static void Reconfigure(ITrackableGoalItem item, TrackingInput tracking)
+    {
+        bool staysMetric = item.TrackingMode == TrackingMode.Metric && tracking.Mode == TrackingMode.Metric;
+        decimal? preserved = staysMetric ? item.CurrentValue : null;
+
+        Apply(item, tracking);
+
+        if (staysMetric && preserved.HasValue)
+        {
+            item.CurrentValue = preserved;
+            if (item.MetricDirection.HasValue && item.TargetValue.HasValue)
+            {
+                item.IsCompleted = TrackingProgress.IsMetricComplete(
+                    item.MetricDirection.Value, preserved.Value, item.TargetValue.Value);
+                item.CompletedDate = item.IsCompleted ? DateTime.UtcNow : null;
+            }
+        }
     }
 
     public static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

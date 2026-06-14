@@ -182,4 +182,49 @@ public sealed class CandleAggregationServiceTests
 
         Assert.Null(result);
     }
+
+    [Fact]
+    public async Task GetNextAggregatedCandleAsync_SkipsEmptyBuckets_AcrossClosedMarketGap()
+    {
+        // Closed-market gap (overnight/weekend/holiday for an index like NDX): the bucket
+        // immediately after the current timestamp is empty, but data resumes later. The
+        // engine must skip the gap and return the next bucket that actually has candles —
+        // not null, which would prematurely end the session.
+        var start = new DateTime(2025, 5, 1, 10, 0, 0, DateTimeKind.Utc);
+        var candles = new List<OhlcvCandle>();
+        // Bucket 10:00–10:15 has data (the current/last-played bucket).
+        candles.AddRange(CreateM1Candles("NDX", start, 15));
+        // Bucket 10:15–10:30 is EMPTY (the gap). Data resumes at 10:35 (bucket 10:30–10:45).
+        candles.AddRange(CreateM1Candles("NDX", start.AddMinutes(35), 10));
+
+        _context.Setup(x => x.OhlcvCandles)
+            .Returns(DbSetMockHelper.CreateMockDbSet(candles.AsQueryable()).Object);
+
+        // afterTimestamp falls inside the 10:00 bucket; the next bucket (10:15) is empty.
+        var result = await _service.GetNextAggregatedCandleAsync(
+            "NDX", Timeframe.M15, start.AddMinutes(5));
+
+        Assert.NotNull(result);
+        Assert.Equal(start.AddMinutes(30), result.Timestamp); // snapped to the 10:30 bucket
+        Assert.Equal(Timeframe.M15, result.Timeframe);
+    }
+
+    [Fact]
+    public async Task GetNextBucketWithM1Async_SkipsEmptyBuckets_AcrossClosedMarketGap()
+    {
+        var start = new DateTime(2025, 5, 1, 10, 0, 0, DateTimeKind.Utc);
+        var candles = new List<OhlcvCandle>();
+        candles.AddRange(CreateM1Candles("NDX", start, 15));
+        candles.AddRange(CreateM1Candles("NDX", start.AddMinutes(35), 10));
+
+        _context.Setup(x => x.OhlcvCandles)
+            .Returns(DbSetMockHelper.CreateMockDbSet(candles.AsQueryable()).Object);
+
+        var result = await _service.GetNextBucketWithM1Async(
+            "NDX", Timeframe.M15, start.AddMinutes(5));
+
+        Assert.NotNull(result);
+        Assert.Equal(start.AddMinutes(30), result.DisplayCandle.Timestamp);
+        Assert.NotEmpty(result.M1Candles);
+    }
 }

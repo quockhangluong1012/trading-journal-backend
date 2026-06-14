@@ -1,6 +1,7 @@
 using Moq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using TradingJournal.Messaging.Shared.Abstractions;
 using TradingJournal.Messaging.Shared.Contracts;
 using TradingJournal.Modules.Goals.Common.Enum;
@@ -118,6 +119,9 @@ public sealed class GoalActivityProgressTests
     {
         DbContextOptions<GoalDbContext> options = new DbContextOptionsBuilder<GoalDbContext>()
             .UseInMemoryDatabase($"goals-{Guid.NewGuid()}")
+            // ExecuteInTransactionAsync opens a transaction; the in-memory provider
+            // ignores transactions and would otherwise throw the warning as an error.
+            .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
         return new GoalDbContext(options, new HttpContextAccessor());
     }

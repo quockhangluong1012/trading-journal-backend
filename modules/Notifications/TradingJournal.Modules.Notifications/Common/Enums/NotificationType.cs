@@ -7,5 +7,6 @@ public enum NotificationType
     TradeReminder = 2,
     AiInsight = 3,
     TiltWarning = 4,
-    StreakAlert = 5
+    StreakAlert = 5,
+    GoalCompleted = 6
 }

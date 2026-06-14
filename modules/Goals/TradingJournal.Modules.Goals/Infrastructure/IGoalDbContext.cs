@@ -7,5 +7,10 @@ public interface IGoalDbContext
     DbSet<GoalTask> GoalTasks { get; set; }
     DbSet<GoalProgressEntry> ProgressEntries { get; set; }
     DbSet<GoalActivityLink> ActivityLinks { get; set; }
+
+    Task<TResult> ExecuteInTransactionAsync<TResult>(
+        Func<CancellationToken, Task<TResult>> operation,
+        CancellationToken cancellationToken = default);
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

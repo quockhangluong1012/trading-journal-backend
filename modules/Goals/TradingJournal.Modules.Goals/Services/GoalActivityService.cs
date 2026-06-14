@@ -90,12 +90,29 @@ internal sealed class GoalActivityService(
             return;
         }
 
-        await context.SaveChangesAsync(cancellationToken);
-
-        foreach (GoalItemCompletedEvent completion in completions)
+        await context.ExecuteInTransactionAsync(async ct =>
         {
-            await eventBus.PublishAsync(completion, cancellationToken);
-        }
+            try
+            {
+                await context.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateException)
+            {
+                // The unique (SourceEventId, ItemType, ItemId) index already guards
+                // against double-applying an event. Under concurrent processing of
+                // the same event the in-memory dedup check can miss and the insert
+                // races to the constraint — treat that as already-applied and bail
+                // without re-publishing completion events.
+                return false;
+            }
+
+            foreach (GoalItemCompletedEvent completion in completions)
+            {
+                await eventBus.PublishAsync(completion, ct);
+            }
+
+            return true;
+        }, cancellationToken);
     }
 
     private bool Apply<T>(
@@ -129,9 +146,15 @@ internal sealed class GoalActivityService(
             && item.TargetValue.HasValue
             && TrackingProgress.IsMetricComplete(item.MetricDirection.Value, currentValue, item.TargetValue.Value);
 
+        bool firstCompletion = item.IsCompleted && !wasCompleted && item.FirstCompletedDate is null;
         if (item.IsCompleted && !wasCompleted)
         {
             item.CompletedDate = recordedAt;
+        }
+
+        if (firstCompletion)
+        {
+            item.FirstCompletedDate = recordedAt;
             completions.Add(new GoalItemCompletedEvent(
                 Guid.NewGuid(),
                 userId,

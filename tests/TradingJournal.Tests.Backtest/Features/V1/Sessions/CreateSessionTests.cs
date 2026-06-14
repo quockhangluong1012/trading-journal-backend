@@ -154,7 +154,7 @@ public sealed class CreateSessionHandlerTests
     }
 
     [Fact]
-    public async Task Handle_PublishesEvent_FromThreeDaysBeforeSelectedStartDate()
+    public async Task Handle_PublishesEvent_FromSevenDaysBeforeSelectedStartDate()
     {
         DateTime selectedStartDate = new(2024, 1, 10, 9, 0, 0, DateTimeKind.Utc);
 
@@ -170,7 +170,7 @@ public sealed class CreateSessionHandlerTests
 
         _eventBus.Verify(x => x.PublishAsync(
             It.Is<TradingJournal.Modules.Backtest.Events.FetchHistoricalDataEvent>(evt =>
-                evt.StartDate == selectedStartDate.AddDays(-3)
+                evt.StartDate == selectedStartDate.AddDays(-7)
                 && evt.EndDate == selectedStartDate.AddDays(30)),
             It.IsAny<CancellationToken>()), Times.Once);
     }

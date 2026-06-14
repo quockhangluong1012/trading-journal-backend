@@ -172,7 +172,17 @@ public sealed class UpdateProgress
                 item.TargetValue.Value);
         }
 
-        item.CompletedDate = item.IsCompleted ? DateTime.UtcNow : null;
+        DateTime completedAt = DateTime.UtcNow;
+        item.CompletedDate = item.IsCompleted ? completedAt : null;
+
+        // Reward/notify only on the very first completion. Manual items can be
+        // toggled off and on again — without this guard each re-completion would
+        // re-publish GoalItemCompletedEvent and farm karma indefinitely.
+        bool firstCompletion = !previousIsCompleted && item.IsCompleted && item.FirstCompletedDate is null;
+        if (firstCompletion)
+        {
+            item.FirstCompletedDate = completedAt;
+        }
 
         context.ProgressEntries.Add(new GoalProgressEntry
         {
@@ -188,43 +198,46 @@ public sealed class UpdateProgress
             CreatedBy = userId,
         });
 
-        int rows = await context.SaveChangesAsync(cancellationToken);
-        if (rows <= 0)
+        return await context.ExecuteInTransactionAsync(async ct =>
         {
-            return Result<ProgressResult>.Failure(Error.Create("Failed to update progress."));
-        }
+            int rows = await context.SaveChangesAsync(ct);
+            if (rows <= 0)
+            {
+                return Result<ProgressResult>.Failure(Error.Create("Failed to update progress."));
+            }
 
-        if (!previousIsCompleted && item.IsCompleted)
-        {
-            await eventBus.PublishAsync(new GoalItemCompletedEvent(
-                Guid.NewGuid(),
-                userId,
-                goalId,
-                itemId,
-                itemType switch
-                {
-                    GoalItemType.Goal => GoalItemKind.Goal,
-                    GoalItemType.Milestone => GoalItemKind.Milestone,
-                    GoalItemType.Task => GoalItemKind.Task,
-                    _ => throw new ArgumentOutOfRangeException(nameof(itemType), itemType, null),
-                },
-                title,
-                item.CompletedDate ?? DateTime.UtcNow), cancellationToken);
-        }
+            if (firstCompletion)
+            {
+                await eventBus.PublishAsync(new GoalItemCompletedEvent(
+                    Guid.NewGuid(),
+                    userId,
+                    goalId,
+                    itemId,
+                    itemType switch
+                    {
+                        GoalItemType.Goal => GoalItemKind.Goal,
+                        GoalItemType.Milestone => GoalItemKind.Milestone,
+                        GoalItemType.Task => GoalItemKind.Task,
+                        _ => throw new ArgumentOutOfRangeException(nameof(itemType), itemType, null),
+                    },
+                    title,
+                    item.CompletedDate ?? completedAt), ct);
+            }
 
-        decimal progress = TrackingProgress.Calculate(
-            item.TrackingMode,
-            item.MetricDirection,
-            item.StartValue,
-            item.CurrentValue,
-            item.TargetValue,
-            item.IsCompleted);
+            decimal progress = TrackingProgress.Calculate(
+                item.TrackingMode,
+                item.MetricDirection,
+                item.StartValue,
+                item.CurrentValue,
+                item.TargetValue,
+                item.IsCompleted);
 
-        return Result<ProgressResult>.Success(new ProgressResult(
-            item.CurrentValue,
-            progress,
-            item.IsCompleted,
-            item.CompletedDate));
+            return Result<ProgressResult>.Success(new ProgressResult(
+                item.CurrentValue,
+                progress,
+                item.IsCompleted,
+                item.CompletedDate));
+        }, cancellationToken);
     }
 
     [ExcludeFromCodeCoverage]

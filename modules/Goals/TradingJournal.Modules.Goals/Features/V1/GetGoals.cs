@@ -29,6 +29,7 @@ public sealed class GetGoals
         goal.StartDate,
         goal.DueDate,
         GoalTrackingMapper.ToSnapshot(goal),
+        GoalRollup.ForGoal(goal),
         goal.Milestones.Count,
         goal.Tasks.Count,
         goal.Tasks.Count(task => task.IsCompleted),
@@ -56,12 +57,10 @@ public sealed class GetGoals
                 .AsSplitQuery()
                 .ToListAsync(cancellationToken);
 
-            IReadOnlyList<GoalSummary> result = goals
-                .OrderBy(goal => goal.IsCompleted)
-                .ThenBy(goal => goal.DueDate ?? DateTime.MaxValue)
-                .ThenByDescending(goal => goal.UpdatedDate ?? goal.CreatedDate)
-                .Select(Map)
-                .ToList();
+            // Reuse the same filtering/ordering/mapping the query tests assert against so
+            // the two can never silently diverge.
+            IReadOnlyList<GoalSummary> result = BuildQuery(
+                goals.AsQueryable(), request.UserId, request.IncludeCompleted).ToList();
 
             return Result<IReadOnlyList<GoalSummary>>.Success(result);
         }

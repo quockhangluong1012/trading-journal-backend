@@ -13,4 +13,10 @@ public interface ITrackableGoalItem
     decimal? TargetValue { get; set; }
     bool IsCompleted { get; set; }
     DateTime? CompletedDate { get; set; }
+
+    /// <summary>
+    /// First time this item ever transitioned to completed. Stays set even if
+    /// the item is later re-opened, so completion rewards are only granted once.
+    /// </summary>
+    DateTime? FirstCompletedDate { get; set; }
 }

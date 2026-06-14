@@ -62,12 +62,15 @@ public sealed class AddGoalTask
             };
             GoalTrackingMapper.Apply(task, request.Tracking);
 
-            context.GoalTasks.Add(task);
-            int rows = await context.SaveChangesAsync(cancellationToken);
+            return await context.ExecuteInTransactionAsync(async ct =>
+            {
+                context.GoalTasks.Add(task);
+                int rows = await context.SaveChangesAsync(ct);
 
-            return rows > 0
-                ? Result<int>.Success(task.Id)
-                : Result<int>.Failure(Error.Create("Failed to create task."));
+                return rows > 0
+                    ? Result<int>.Success(task.Id)
+                    : Result<int>.Failure(Error.Create("Failed to create task."));
+            }, cancellationToken);
         }
     }
 

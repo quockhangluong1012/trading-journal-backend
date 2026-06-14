@@ -23,5 +23,6 @@ public sealed class GoalTask : EntityBase<int>, ITrackableGoalItem
     public decimal? TargetValue { get; set; }
     public bool IsCompleted { get; set; }
     public DateTime? CompletedDate { get; set; }
+    public DateTime? FirstCompletedDate { get; set; }
     public ICollection<GoalProgressEntry> ProgressEntries { get; set; } = [];
 }

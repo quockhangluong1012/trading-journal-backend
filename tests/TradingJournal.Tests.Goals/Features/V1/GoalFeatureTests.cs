@@ -72,6 +72,7 @@ public sealed class CreateGoalHandlerTests
         var context = new Mock<IGoalDbContext>();
         context.Setup(c => c.Goals).Returns(goalsMock.Object);
         context.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        context.SetupTransactionPassthrough<Result<int>>();
 
         var handler = new CreateGoal.Handler(context.Object);
         var request = new CreateGoal.Request(
@@ -108,6 +109,7 @@ public sealed class AddMilestoneHandlerTests
         context.Setup(c => c.Goals).Returns(DbSetMockHelper.CreateMockDbSet(goals).Object);
         context.Setup(c => c.Milestones).Returns(milestonesMock.Object);
         context.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        context.SetupTransactionPassthrough<Result<int>>();
 
         var handler = new AddMilestone.Handler(context.Object);
         var request = new AddMilestone.Request(
@@ -159,6 +161,7 @@ public sealed class AddGoalTaskHandlerTests
         context.Setup(c => c.Goals).Returns(DbSetMockHelper.CreateMockDbSet(goals).Object);
         context.Setup(c => c.GoalTasks).Returns(tasksMock.Object);
         context.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        context.SetupTransactionPassthrough<Result<int>>();
 
         var handler = new AddGoalTask.Handler(context.Object);
         var request = new AddGoalTask.Request(7, null, "  Review journal  ", null, null, 0, TrackingInput.Manual, 42);
@@ -220,6 +223,7 @@ public sealed class UpdateProgressHandlerTests
         context.Setup(c => c.Goals).Returns(DbSetMockHelper.CreateMockDbSet(new[] { goal }).Object);
         context.Setup(c => c.ProgressEntries).Returns(entriesMock.Object);
         context.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        context.SetupTransactionPassthrough<Result<ProgressResult>>();
 
         var handler = new UpdateProgress.GoalHandler(context.Object, Mock.Of<IEventBus>());
         var request = new UpdateProgress.GoalRequest(7, 100m, null, "Reached target", 42);
@@ -250,6 +254,7 @@ public sealed class UpdateProgressHandlerTests
         context.Setup(c => c.ProgressEntries)
             .Returns(DbSetMockHelper.CreateMockDbSet(Array.Empty<GoalProgressEntry>()).Object);
         context.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        context.SetupTransactionPassthrough<Result<ProgressResult>>();
 
         var handler = new UpdateProgress.GoalHandler(context.Object, Mock.Of<IEventBus>());
 
@@ -287,6 +292,7 @@ public sealed class UpdateProgressHandlerTests
         context.Setup(c => c.ProgressEntries)
             .Returns(DbSetMockHelper.CreateMockDbSet(Array.Empty<GoalProgressEntry>()).Object);
         context.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        context.SetupTransactionPassthrough<Result<ProgressResult>>();
 
         var handler = new UpdateProgress.TaskHandler(context.Object, Mock.Of<IEventBus>());
         Result<ProgressResult> result = await handler.Handle(

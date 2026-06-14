@@ -169,6 +169,24 @@ internal sealed class CandleAggregationService(
 
         int bucketMinutes = (int)targetTimeframe;
         DateTime nextBucketStart = FloorTimestamp(afterTimestamp, bucketMinutes).AddMinutes(bucketMinutes);
+
+        // Markets that close (indices, stocks, forex weekends) leave empty buckets between
+        // sessions. Probing only the immediately-adjacent bucket would return null the moment
+        // playback reaches an overnight/weekend/holiday gap and prematurely end the session.
+        // Instead, find the first M1 candle AT OR AFTER the next bucket boundary and snap to
+        // the bucket that candle belongs to — skipping any empty buckets in between. If none
+        // remain, the asset's data is genuinely exhausted and null correctly ends the session.
+        DateTime? firstTimestamp = await context.OhlcvCandles
+            .Where(c => c.Asset == symbol && c.Timeframe == Timeframe.M1
+                        && c.Timestamp >= nextBucketStart)
+            .OrderBy(c => c.Timestamp)
+            .Select(c => (DateTime?)c.Timestamp)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (firstTimestamp is null)
+            return null;
+
+        nextBucketStart = FloorTimestamp(firstTimestamp.Value, bucketMinutes);
         DateTime nextBucketEnd = nextBucketStart.AddMinutes(bucketMinutes);
 
         IQueryable<OhlcvCandle> bucket = context.OhlcvCandles
@@ -224,6 +242,20 @@ internal sealed class CandleAggregationService(
     {
         int bucketMinutes = (int)targetTimeframe;
         DateTime nextBucketStart = FloorTimestamp(afterTimestamp, bucketMinutes).AddMinutes(bucketMinutes);
+
+        // Skip empty buckets (closed-market gaps) by snapping to the bucket of the next
+        // available M1 candle — see GetNextAggregatedCandleAsync for the rationale.
+        DateTime? firstTimestamp = await context.OhlcvCandles
+            .Where(c => c.Asset == symbol && c.Timeframe == Timeframe.M1
+                        && c.Timestamp >= nextBucketStart)
+            .OrderBy(c => c.Timestamp)
+            .Select(c => (DateTime?)c.Timestamp)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (firstTimestamp is null)
+            return null;
+
+        nextBucketStart = FloorTimestamp(firstTimestamp.Value, bucketMinutes);
         DateTime nextBucketEnd = nextBucketStart.AddMinutes(bucketMinutes);
 
         // Single read of the bucket's M1 window. The same list is used to derive the

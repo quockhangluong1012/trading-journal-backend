@@ -46,12 +46,15 @@ public sealed class AddMilestone
             };
             GoalTrackingMapper.Apply(milestone, request.Tracking);
 
-            context.Milestones.Add(milestone);
-            int rows = await context.SaveChangesAsync(cancellationToken);
+            return await context.ExecuteInTransactionAsync(async ct =>
+            {
+                context.Milestones.Add(milestone);
+                int rows = await context.SaveChangesAsync(ct);
 
-            return rows > 0
-                ? Result<int>.Success(milestone.Id)
-                : Result<int>.Failure(Error.Create("Failed to create milestone."));
+                return rows > 0
+                    ? Result<int>.Success(milestone.Id)
+                    : Result<int>.Failure(Error.Create("Failed to create milestone."));
+            }, cancellationToken);
         }
     }
 

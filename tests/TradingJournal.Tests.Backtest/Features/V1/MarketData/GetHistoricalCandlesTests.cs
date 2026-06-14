@@ -20,11 +20,11 @@ public sealed class GetHistoricalCandlesHandlerTests
     }
 
     [Fact]
-    public async Task Handle_LoadsReferenceCandlesFromThreeDaysBeforeSessionStart()
+    public async Task Handle_LoadsReferenceCandlesFromSevenDaysBeforeSessionStart()
     {
         DateTime sessionStart = new(2024, 1, 10, 9, 0, 0, DateTimeKind.Utc);
         DateTime currentTimestamp = sessionStart;
-        DateTime expectedReferenceStart = sessionStart.AddDays(-3);
+        DateTime expectedReferenceStart = sessionStart.AddDays(-7);
         BacktestSession session = new()
         {
             Id = 42,

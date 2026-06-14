@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TradingJournal.Modules.Goals.Infrastructure;
 
@@ -11,9 +12,11 @@ using TradingJournal.Modules.Goals.Infrastructure;
 namespace TradingJournal.Modules.Goals.Migrations
 {
     [DbContext(typeof(GoalDbContext))]
-    partial class GoalDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260614031528_AddGoalFirstCompletedDate")]
+    partial class AddGoalFirstCompletedDate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -101,9 +104,6 @@ namespace TradingJournal.Modules.Goals.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedBy", "IsCompleted", "DueDate");
-
-                    b.HasIndex("CreatedBy", "MetricSource", "TrackingMode", "IsCompleted")
-                        .HasFilter("[IsCompleted] = 0");
 
                     b.ToTable("Goals", "Goals");
                 });
@@ -258,9 +258,6 @@ namespace TradingJournal.Modules.Goals.Migrations
                     b.HasIndex("CreatedBy");
 
                     b.HasIndex("GoalId", "SortOrder");
-
-                    b.HasIndex("CreatedBy", "MetricSource", "TrackingMode", "IsCompleted")
-                        .HasFilter("[IsCompleted] = 0");
 
                     b.ToTable("GoalMilestones", "Goals");
                 });
@@ -418,9 +415,6 @@ namespace TradingJournal.Modules.Goals.Migrations
                     b.HasIndex("MilestoneId");
 
                     b.HasIndex("GoalId", "MilestoneId", "SortOrder");
-
-                    b.HasIndex("CreatedBy", "MetricSource", "TrackingMode", "IsCompleted")
-                        .HasFilter("[IsCompleted] = 0");
 
                     b.ToTable("GoalTasks", "Goals");
                 });
