@@ -68,30 +68,30 @@ internal sealed partial class KarmaService(
     private static readonly (int Threshold, string Title)[] KarmaLevels =
     [
         (0, "Novice Trader"),       // 1
-        (50, "Apprentice"),          // 2
-        (150, "Journeyman"),         // 3
-        (300, "Skilled Trader"),     // 4
-        (500, "Expert"),             // 5
-        (750, "Master Trader"),      // 6
-        (1100, "Grandmaster"),       // 7
-        (1500, "Elite"),             // 8
-        (2000, "Legend"),            // 9
-        (3000, "Trading Sage"),      // 10
-        (4000, "Warlord"),           // 11
-        (5500, "Champion"),          // 12
-        (7500, "Conqueror"),         // 13
-        (10000, "Titan"),            // 14
-        (13000, "Overlord"),         // 15
-        (16500, "Sovereign"),        // 16
-        (20500, "Ascendant"),        // 17
-        (25000, "Celestial"),        // 18
-        (30000, "Transcendent"),     // 19
-        (36000, "Mythical"),         // 20
-        (43000, "Immortal"),         // 21
-        (51000, "Demigod"),          // 22
-        (60000, "Divine"),           // 23
-        (72000, "Eternal"),          // 24
-        (85000, "Trading God"),      // 25
+        (100, "Apprentice"),         // 2
+        (300, "Journeyman"),         // 3
+        (650, "Skilled Trader"),     // 4
+        (1100, "Expert"),            // 5
+        (1800, "Master Trader"),     // 6
+        (2800, "Grandmaster"),       // 7
+        (4200, "Elite"),             // 8
+        (6000, "Legend"),            // 9
+        (8500, "Trading Sage"),      // 10
+        (12000, "Warlord"),          // 11
+        (16000, "Champion"),         // 12
+        (21000, "Conqueror"),        // 13
+        (27000, "Titan"),            // 14
+        (34000, "Overlord"),         // 15
+        (42000, "Sovereign"),        // 16
+        (51000, "Ascendant"),        // 17
+        (62000, "Celestial"),        // 18
+        (75000, "Transcendent"),     // 19
+        (90000, "Mythical"),         // 20
+        (110000, "Immortal"),        // 21
+        (135000, "Demigod"),         // 22
+        (165000, "Divine"),          // 23
+        (205000, "Eternal"),         // 24
+        (250000, "Trading God"),     // 25
     ];
 
 }

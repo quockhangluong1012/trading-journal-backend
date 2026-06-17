@@ -15,6 +15,8 @@ internal sealed class BacktestDbContext(DbContextOptions<BacktestDbContext> opti
 
     public DbSet<ChartDrawing> ChartDrawings { get; set; } = null!;
 
+    public DbSet<ChartDrawingTemplate> ChartDrawingTemplates { get; set; } = null!;
+
     public DbSet<BacktestAsset> BacktestAssets { get; set; } = null!;
 
     public DbSet<CsvImportJob> CsvImportJobs { get; set; } = null!;
@@ -89,6 +91,18 @@ internal sealed class BacktestDbContext(DbContextOptions<BacktestDbContext> opti
                 .HasDatabaseName("IX_ChartDrawings_SessionId");
         });
 
+        modelBuilder.Entity<ChartDrawingTemplate>(builder =>
+        {
+            builder.ToTable("ChartDrawingTemplates", "Backtest");
+
+            builder.Property(t => t.Name).HasMaxLength(120);
+            builder.Property(t => t.Tool).HasMaxLength(50);
+            builder.Property(t => t.Text).HasMaxLength(500);
+
+            builder.HasIndex(t => new { t.CreatedBy, t.IsDisabled, t.CreatedDate })
+                .HasDatabaseName("IX_ChartDrawingTemplates_UserActiveCreated");
+        });
+
         modelBuilder.Entity<BacktestAsset>(builder =>
         {
             builder.ToTable("BacktestAssets", "Backtest");
@@ -115,4 +129,3 @@ internal sealed class BacktestDbContext(DbContextOptions<BacktestDbContext> opti
         });
     }
 }
-

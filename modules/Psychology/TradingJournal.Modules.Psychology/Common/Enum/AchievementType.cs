@@ -19,6 +19,8 @@ public enum AchievementType
     TwoThousandFiveHundredTrades = 100,
     SevenThousandFiveHundredTrades = 101,
     TenThousandTrades = 102,
+    FifteenHundredTrades = 103,
+    ThreeThousandTrades = 104,
 
     // ── Review Milestones (10–19) ──
     FirstReview = 10,
@@ -29,6 +31,8 @@ public enum AchievementType
     FiveReviews = 15,
     TwoHundredReviews = 16,
     FiveHundredReviews = 17,
+    ThreeHundredReviews = 18,
+    ThousandReviews = 19,
 
     // ── Journaling Streaks (20–29, 70–79) ──
     WeekStreak = 20,
@@ -45,6 +49,7 @@ public enum AchievementType
     FourMonthStreak = 71,
     EightMonthStreak = 72,
     TenMonthStreak = 73,
+    TwoYearStreak = 74,
 
     // ── Win Streaks (30–39) ──
     WinStreak5 = 30,
@@ -55,6 +60,8 @@ public enum AchievementType
     WinStreak20 = 35,
     WinStreak25 = 36,
     WinStreak30 = 37,
+    WinStreak40 = 38,
+    WinStreak50 = 39,
 
     // ── Karma Levels (40–49) ──
     KarmaLevel5 = 40,
@@ -90,6 +97,8 @@ public enum AchievementType
     JournalEntries5 = 68,
     JournalEntries25 = 69,
     JournalEntries500 = 80,
+    JournalEntries1000 = 81,
+    Disciplined1000 = 82,
 
     // ── Daily Note Preparation (110–119) ──
     DailyNotes3 = 110,
@@ -99,6 +108,7 @@ public enum AchievementType
     DailyNotes60 = 114,
     DailyNotes90 = 115,
     DailyNotes180 = 116,
+    DailyNotes365 = 117,
 
     // ── Risk Management (120–129) ──
     RiskReward2x10 = 120,
@@ -107,6 +117,8 @@ public enum AchievementType
     RiskReward3x10 = 123,
     RiskReward3x25 = 124,
     RiskReward3x50 = 125,
+    RiskReward2x100 = 126,
+    RiskReward3x100 = 127,
 
     // ── Loss Recovery (130–139) ──
     Recovery3 = 130,
@@ -121,12 +133,16 @@ public enum AchievementType
     WinRate60 = 142,
     WinRate65 = 143,
     WinRate70 = 144,
+    WinRate75 = 145,
+    WinRate80 = 146,
 
     // ── Diversification (150–159) ──
     Assets5 = 150,
     Assets10 = 151,
     Assets20 = 152,
     Setups5 = 153,
+    Assets30 = 154,
+    Setups10 = 155,
 
     // ── ICT Methodology (160–189) ──
     // Power of 3 (AMD) trades
@@ -203,6 +219,9 @@ public enum AchievementType
     ProfitableWeek25 = 220,
     BestTradeRR5 = 221,
     BestTradeRR10 = 222,
+    ProfitableDay250 = 223,
+    ProfitableWeek50 = 224,
+    BestTradeRR20 = 225,
 
     // ── Prop Firm Challenge (240–259) ──
     PropMinDays5 = 240,
@@ -240,4 +259,8 @@ public enum AchievementType
     FiveGoalsCompleted = 321,
     TenGoalsCompleted = 322,
     GoalMaster = 323,
+
+    // Extra karma level milestones (330-339)
+    KarmaLevel22 = 330,
+    KarmaLevel24 = 331,
 }

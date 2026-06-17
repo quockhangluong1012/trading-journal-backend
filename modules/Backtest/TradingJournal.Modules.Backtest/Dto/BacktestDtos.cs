@@ -107,3 +107,12 @@ public record AdvanceCandleResponseDto(
     bool IsLiquidated,
     List<OrderDto> FilledOrders,
     List<OrderDto> ClosedPositions);
+
+public record ChartDrawingTemplateDto(
+    int Id,
+    string ClientId,
+    string Label,
+    string StyleJson,
+    string? Tool,
+    string? Text,
+    DateTime CreatedDate);

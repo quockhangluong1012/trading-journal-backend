@@ -50,7 +50,7 @@ internal sealed partial class KarmaService
             .Select(k => k.RecordedAt.Date)
             .Distinct()
             .OrderByDescending(d => d)
-            .Take(365) // Look back at most 1 year
+            .Take(730) // Look back far enough for the two-year streak achievement
             .ToListAsync(ct);
 
         if (tradeDates.Count == 0)
@@ -195,7 +195,9 @@ internal sealed partial class KarmaService
                 AchievementType.TwoFiftyTrades => tradeCount >= 250,
                 AchievementType.FiveHundredTrades => tradeCount >= 500,
                 AchievementType.ThousandTrades => tradeCount >= 1000,
+                AchievementType.FifteenHundredTrades => tradeCount >= 1500,
                 AchievementType.TwoThousandFiveHundredTrades => tradeCount >= 2500,
+                AchievementType.ThreeThousandTrades => tradeCount >= 3000,
                 AchievementType.FiveThousandTrades => tradeCount >= 5000,
                 AchievementType.SevenThousandFiveHundredTrades => tradeCount >= 7500,
                 AchievementType.TenThousandTrades => tradeCount >= 10000,
@@ -208,7 +210,9 @@ internal sealed partial class KarmaService
                 AchievementType.FiftyReviews => reviewCount >= 50,
                 AchievementType.HundredReviews => reviewCount >= 100,
                 AchievementType.TwoHundredReviews => reviewCount >= 200,
+                AchievementType.ThreeHundredReviews => reviewCount >= 300,
                 AchievementType.FiveHundredReviews => reviewCount >= 500,
+                AchievementType.ThousandReviews => reviewCount >= 1000,
 
                 // Journaling streaks
                 AchievementType.ThreeDayStreak => journalingStreak >= 3,
@@ -225,6 +229,7 @@ internal sealed partial class KarmaService
                 AchievementType.EightMonthStreak => journalingStreak >= 240,
                 AchievementType.TenMonthStreak => journalingStreak >= 300,
                 AchievementType.YearStreak => journalingStreak >= 365,
+                AchievementType.TwoYearStreak => journalingStreak >= 730,
 
                 // Win streaks
                 AchievementType.WinStreak3 => bestWinStreak >= 3,
@@ -235,6 +240,8 @@ internal sealed partial class KarmaService
                 AchievementType.WinStreak20 => bestWinStreak >= 20,
                 AchievementType.WinStreak25 => bestWinStreak >= 25,
                 AchievementType.WinStreak30 => bestWinStreak >= 30,
+                AchievementType.WinStreak40 => bestWinStreak >= 40,
+                AchievementType.WinStreak50 => bestWinStreak >= 50,
 
                 // Karma levels
                 AchievementType.KarmaLevel2 => level >= 2,
@@ -246,6 +253,8 @@ internal sealed partial class KarmaService
                 AchievementType.KarmaLevel15 => level >= 15,
                 AchievementType.KarmaLevel18 => level >= 18,
                 AchievementType.KarmaLevel20 => level >= 20,
+                AchievementType.KarmaLevel22 => level >= 22,
+                AchievementType.KarmaLevel24 => level >= 24,
                 AchievementType.KarmaLevel25 => level >= 25,
 
                 // Psychology — tilt
@@ -265,6 +274,7 @@ internal sealed partial class KarmaService
                 AchievementType.Disciplined200 => consecutiveDisciplinedTrades >= 200,
                 AchievementType.Disciplined300 => consecutiveDisciplinedTrades >= 300,
                 AchievementType.Disciplined500 => consecutiveDisciplinedTrades >= 500,
+                AchievementType.Disciplined1000 => consecutiveDisciplinedTrades >= 1000,
 
                 // Psychology — journal entries
                 AchievementType.JournalEntries5 => journalEntryCount >= 5,
@@ -274,6 +284,7 @@ internal sealed partial class KarmaService
                 AchievementType.JournalEntries100 => journalEntryCount >= 100,
                 AchievementType.JournalEntries250 => journalEntryCount >= 250,
                 AchievementType.JournalEntries500 => journalEntryCount >= 500,
+                AchievementType.JournalEntries1000 => journalEntryCount >= 1000,
 
                 // Daily note preparation
                 AchievementType.DailyNotes3 => dailyNoteStreak >= 3,
@@ -283,6 +294,7 @@ internal sealed partial class KarmaService
                 AchievementType.DailyNotes60 => dailyNoteStreak >= 60,
                 AchievementType.DailyNotes90 => dailyNoteStreak >= 90,
                 AchievementType.DailyNotes180 => dailyNoteStreak >= 180,
+                AchievementType.DailyNotes365 => dailyNoteStreak >= 365,
 
                 // Risk management (R:R ratio)
                 AchievementType.RiskReward2x10 => rr2xCount >= 10,
@@ -291,6 +303,8 @@ internal sealed partial class KarmaService
                 AchievementType.RiskReward3x10 => rr3xCount >= 10,
                 AchievementType.RiskReward3x25 => rr3xCount >= 25,
                 AchievementType.RiskReward3x50 => rr3xCount >= 50,
+                AchievementType.RiskReward2x100 => rr2xCount >= 100,
+                AchievementType.RiskReward3x100 => rr3xCount >= 100,
 
                 // Loss recovery
                 AchievementType.Recovery3 => recoveryCount >= 1,
@@ -305,12 +319,16 @@ internal sealed partial class KarmaService
                 AchievementType.WinRate60 => closedCount >= 75 && winRate >= 60.0,
                 AchievementType.WinRate65 => closedCount >= 100 && winRate >= 65.0,
                 AchievementType.WinRate70 => closedCount >= 150 && winRate >= 70.0,
+                AchievementType.WinRate75 => closedCount >= 200 && winRate >= 75.0,
+                AchievementType.WinRate80 => closedCount >= 250 && winRate >= 80.0,
 
                 // Diversification
                 AchievementType.Assets5 => uniqueAssets >= 5,
                 AchievementType.Assets10 => uniqueAssets >= 10,
                 AchievementType.Assets20 => uniqueAssets >= 20,
                 AchievementType.Setups5 => uniqueSetups >= 5,
+                AchievementType.Assets30 => uniqueAssets >= 30,
+                AchievementType.Setups10 => uniqueSetups >= 10,
 
                 // ICT Methodology
                 AchievementType.IctPo3First => ictMetrics.Po3Count >= 1,
@@ -365,11 +383,14 @@ internal sealed partial class KarmaService
                 AchievementType.ProfitableDay25 => profitMetrics.ProfitableDays >= 25,
                 AchievementType.ProfitableDay50 => profitMetrics.ProfitableDays >= 50,
                 AchievementType.ProfitableDay100 => profitMetrics.ProfitableDays >= 100,
+                AchievementType.ProfitableDay250 => profitMetrics.ProfitableDays >= 250,
                 AchievementType.ProfitableWeek5 => profitMetrics.ProfitableWeeks >= 5,
                 AchievementType.ProfitableWeek10 => profitMetrics.ProfitableWeeks >= 10,
                 AchievementType.ProfitableWeek25 => profitMetrics.ProfitableWeeks >= 25,
+                AchievementType.ProfitableWeek50 => profitMetrics.ProfitableWeeks >= 50,
                 AchievementType.BestTradeRR5 => profitMetrics.BestTradeRR >= 5.0,
                 AchievementType.BestTradeRR10 => profitMetrics.BestTradeRR >= 10.0,
+                AchievementType.BestTradeRR20 => profitMetrics.BestTradeRR >= 20.0,
 
                 // Prop Firm Challenge
                 AchievementType.PropMinDays5 => propMetrics.BestMonthTradingDays >= 5,

@@ -12,6 +12,29 @@ internal sealed partial class KarmaService
 
     private static readonly AchievementDefinition[] AchievementDefinitions =
     [
+        // Additional challenge achievements
+        new(AchievementType.FifteenHundredTrades, "Volume Specialist", "Log 1,500 trades", "1500", "Trades"),
+        new(AchievementType.ThreeThousandTrades, "Execution Engine", "Log 3,000 trades", "3000", "Trades"),
+        new(AchievementType.ThreeHundredReviews, "Review Professor", "Complete 300 trade reviews", "300", "Reviews"),
+        new(AchievementType.ThousandReviews, "Review Archivist", "Complete 1,000 trade reviews", "1000", "Reviews"),
+        new(AchievementType.TwoYearStreak, "Two-Year Anchor", "730-day journaling streak", "730", "Streaks"),
+        new(AchievementType.WinStreak40, "Relentless Run", "40 consecutive winning trades", "40", "Performance"),
+        new(AchievementType.WinStreak50, "Perfect Storm", "50 consecutive winning trades", "50", "Performance"),
+        new(AchievementType.WinRate75, "Edge Specialist", "Achieve 75%+ win rate (min 200 trades)", "75", "Performance"),
+        new(AchievementType.WinRate80, "Probability Master", "Achieve 80%+ win rate (min 250 trades)", "80", "Performance"),
+        new(AchievementType.KarmaLevel22, "Immortal Grind", "Reach karma level 22", "22", "Karma"),
+        new(AchievementType.KarmaLevel24, "Eternal Discipline", "Reach karma level 24", "24", "Karma"),
+        new(AchievementType.Disciplined1000, "Rulebook Incarnate", "1,000 consecutive trades with no rule breaks", "1000", "Psychology"),
+        new(AchievementType.JournalEntries1000, "Mind Archive", "Write 1,000 psychology journal entries", "1000", "Psychology"),
+        new(AchievementType.DailyNotes365, "Annual Operator", "Write daily notes for 365 consecutive days", "365", "Preparation"),
+        new(AchievementType.RiskReward2x100, "Risk Veteran", "100 trades with 2:1+ reward-to-risk", "2R", "RiskManagement"),
+        new(AchievementType.RiskReward3x100, "R-Multiple Master", "100 trades with 3:1+ reward-to-risk", "3R", "RiskManagement"),
+        new(AchievementType.Assets30, "Cross-Market Operator", "Trade 30 different assets", "30", "Diversification"),
+        new(AchievementType.Setups10, "Playbook Architect", "Use 10 different trading setups", "10", "Diversification"),
+        new(AchievementType.ProfitableDay250, "Green Calendar", "250 profitable trading days", "250", "Profit"),
+        new(AchievementType.ProfitableWeek50, "Yearly Crusher", "50 profitable trading weeks", "50", "Profit"),
+        new(AchievementType.BestTradeRR20, "Twenty-R Strike", "A single trade achieving 20R+ return", "20R", "Profit"),
+
         // ── Trade milestones (12) ──
         new(AchievementType.FirstTrade, "First Blood", "Log your very first trade", "🎯", "Trades"),
         new(AchievementType.TenTrades, "Getting Started", "Log 10 trades", "📊", "Trades"),

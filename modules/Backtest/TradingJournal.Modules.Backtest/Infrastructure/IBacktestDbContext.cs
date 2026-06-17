@@ -20,6 +20,8 @@ public interface IBacktestDbContext
 
     DbSet<ChartDrawing> ChartDrawings { get; set; }
 
+    DbSet<ChartDrawingTemplate> ChartDrawingTemplates { get; set; }
+
     DbSet<BacktestAsset> BacktestAssets { get; set; }
 
     DbSet<CsvImportJob> CsvImportJobs { get; set; }
