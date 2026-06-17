@@ -27,9 +27,16 @@ public sealed class GetHistoricalCandles
             if (session is null)
                 return Result<List<CandleDto>>.Failure(Error.Create("Session not found."));
 
-            Timeframe tf = request.Timeframe is not null
-                ? Enum.Parse<Timeframe>(request.Timeframe, ignoreCase: true)
-                : session.ActiveTimeframe;
+            Timeframe tf;
+            if (request.Timeframe is not null)
+            {
+                if (!Enum.TryParse(request.Timeframe, ignoreCase: true, out tf) || !Enum.IsDefined(tf))
+                    return Result<List<CandleDto>>.Failure(Error.Create($"Invalid timeframe: {request.Timeframe}"));
+            }
+            else
+            {
+                tf = session.ActiveTimeframe;
+            }
 
             // Use the asset symbol as stored (already normalized when asset was created)
             string symbol = session.Asset;

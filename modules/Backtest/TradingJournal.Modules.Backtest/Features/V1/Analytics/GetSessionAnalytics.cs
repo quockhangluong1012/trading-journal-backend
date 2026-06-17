@@ -28,15 +28,15 @@ public sealed class GetSessionAnalytics
             // Single pass over the trade log for all tallies instead of ~5 separate scans.
             int totalTrades = tradeResults.Count;
             int totalWins = 0;
+            int totalLosses = 0;
             decimal grossProfit = 0m, grossLoss = 0m;
 
             foreach (BacktestTradeResult t in tradeResults)
             {
                 if (t.Pnl > 0) { totalWins++; grossProfit += t.Pnl; }
-                else { grossLoss += t.Pnl; }
+                else if (t.Pnl < 0) { totalLosses++; grossLoss += t.Pnl; }
+                // Pnl == 0 (breakeven) is counted as neither a win nor a loss.
             }
-
-            int totalLosses = totalTrades - totalWins;
             decimal winRate = totalTrades > 0 ? Math.Round((decimal)totalWins / totalTrades * 100m, 2) : 0m;
             decimal netPnl = grossProfit + grossLoss;
 

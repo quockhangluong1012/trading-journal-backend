@@ -29,6 +29,7 @@ namespace TradingJournal.Modules.Backtest.Hubs;
 [Authorize]
 public sealed class BacktestHub(
     IServiceScopeFactory scopeFactory,
+    IHubContext<BacktestHub> hubContext,
     ILogger<BacktestHub> logger) : Hub
 {
     // Track playing sessions: sessionId → CancellationTokenSource
@@ -56,8 +57,13 @@ public sealed class BacktestHub(
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"backtest-{sessionId}");
 
-        // Stop playing if this was the last connection
-        StopPlaying(sessionId);
+        // Only stop the auto-advance loop if THIS connection is the one that started it.
+        // Otherwise a second tab/connection leaving would kill playback for the actual player.
+        if (SessionPlayers.TryGetValue(sessionId, out string? player) && player == Context.ConnectionId)
+        {
+            StopPlaying(sessionId);
+        }
+
         logger.LogDebug("Connection {ConnectionId} left session {SessionId}", Context.ConnectionId, sessionId);
     }
 
@@ -209,8 +215,11 @@ public sealed class BacktestHub(
         {
             logger.LogError(ex, "Error in auto-advance loop for session {SessionId}", sessionId);
 
-            await Clients.Group($"backtest-{sessionId}")
-                .SendAsync("Error", new { Message = "Playback error: " + ex.Message });
+            // Use the injected IHubContext, not this.Clients: the hub instance that started
+            // this loop has long since been disposed (Play() returned), so its Clients property
+            // is no longer valid here.
+            await hubContext.Clients.Group($"backtest-{sessionId}")
+                .SendAsync("Error", new { Message = "Playback error: " + ex.Message }, CancellationToken.None);
         }
 
         logger.LogInformation("Auto-advance stopped for session {SessionId}", sessionId);
@@ -235,9 +244,6 @@ public sealed class BacktestHub(
                 result.Candle.Volume)
             : null;
 
-        // Map filled and closed orders for the notification
-        IBacktestDbContext dbContext = scope.ServiceProvider.GetRequiredService<IBacktestDbContext>();
-
         List<object> filledOrders = result.MatchingResult?.Fills
             .Select(f => (object)new { f.OrderId, f.FilledPrice, f.FilledAt })
             .ToList() ?? [];
@@ -246,7 +252,10 @@ public sealed class BacktestHub(
             .Select(c => (object)new { c.OrderId, c.ExitPrice, c.Pnl, c.Reason, c.ClosedAt })
             .ToList() ?? [];
 
-        await Clients.Group($"backtest-{sessionId}")
+        // Use the injected IHubContext rather than this.Clients: this method runs from the
+        // fire-and-forget AutoAdvanceLoop after the originating hub invocation has returned and
+        // the hub instance was disposed, so this.Clients is no longer safe to touch.
+        await hubContext.Clients.Group($"backtest-{sessionId}")
             .SendAsync("CandleAdvanced", new
             {
                 SessionId = sessionId,

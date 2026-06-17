@@ -4,6 +4,7 @@ using TradingJournal.Modules.Backtest.Common.Enums;
 using TradingJournal.Modules.Backtest.Domain;
 using TradingJournal.Modules.Backtest.Features.V1.Orders;
 using TradingJournal.Modules.Backtest.Infrastructure;
+using TradingJournal.Modules.Backtest.Services;
 using TradingJournal.Tests.Backtest.Helpers;
 
 namespace TradingJournal.Tests.Backtest.Features.V1.Orders;
@@ -15,7 +16,12 @@ public sealed class ClosePositionHandlerTests
 
     public ClosePositionHandlerTests()
     {
-        _handler = new ClosePosition.Handler(_context.Object);
+        var sessionLock = new Mock<IBacktestSessionLock>();
+        sessionLock
+            .Setup(l => l.AcquireAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<IAsyncDisposable>());
+
+        _handler = new ClosePosition.Handler(_context.Object, sessionLock.Object);
     }
 
     [Fact]

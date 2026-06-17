@@ -26,10 +26,15 @@ internal sealed class PlaybackEngine(
     IOrderMatchingEngine matchingEngine,
     ICandleAggregationService aggregationService,
     IEventBus eventBus,
+    IBacktestSessionLock sessionLock,
     ILogger<PlaybackEngine> logger) : IPlaybackEngine
 {
     public async Task<PlaybackAdvanceResult> AdvanceCandleAsync(int sessionId, CancellationToken cancellationToken = default)
     {
+        // Serialize against manual close / finish so the read-modify-write of CurrentBalance
+        // below can't interleave with another path mutating the same session.
+        await using IAsyncDisposable _ = await sessionLock.AcquireAsync(sessionId, cancellationToken);
+
         BacktestSession session = await context.BacktestSessions
             .FirstOrDefaultAsync(s => s.Id == sessionId, cancellationToken)
             ?? throw new InvalidOperationException($"Session {sessionId} not found.");
@@ -121,6 +126,13 @@ internal sealed class PlaybackEngine(
         }
 
         // ── Persist closes ──
+        // Thread a running balance through the closes so each trade result records the
+        // cumulative BalanceAfter. result.Closes is in chronological evaluation order
+        // (intra-bar appends per M1 step; single-bar appends SL/TP then liquidation), so
+        // folding PnL in order reproduces the true equity progression. Computing it as
+        // "session balance + this close's PnL" would give every simultaneous close the
+        // same pre-advance baseline and corrupt the equity curve / drawdown analytics.
+        decimal runningBalance = session.CurrentBalance;
         List<BacktestOrder> closedOrders = [];
         foreach (OrderClose close in result.Closes)
         {
@@ -132,6 +144,8 @@ internal sealed class PlaybackEngine(
             order.ClosedAt = close.ClosedAt;
             closedOrders.Add(order);
 
+            runningBalance += close.Pnl;
+
             await context.BacktestTradeResults.AddAsync(new BacktestTradeResult
             {
                 Id = 0,
@@ -142,7 +156,7 @@ internal sealed class PlaybackEngine(
                 ExitPrice = close.ExitPrice,
                 PositionSize = order.PositionSize,
                 Pnl = close.Pnl,
-                BalanceAfter = session.CurrentBalance + close.Pnl,
+                BalanceAfter = runningBalance,
                 EntryTime = order.FilledAt ?? order.OrderedAt,
                 ExitTime = close.ClosedAt,
                 ExitReason = close.Reason
@@ -150,7 +164,7 @@ internal sealed class PlaybackEngine(
         }
 
         // ── Update session state ──
-        decimal newBalance = session.CurrentBalance + result.Closes.Sum(c => c.Pnl);
+        decimal newBalance = runningBalance;
         session.CurrentBalance = newBalance;
         session.CurrentTimestamp = displayCandle.Timestamp;
 

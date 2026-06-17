@@ -36,11 +36,17 @@ public sealed class AdvanceCandle
 
             // Map filled and closed orders. The engine already mutated and returned the
             // affected order entities, so map those directly instead of re-fetching each by id.
+            // Attach each close's engine reason (SL/TP/gap/liquidation) so the client labels
+            // exits precisely rather than inferring them from price levels.
+            Dictionary<int, string> closeReasons = (advanceResult.MatchingResult?.Closes ?? [])
+                .GroupBy(c => c.OrderId)
+                .ToDictionary(g => g.Key, g => g.Last().Reason);
+
             List<OrderDto> filledOrders = (advanceResult.FilledOrders ?? [])
-                .Select(MapOrderToDto).ToList();
+                .Select(o => MapOrderToDto(o, null)).ToList();
 
             List<OrderDto> closedPositions = (advanceResult.ClosedOrders ?? [])
-                .Select(MapOrderToDto).ToList();
+                .Select(o => MapOrderToDto(o, closeReasons.GetValueOrDefault(o.Id))).ToList();
 
             AdvanceCandleResponseDto response = new(
                 candle,
@@ -56,7 +62,7 @@ public sealed class AdvanceCandle
             return Result<AdvanceCandleResponseDto>.Success(response);
         }
 
-        private static OrderDto MapOrderToDto(BacktestOrder o) => new(
+        private static OrderDto MapOrderToDto(BacktestOrder o, string? exitReason) => new(
             o.Id,
             o.OrderType.ToString(),
             o.Side.ToString(),
@@ -70,7 +76,8 @@ public sealed class AdvanceCandle
             o.Pnl,
             o.OrderedAt,
             o.FilledAt,
-            o.ClosedAt);
+            o.ClosedAt,
+            exitReason);
     }
 
     public class Endpoint : ICarterModule

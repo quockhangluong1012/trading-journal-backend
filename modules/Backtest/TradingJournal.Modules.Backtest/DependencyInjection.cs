@@ -27,6 +27,10 @@ public static class DependencyInjection
         services.AddScoped<IPlaybackEngine, PlaybackEngine>();
         services.AddScoped<ICandleAggregationService, CandleAggregationService>();
 
+        // Serializes per-session balance mutations across playback, manual close, and finish.
+        // Singleton: the in-memory gate must be shared by every request/loop touching a session.
+        services.AddSingleton<IBacktestSessionLock, BacktestSessionLock>();
+
         // Market data provider (Yahoo Finance — free, supports all symbols including NASDAQ indices).
         // The standard resilience handler adds retry, circuit breaker, and per-attempt/total timeouts —
         // important because this client is driven by background sync jobs against an external API with

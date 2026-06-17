@@ -75,14 +75,12 @@ internal sealed class CandleAggregationService(
     {
         int skip = (page - 1) * pageSize;
 
-        IQueryable<OhlcvCandle> m1 = context.OhlcvCandles
-            .Where(c => c.Asset == symbol && c.Timeframe == Timeframe.M1
-                        && c.Timestamp >= fromTimestamp && c.Timestamp <= toTimestamp);
-
         // For M1 no bucketing is needed — page the raw rows directly in SQL.
         if (targetTimeframe == Timeframe.M1)
         {
-            return await m1
+            return await context.OhlcvCandles
+                .Where(c => c.Asset == symbol && c.Timeframe == Timeframe.M1
+                            && c.Timestamp >= fromTimestamp && c.Timestamp <= toTimestamp)
                 .OrderBy(c => c.Timestamp)
                 .Skip(skip)
                 .Take(pageSize)
@@ -91,6 +89,19 @@ internal sealed class CandleAggregationService(
         }
 
         int bucketMinutes = (int)targetTimeframe;
+
+        // Include the ENTIRE bucket that toTimestamp (the session's current timestamp) falls in,
+        // not just M1 rows up to that instant. The playback engine sets CurrentTimestamp to the
+        // displayed bucket's START while streaming that bucket's fully-aggregated candle, so a
+        // plain `<= toTimestamp` filter would re-aggregate the latest bucket from only its first
+        // minute — making the most recent candle "shrink" on reload/pagination relative to what
+        // was streamed live. Bounding by the bucket's end keeps the two views consistent without
+        // exposing any data beyond the current candle.
+        DateTime inclusiveTo = FloorTimestamp(toTimestamp, bucketMinutes).AddMinutes(bucketMinutes);
+
+        IQueryable<OhlcvCandle> m1 = context.OhlcvCandles
+            .Where(c => c.Asset == symbol && c.Timeframe == Timeframe.M1
+                        && c.Timestamp >= fromTimestamp && c.Timestamp < inclusiveTo);
 
         // Step 1: bucket and aggregate the order-independent columns (High/Low/Volume)
         // entirely in SQL, then page with OFFSET/FETCH. The bucket key is the integer

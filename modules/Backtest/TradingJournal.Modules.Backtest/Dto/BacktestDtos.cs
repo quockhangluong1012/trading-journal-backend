@@ -60,7 +60,10 @@ public record OrderDto(
     decimal? Pnl,
     DateTime OrderedAt,
     DateTime? FilledAt,
-    DateTime? ClosedAt);
+    DateTime? ClosedAt,
+    // The matching engine's close reason ("SL Hit", "TP Hit (Gapped)", "Liquidated", …),
+    // populated on advance so clients label exits exactly instead of re-deriving them.
+    string? ExitReason = null);
 
 public record TradeResultDto(
     int Id,

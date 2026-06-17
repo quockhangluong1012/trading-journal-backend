@@ -4,6 +4,7 @@ using TradingJournal.Modules.Backtest.Common.Enums;
 using TradingJournal.Modules.Backtest.Domain;
 using TradingJournal.Modules.Backtest.Features.V1.Sessions;
 using TradingJournal.Modules.Backtest.Infrastructure;
+using TradingJournal.Modules.Backtest.Services;
 using TradingJournal.Messaging.Shared.Abstractions;
 using TradingJournal.Messaging.Shared.Contracts;
 using TradingJournal.Tests.Backtest.Helpers;
@@ -18,7 +19,12 @@ public sealed class FinishSessionHandlerTests
 
     public FinishSessionHandlerTests()
     {
-        _handler = new FinishSession.Handler(_context.Object, _eventBus.Object);
+        var sessionLock = new Mock<IBacktestSessionLock>();
+        sessionLock
+            .Setup(l => l.AcquireAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<IAsyncDisposable>());
+
+        _handler = new FinishSession.Handler(_context.Object, _eventBus.Object, sessionLock.Object);
     }
 
     private void SetupTransactionalContext(

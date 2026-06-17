@@ -23,10 +23,13 @@ public sealed class FinishSession
         }
     }
 
-    internal sealed class Handler(IBacktestDbContext context, IEventBus eventBus) : ICommandHandler<Request, Result>
+    internal sealed class Handler(IBacktestDbContext context, IEventBus eventBus, IBacktestSessionLock sessionLock) : ICommandHandler<Request, Result>
     {
         public async Task<Result> Handle(Request request, CancellationToken cancellationToken)
         {
+            // Serialize against the playback loop's balance read-modify-write.
+            await using IAsyncDisposable _ = await sessionLock.AcquireAsync(request.SessionId, cancellationToken);
+
             BacktestSession? session = await context.BacktestSessions
                 .FirstOrDefaultAsync(s => s.Id == request.SessionId
                                           && s.CreatedBy == request.UserId

@@ -49,9 +49,40 @@ public sealed class PlaceOrder
             if (session is null)
                 return Result<OrderDto>.Failure(Error.Create("Active session not found."));
 
-            // For market orders, execute immediately at the current candle's close price
-            // The entry price for market orders should be the close of the current candle
-            BacktestOrderStatus initialStatus = request.OrderType == BacktestOrderType.Market
+            bool isMarket = request.OrderType == BacktestOrderType.Market;
+
+            // OHLC data is BID. The client sends the price it is displaying (the current bid),
+            // so apply the session spread server-side: a long fills at the ASK (bid + spread),
+            // a short fills at the BID. This keeps market entries consistent with how the
+            // matching engine prices SL/TP exits — previously market orders skipped the spread
+            // entirely, handing every long a free half-spread on entry.
+            decimal marketFillPrice = isMarket && request.Side == BacktestOrderSide.Long
+                ? request.EntryPrice + session.Spread
+                : request.EntryPrice;
+
+            // Validate SL/TP sit on the correct side of the entry, so a mistyped level can't
+            // open a position that liquidates itself on the very next candle.
+            decimal entryReference = isMarket ? marketFillPrice : request.EntryPrice;
+
+            if (request.StopLoss is decimal sl)
+            {
+                bool slValid = request.Side == BacktestOrderSide.Long ? sl < entryReference : sl > entryReference;
+                if (!slValid)
+                    return Result<OrderDto>.Failure(Error.Create(request.Side == BacktestOrderSide.Long
+                        ? "Stop loss must be below the entry price for a long position."
+                        : "Stop loss must be above the entry price for a short position."));
+            }
+
+            if (request.TakeProfit is decimal tp)
+            {
+                bool tpValid = request.Side == BacktestOrderSide.Long ? tp > entryReference : tp < entryReference;
+                if (!tpValid)
+                    return Result<OrderDto>.Failure(Error.Create(request.Side == BacktestOrderSide.Long
+                        ? "Take profit must be above the entry price for a long position."
+                        : "Take profit must be below the entry price for a short position."));
+            }
+
+            BacktestOrderStatus initialStatus = isMarket
                 ? BacktestOrderStatus.Active
                 : BacktestOrderStatus.Pending;
 
@@ -62,13 +93,13 @@ public sealed class PlaceOrder
                 OrderType = request.OrderType,
                 Side = request.Side,
                 Status = initialStatus,
-                EntryPrice = request.EntryPrice,
-                FilledPrice = request.OrderType == BacktestOrderType.Market ? request.EntryPrice : null,
+                EntryPrice = isMarket ? marketFillPrice : request.EntryPrice,
+                FilledPrice = isMarket ? marketFillPrice : null,
                 PositionSize = request.PositionSize,
                 StopLoss = request.StopLoss,
                 TakeProfit = request.TakeProfit,
                 OrderedAt = session.CurrentTimestamp,
-                FilledAt = request.OrderType == BacktestOrderType.Market ? session.CurrentTimestamp : null
+                FilledAt = isMarket ? session.CurrentTimestamp : null
             };
 
             await context.BacktestOrders.AddAsync(order, cancellationToken);

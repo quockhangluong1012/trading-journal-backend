@@ -7,10 +7,22 @@ public sealed class ClosePosition
         public int UserId { get; set; }
     }
 
-    internal sealed class Handler(IBacktestDbContext context) : ICommandHandler<Request, Result>
+    internal sealed class Handler(IBacktestDbContext context, IBacktestSessionLock sessionLock) : ICommandHandler<Request, Result>
     {
         public async Task<Result> Handle(Request request, CancellationToken cancellationToken)
         {
+            // Resolve the session id without tracking the entity, so the authoritative
+            // balance read happens only after the lock is held (and is fresh from the DB).
+            int? sessionId = await context.BacktestOrders
+                .Where(o => o.Id == request.OrderId && o.Session.CreatedBy == request.UserId)
+                .Select(o => (int?)o.SessionId)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (sessionId is null)
+                return Result.Failure(Error.Create("Order not found."));
+
+            await using IAsyncDisposable _ = await sessionLock.AcquireAsync(sessionId.Value, cancellationToken);
+
             BacktestOrder? order = await context.BacktestOrders
                 .Include(o => o.Session)
                 .FirstOrDefaultAsync(o => o.Id == request.OrderId

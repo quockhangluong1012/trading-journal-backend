@@ -36,11 +36,13 @@ public sealed class GetPlaybackState
                     o.ExitPrice, o.Pnl, o.OrderedAt, o.FilledAt, o.ClosedAt))
                 .ToListAsync(cancellationToken);
 
-            // Calculate unrealized PnL using latest candle close
+            // Calculate unrealized PnL using the latest candle close. Only M1 candles are
+            // persisted (higher timeframes are aggregated on the fly), so query M1 directly —
+            // querying by session.ActiveTimeframe would match no rows and report 0 on resume.
             decimal unrealizedPnl = 0m;
             OhlcvCandle? latestCandle = await context.OhlcvCandles
                 .Where(c => c.Asset == session.Asset
-                            && c.Timeframe == session.ActiveTimeframe
+                            && c.Timeframe == Timeframe.M1
                             && c.Timestamp <= session.CurrentTimestamp)
                 .OrderByDescending(c => c.Timestamp)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -50,9 +52,13 @@ public sealed class GetPlaybackState
                 foreach (OrderDto pos in activePositions)
                 {
                     decimal entryPrice = pos.FilledPrice ?? pos.EntryPrice;
+
+                    // Mark longs at the BID (close) and shorts at the ASK (close + spread),
+                    // matching how the matching engine values open positions.
+                    decimal markPrice = pos.Side == "Long" ? latestCandle.Close : latestCandle.Close + session.Spread;
                     unrealizedPnl += pos.Side == "Long"
-                        ? (latestCandle.Close - entryPrice) * pos.PositionSize
-                        : (entryPrice - latestCandle.Close) * pos.PositionSize;
+                        ? (markPrice - entryPrice) * pos.PositionSize
+                        : (entryPrice - markPrice) * pos.PositionSize;
                 }
             }
 
